@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<interface>
+	<template class="ScaleEntry" parent="GtkBox">
+		<style>
+			<class name="linked"/>
+		</style>
+		<child>
+			<object class="GtkEntry" id="entry">
+				<property name="visible">true</property>
+				<property name="hexpand">true</property>
+			</object>
+		</child>
+		<child>
+			<object class="GtkScaleButton" id="button">
+				<property name="visible">true</property>
+				<property name="relief">normal</property>
+				<property name="icons">pan-down-symbolic</property>
+			</object>
+		</child>
+	</template>
+</interface>

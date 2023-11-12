@@ -1,0 +1,31 @@
+.small button {
+	padding: 0;
+	min-width: 0;
+}
+button.record:active, button.record:checked {
+	border-color: #b2161d;
+	outline-color: rgba(255, 255, 255, 0.3);
+	box-shadow: inset 0 1px rgba(255, 255, 255, 0);
+	background-image: image(#a0131a);
+}
+button.play:active, button.play:checked {
+	border-color: #16b21d;
+	outline-color: rgba(255, 255, 255, 0.3);
+	box-shadow: inset 0 1px rgba(255, 255, 255, 0);
+	background-image: image(#13a01a);
+}
+levelbar block.full {
+	background-color: red;
+}
+levelbar block.high {
+	background-color: yellow;
+}
+scale#pan {
+	padding-top: 4px;
+	font-size: 10px;
+}
+/*
+combobox {
+	-GtkComboBox-appears-as-list: true;
+}
+*/

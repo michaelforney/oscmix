@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<schemalist>
+	<schema path="/oscmix/" id="oscmix">
+		<key name="send-host" type="s">
+			<default>'localhost'</default>
+		</key>
+		<key name="send-port" type="u">
+			<default>7000</default>
+		</key>
+		<key name="recv-host" type="s">
+			<default>'localhost'</default>
+		</key>
+		<key name="recv-port" type="u">
+			<default>8000</default>
+		</key>
+	</schema>
+</schemalist>

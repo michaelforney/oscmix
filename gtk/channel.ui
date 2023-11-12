@@ -1,0 +1,811 @@
+<interface>
+	<template class="Channel" parent="GtkBox">
+		<property name="spacing">8</property>
+		<child>
+			<object class="GtkBox">
+				<property name="visible">true</property>
+				<property name="orientation">vertical</property>
+				<property name="spacing">4</property>
+				<child>
+					<object class="GtkLabel" id="name">
+						<property name="visible">true</property>
+					</object>
+				</child>
+				<child>
+					<object class="GtkAdjustment" id="pan_adjustment">
+						<property name="lower">-100</property>
+						<property name="upper">100</property>
+						<property name="value">0</property>
+						<property name="step-increment">1</property>
+					</object>
+					<object class="GtkScale" id="pan">
+						<property name="name">pan</property>
+						<property name="visible">true</property>
+						<property name="draw-value">true</property>
+						<property name="value-pos">bottom</property>
+						<property name="adjustment">pan_adjustment</property>
+						<property name="has-origin">false</property>
+						<marks>
+							<mark value="0" position="bottom"/>
+						</marks>
+					</object>
+				</child>
+				<child>
+					<object class="GtkBox">
+						<property bind-source="play_record" bind-property="visible" bind-flags="invert-boolean" name="visible">true</property>
+						<property name="homogeneous">true</property>
+						<style>
+							<class name="linked"/>
+						</style>
+						<child>
+							<object class="GtkToggleButton" id="mute">
+								<property name="visible">true</property>
+								<property name="label">M</property>
+							</object>
+						</child>
+						<child>
+							<object class="GtkToggleButton" id="solo">
+								<property name="visible">true</property>
+								<property name="label">S</property>
+							</object>
+						</child>
+					</object>
+				</child>
+				<child>
+					<object class="GtkBox" id="play_record">
+						<property name="homogeneous">true</property>
+						<style>
+							<class name="linked"/>
+						</style>
+						<child>
+							<object class="GtkToggleButton" id="play">
+								<property name="visible">true</property>
+								<property name="image">play-icon</property>
+								<style>
+									<class name="play"/>
+								</style>
+							</object>
+						</child>
+						<child>
+							<object class="GtkToggleButton" id="record">
+								<property name="visible">true</property>
+								<property name="image">record-icon</property>
+								<style>
+									<class name="record"/>
+								</style>
+							</object>
+						</child>
+					</object>
+				</child>
+				<child>
+					<object class="GtkBox">
+						<property name="visible">true</property>
+						<child>
+							<object class="GtkLevelBar" id="level">
+								<property name="visible">true</property>
+								<property name="orientation">vertical</property>
+								<property name="min-value">0</property>
+								<property name="max-value">71</property>
+								<property name="inverted">true</property>
+								<offsets>
+									<offset name="full" value="71"/>
+									<offset name="high" value="65"/>
+									<offset name="low" value="59"/>
+								</offsets>
+							</object>
+							<packing>
+								<property name="expand">true</property>
+							</packing>
+						</child>
+						<child>
+							<object class="GtkLevelBar" id="level_right">
+								<property bind-source="stereo" bind-property="active" name="visible"/>
+								<property name="orientation">vertical</property>
+								<property name="min-value">0</property>
+								<property name="max-value">71</property>
+								<property name="inverted">true</property>
+								<offsets>
+									<offset name="full" value="71"/>
+									<offset name="high" value="65"/>
+									<offset name="low" value="59"/>
+								</offsets>
+							</object>
+							<packing>
+								<property name="expand">true</property>
+							</packing>
+						</child>
+						<child>
+							<object class="GtkScale" id="volume_scale">
+								<property name="visible">true</property>
+								<property name="orientation">vertical</property>
+								<property name="inverted">true</property>
+								<property name="draw-value">false</property>
+								<property name="adjustment">volume</property>
+								<marks>
+									<mark value="6" position="left"/>
+									<mark value="0" position="left"/>
+									<mark value="-6" position="left"/>
+									<mark value="-18" position="left"/>
+									<mark value="-42" position="left"/>
+									<mark value="-65" position="left"/>
+								</marks>
+							</object>
+						</child>
+						<child>
+							<object class="GtkStackSwitcher" id="stack_buttons">
+								<property name="visible">true</property>
+								<property name="valign">end</property>
+								<property name="orientation">vertical</property>
+								<property name="stack">stack</property>
+								<style>
+									<class name="small"/>
+								</style>
+								<child>
+									<object class="GtkRadioButton" id="stack_hide">
+										<property name="focus-on-click">false</property>
+										<property name="draw-indicator">false</property>
+									</object>
+								</child>
+							</object>
+						</child>
+					</object>
+					<packing>
+						<property name="expand">true</property>
+					</packing>
+				</child>
+				<child>
+					<object class="GtkSpinButton">
+						<property name="visible">true</property>
+						<property bind-source="volume_scale" bind-property="adjustment" name="adjustment">volume</property>
+						<property name="digits">1</property>
+						<signal name="output" handler="on_volume_output"/>
+					</object>
+				</child>
+				<child>
+					<object class="GtkComboBox" id="output">
+						<property name="visible">true</property>
+						<signal name="changed" handler="on_output_changed"/>
+						<child>
+							<object class="GtkCellRendererText"/>
+							<attributes>
+								<attribute name="text">1</attribute>
+							</attributes>
+						</child>
+					</object>
+				</child>
+			</object>
+		</child>
+		<child>
+			<object class="GtkFrame">
+				<property name="visible">true</property>
+				<property bind-source="stack_hide" bind-property="active" bind-flags="sync-create|invert-boolean" name="visible"/>
+				<child>
+					<object class="GtkScrolledWindow">
+						<property name="visible">true</property>
+						<property name="hscrollbar-policy">never</property>
+						<child>
+							<object class="GtkStack" id="stack">
+								<property name="visible">true</property>
+								<property name="border-width">4</property>
+								<property name="homogeneous">false</property>
+								<child>
+									<object class="GtkBox">
+										<property name="visible">true</property>
+										<property name="orientation">vertical</property>
+										<child>
+											<object class="GtkCheckButton" id="stereo">
+												<property name="visible">true</property>
+												<property name="label">Stereo</property>
+												<signal name="toggled" handler="on_stereo_toggled"/>
+											</object>
+										</child>
+										<child>
+											<object class="GtkCheckButton" id="instr">
+												<property name="label">Instr.</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkCheckButton" id="48v">
+												<property name="label">48v</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkComboBoxText" id="reflevel">
+												<items>
+													<item>+13 dBu</item>
+													<item>+19 dBu</item>
+												</items>
+											</object>
+										</child>
+										<child>
+											<object class="GtkLabel">
+												<property bind-source="gain_button" bind-property="visible" name="visible"/>
+												<property name="label">Gain</property>
+												<property name="halign">start</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkSpinButton" id="gain_button">
+												<property name="adjustment">gain</property>
+												<property name="digits">1</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkCheckButton" id="autoset">
+												<property name="label">Autoset</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkLabel">
+												<property bind-source="stereo" bind-property="active" name="visible"/>
+												<property name="halign">start</property>
+												<property name="label">Width</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkSpinButton" id="stereowidth">
+												<property bind-source="stereo" bind-property="active" name="visible"/>
+											</object>
+										</child>
+										<child>
+											<object class="GtkLabel" id="fx_label">
+												<property name="visible">true</property>
+												<property name="halign">start</property>
+												<property name="label">FX Send</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkSpinButton">
+												<property name="visible">true</property>
+												<property name="adjustment">fx</property>
+												<property name="digits">1</property>
+												<signal name="output" handler="on_volume_output"/>
+											</object>
+										</child>
+										<child>
+											<object class="GtkCheckButton" id="msproc">
+												<property name="label">M/S Proc.</property>
+												<property bind-source="stereo" bind-property="active" name="visible"/>
+											</object>
+										</child>
+										<child>
+											<object class="GtkBox">
+												<property name="visible">true</property>
+												<property name="homogeneous">true</property>
+												<style>
+													<class name="linked"/>
+												</style>
+												<child>
+													<object class="GtkToggleButton" id="phase">
+														<property name="visible">true</property>
+														<property name="always-show-image">true</property>
+														<property name="label">L</property>
+														<property name="image">phase-icon</property>
+													</object>
+												</child>
+												<child>
+													<object class="GtkToggleButton" id="phase_right">
+														<property bind-source="stereo" bind-property="active" name="visible"/>
+														<property name="always-show-image">true</property>
+														<property name="label">R</property>
+														<property name="image">phase-right-icon</property>
+													</object>
+												</child>
+											</object>
+										</child>
+									</object>
+									<packing>
+										<property name="icon-name">preferences-system-symbolic</property>
+									</packing>
+								</child>
+								<child>
+									<object class="GtkBox" id="eq_box">
+										<property name="visible">true</property>
+										<property name="orientation">vertical</property>
+										<property name="spacing">8</property>
+										<child>
+											<object class="GtkGrid">
+												<property name="visible">true</property>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">EQ</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkSwitch" id="eq">
+														<property name="visible">true</property>
+														<property name="halign">end</property>
+													</object>
+													<packing>
+														<property name="left_attach">3</property>
+														<property name="top_attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Band</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">1</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">2</property>
+													</object>
+													<packing>
+														<property name="left_attach">2</property>
+														<property name="top_attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">3</property>
+													</object>
+													<packing>
+														<property name="left_attach">3</property>
+														<property name="top_attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Type</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">2</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkListStore" id="eq_band1type_model">
+														<columns>
+															<column type="GdkPixbuf"/>
+															<column type="gchararray"/>
+														</columns>
+														<data>
+															<row>
+																<col id="0">resource:///oscmix/eq-peak.svg</col>
+															</row>
+															<row>
+																<col id="0">resource:///oscmix/eq-shelf.svg</col>
+															</row>
+														</data>
+													</object>
+													<object class="GtkComboBox" id="eq_band1type">
+														<property name="visible">true</property>
+														<property name="model">eq_band1type_model</property>
+														<child>
+															<object class="GtkCellRendererPixbuf"/>
+															<attributes>
+																<attribute name="pixbuf">0</attribute>
+															</attributes>
+														</child>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">2</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkImage">
+														<property name="visible">true</property>
+														<property name="resource">/oscmix/eq-peak.svg</property>
+													</object>
+													<packing>
+														<property name="left_attach">2</property>
+														<property name="top_attach">2</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkListStore" id="eq_band3type_model">
+														<columns>
+															<column type="GdkPixbuf"/>
+															<column type="gchararray"/>
+														</columns>
+														<data>
+															<row>
+																<col id="0">resource:///oscmix/eq-peak.svg</col>
+															</row>
+															<row>
+																<col id="0">resource:///oscmix/eq-shelf.svg</col>
+															</row>
+															<row>
+																<col id="0">resource:///oscmix/eq-lowpass.svg</col>
+															</row>
+														</data>
+													</object>
+													<object class="GtkComboBox" id="eq_band3type">
+														<property name="visible">true</property>
+														<property name="model">eq_band3type_model</property>
+														<child>
+															<object class="GtkCellRendererPixbuf"/>
+															<attributes>
+																<attribute name="pixbuf">0</attribute>
+															</attributes>
+														</child>
+													</object>
+													<packing>
+														<property name="left_attach">3</property>
+														<property name="top_attach">2</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Gain</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">3</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="eq_band1gain">
+														<property name="lower">-20</property>
+														<property name="upper">20</property>
+														<property name="page-increment">0.5</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">eq_band1gain</property>
+														<property name="digits">1</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">3</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="eq_band2gain">
+														<property name="lower">-20</property>
+														<property name="upper">20</property>
+														<property name="page-increment">0.5</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">eq_band2gain</property>
+														<property name="digits">1</property>
+													</object>
+													<packing>
+														<property name="left_attach">2</property>
+														<property name="top_attach">3</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="eq_band3gain">
+														<property name="lower">-20</property>
+														<property name="upper">20</property>
+														<property name="page-increment">0.5</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">eq_band3gain</property>
+														<property name="digits">1</property>
+													</object>
+													<packing>
+														<property name="left_attach">3</property>
+														<property name="top_attach">3</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Freq</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">4</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="eq_band1freq">
+														<property name="lower">20</property>
+														<property name="upper">20000</property>
+														<property name="page-increment">1</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">eq_band1freq</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">4</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="eq_band2freq">
+														<property name="lower">20</property>
+														<property name="upper">20000</property>
+														<property name="page-increment">1</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">eq_band2freq</property>
+													</object>
+													<packing>
+														<property name="left_attach">2</property>
+														<property name="top_attach">4</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="eq_band3freq">
+														<property name="lower">20</property>
+														<property name="upper">20000</property>
+														<property name="page-increment">1</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">eq_band3freq</property>
+													</object>
+													<packing>
+														<property name="left_attach">3</property>
+														<property name="top_attach">4</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Q</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">5</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="eq_band1q">
+														<property name="lower">0.7</property>
+														<property name="upper">5.0</property>
+														<property name="page-increment">0.1</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">eq_band1q</property>
+														<property name="digits">1</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">5</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="eq_band2q">
+														<property name="lower">0.7</property>
+														<property name="upper">5.0</property>
+														<property name="page-increment">0.1</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">eq_band2q</property>
+														<property name="digits">1</property>
+													</object>
+													<packing>
+														<property name="left_attach">2</property>
+														<property name="top_attach">5</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="eq_band3q">
+														<property name="lower">0.7</property>
+														<property name="upper">5.0</property>
+														<property name="page-increment">0.1</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">eq_band3q</property>
+														<property name="digits">1</property>
+													</object>
+													<packing>
+														<property name="left_attach">3</property>
+														<property name="top_attach">5</property>
+													</packing>
+												</child>
+											</object>
+										</child>
+										<child>
+											<object class="GtkSeparator">
+												<property name="visible">true</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkGrid">
+												<property name="visible">true</property>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Low Cut</property>
+														<property name="halign">start</property>
+														<property name="hexpand">true</property>
+													</object>
+													<packing>
+														<property name="top_attach">0</property>
+														<property name="left_attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkSwitch" id="lowcut">
+														<property name="visible">true</property>
+														<property name="halign">end</property>
+														<property name="hexpand">true</property>
+													</object>
+													<packing>
+														<property name="top_attach">0</property>
+														<property name="left_attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Slope</property>
+														<property name="halign">start</property>
+													</object>
+													<packing>
+														<property name="top_attach">1</property>
+														<property name="left_attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkComboBoxText" id="lowcut_slope">
+														<property name="visible">true</property>
+														<items>
+															<item>6 dB/o</item>
+															<item>12 dB/o</item>
+															<item>18 dB/o</item>
+															<item>24 dB/o</item>
+														</items>
+													</object>
+													<packing>
+														<property name="top_attach">1</property>
+														<property name="left_attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Freq.</property>
+														<property name="halign">start</property>
+													</object>
+													<packing>
+														<property name="top_attach">2</property>
+														<property name="left_attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="lowcut_freq">
+														<property name="lower">20</property>
+														<property name="upper">500</property>
+														<property name="page-increment">1</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">lowcut_freq</property>
+													</object>
+													<packing>
+														<property name="top_attach">2</property>
+														<property name="left_attach">1</property>
+													</packing>
+												</child>
+											</object>
+										</child>
+									</object>
+									<packing>
+										<property name="title">EQ</property>
+									</packing>
+								</child>
+								<child>
+									<object class="GtkBox" id="dynamics_box">
+										<property name="visible">true</property>
+										<property name="orientation">vertical</property>
+										<child>
+											<object class="GtkCheckButton" id="dynamics">
+												<property name="visible">true</property>
+												<property name="label">Dynamics</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkSeparator">
+												<property name="visible">true</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkCheckButton" id="autolevel">
+												<property name="visible">true</property>
+												<property name="label">Auto Level</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkLabel">
+												<property name="visible">true</property>
+												<property name="label">Max Gain</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkSpinButton" id="maxgain">
+												<property name="visible">true</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkLabel">
+												<property name="visible">true</property>
+												<property name="label">Headroom</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkSpinButton" id="headroom">
+												<property name="visible">true</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkLabel">
+												<property name="visible">true</property>
+												<property name="label">Rise Time</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkSpinButton" id="risetime">
+												<property name="visible">true</property>
+											</object>
+										</child>
+									</object>
+									<packing>
+										<property name="title">D</property>
+									</packing>
+								</child>
+							</object>
+						</child>
+					</object>
+				</child>
+			</object>
+		</child>
+	</template>
+	<object class="GtkAdjustment" id="volume">
+		<property name="lower">-65</property>
+		<property name="upper">6</property>
+		<property name="value">-65</property>
+		<property name="step-increment">0.5</property>
+	</object>
+	<object class="GtkAdjustment" id="gain">
+		<property name="lower">0</property>
+		<property name="upper">24</property>
+		<property name="value">0</property>
+		<property name="step-increment">0.5</property>
+	</object>
+	<object class="GtkAdjustment" id="fx">
+		<property name="lower">-65</property>
+		<property name="upper">0</property>
+		<property name="value">-65</property>
+		<property name="step-increment">0.5</property>
+	</object>
+	<object class="GtkImage" id="phase-icon">
+		<property name="icon-name">action-unavailable-symbolic</property>
+	</object>
+	<object class="GtkImage" id="phase-right-icon">
+		<property name="icon-name">action-unavailable-symbolic</property>
+	</object>
+	<object class="GtkImage" id="play-icon">
+		<property name="icon-name">media-playback-start-symbolic</property>
+	</object>
+	<object class="GtkImage" id="record-icon">
+		<property name="icon-name">media-record-symbolic</property>
+	</object>
+</interface>

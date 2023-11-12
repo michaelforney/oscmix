@@ -1,0 +1,1515 @@
+<interface>
+	<template class="OSCMixWindow" parent="GtkApplicationWindow">
+		<property name="visible">true</property>
+		<property name="title">oscmix</property>
+		<child type="titlebar">
+			<object class="GtkHeaderBar">
+				<property name="visible">true</property>
+				<property name="show-close-button">true</property>
+				<property name="title">oscmix</property>
+			</object>
+		</child>
+		<child>
+			<object class="GtkPaned">
+				<property name="visible">true</property>
+				<child>
+					<object class="GtkBox">
+						<property name="visible">true</property>
+						<property name="orientation">vertical</property>
+						<property name="homogeneous">true</property>
+						<property name="border-width">8</property>
+						<property name="expand">true</property>
+						<child>
+							<object class="GtkFrame">
+								<property name="visible">true</property>
+								<property name="label">Input</property>
+								<child>
+									<object class="GtkScrolledWindow">
+										<property name="visible">true</property>
+										<child>
+											<object class="GtkBox" id="inputs">
+												<property name="visible">true</property>
+												<property name="orientation">horizontal</property>
+												<property name="halign">start</property>
+												<property name="border-width">8</property>
+												<property name="spacing">8</property>
+											</object>
+										</child>
+									</object>
+								</child>
+							</object>
+						</child>
+						<child>
+							<object class="GtkFrame">
+								<property name="visible">true</property>
+								<property name="label">Playback</property>
+								<child>
+									<object class="GtkScrolledWindow">
+										<property name="visible">true</property>
+										<child>
+											<object class="GtkBox" id="playbacks">
+												<property name="visible">true</property>
+												<property name="orientation">horizontal</property>
+												<property name="halign">start</property>
+												<property name="spacing">8</property>
+												<property name="border-width">8</property>
+											</object>
+										</child>
+									</object>
+								</child>
+							</object>
+						</child>
+						<child>
+							<object class="GtkFrame">
+								<property name="visible">true</property>
+								<property name="label">Output</property>
+								<child>
+									<object class="GtkScrolledWindow">
+										<property name="visible">true</property>
+										<child>
+											<object class="GtkBox" id="outputs">
+												<property name="visible">true</property>
+												<property name="orientation">horizontal</property>
+												<property name="halign">start</property>
+												<property name="spacing">8</property>
+												<property name="border-width">8</property>
+											</object>
+										</child>
+									</object>
+								</child>
+							</object>
+						</child>
+					</object>
+					<packing>
+						<property name="resize">true</property>
+						<property name="shrink">false</property>
+					</packing>
+				</child>
+				<child>
+					<object class="GtkScrolledWindow">
+						<property name="visible">true</property>
+						<property name="hscrollbar-policy">never</property>
+						<child>
+							<object class="GtkBox">
+								<property name="visible">true</property>
+								<property name="orientation">vertical</property>
+								<property name="spacing">10</property>
+								<property name="border-width">8</property>
+								<child>
+									<object class="GtkExpander">
+										<property name="visible">true</property>
+										<property name="expanded">true</property>
+										<child type="label">
+											<object class="GtkLabel">
+												<property name="visible">true</property>
+												<property name="label">OSC</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkBox">
+												<property name="visible">true</property>
+												<property name="orientation">vertical</property>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Send</property>
+														<property name="halign">start</property>
+													</object>
+												</child>
+												<child>
+													<object class="GtkBox">
+														<property name="visible">true</property>
+														<style>
+															<class name="linked"/>
+														</style>
+														<child>
+															<object class="GtkEntry" id="send_host">
+																<property name="visible">true</property>
+																<property name="width-chars">10</property>
+																<property name="hexpand">true</property>
+																<property name="placeholder-text">Host</property>
+																<signal name="activate" handler="on_send_addr_changed"/>
+															</object>
+														</child>
+														<child>
+															<object class="GtkAdjustment" id="send_port">
+																<property name="lower">1</property>
+																<property name="upper">65535</property>
+																<property name="value">7000</property>
+																<property name="step-increment">1</property>
+															</object>
+															<object class="GtkSpinButton">
+																<property name="visible">true</property>
+																<property name="placeholder-text">Port</property>
+																<property name="adjustment">send_port</property>
+																<property name="width-chars">4</property>
+																<signal name="activate" handler="on_send_addr_changed"/>
+															</object>
+														</child>
+													</object>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Receive</property>
+														<property name="halign">start</property>
+													</object>
+												</child>
+												<child>
+													<object class="GtkBox">
+														<property name="visible">true</property>
+														<style>
+															<class name="linked"/>
+														</style>
+														<child>
+															<object class="GtkEntry" id="recv_host">
+																<property name="visible">true</property>
+																<property name="width-chars">10</property>
+																<property name="hexpand">true</property>
+																<property name="placeholder-text">Host</property>
+																<signal name="activate" handler="on_recv_addr_changed"/>
+															</object>
+														</child>
+														<child>
+															<object class="GtkAdjustment" id="recv_port">
+																<property name="lower">1</property>
+																<property name="upper">65535</property>
+																<property name="value">8000</property>
+																<property name="step-increment">1</property>
+															</object>
+															<object class="GtkSpinButton">
+																<property name="visible">true</property>
+																<property name="placeholder-text">Port</property>
+																<property name="adjustment">recv_port</property>
+																<property name="width-chars">4</property>
+																<signal name="activate" handler="on_recv_addr_changed"/>
+															</object>
+														</child>
+													</object>
+												</child>
+											</object>
+										</child>
+									</object>
+								</child>
+								<child>
+									<object class="GtkSeparator">
+										<property name="visible">true</property>
+									</object>
+								</child>
+								<child>
+									<object class="GtkExpander">
+										<property name="visible">true</property>
+										<property name="expanded">false</property>
+										<child type="label">
+											<object class="GtkLabel">
+												<property name="visible">true</property>
+												<property name="label">Reverb</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkGrid">
+												<property name="visible">true</property>
+												<property name="row-spacing">4</property>
+												<property name="column-spacing">8</property>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="hexpand">true</property>
+														<property name="label">Enabled</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkSwitch" id="reverb_enabled">
+														<property name="visible">true</property>
+														<property name="halign">end</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Type</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkComboBoxText" id="reverb_type">
+														<property name="visible">true</property>
+														<property name="hexpand">true</property>
+														<signal name="changed" handler="on_reverb_type_changed"/>
+														<items>
+															<item>Small Room</item>
+															<item>Medium Room</item>
+															<item>Large Room</item>
+															<item>Walls</item>
+															<item>Shorty</item>
+															<item>Attack</item>
+															<item>Swagger</item>
+															<item>Old School</item>
+															<item>Echoistic</item>
+															<item>8plus9</item>
+															<item>Grand Wide</item>
+															<item>Thicker</item>
+															<item>Envelope</item>
+															<item>Gated</item>
+															<item>Space</item>
+														</items>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Pre Delay</property>
+														<property name="halign">start</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">2</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="reverb_predelay_adjustment">
+														<property name="lower">0</property>
+														<property name="upper">999</property>
+														<property name="step-increment">1</property>
+													</object>
+													<object class="ScaleEntry" id="reverb_predelay">
+														<property name="visible">true</property>
+														<property name="adjustment">reverb_predelay_adjustment</property>
+														<property name="unit"> ms</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">2</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Low Cut</property>
+														<property name="halign">start</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">3</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="reverb_lowcut_adjustment">
+														<property name="lower">20</property>
+														<property name="upper">500</property>
+														<property name="step-increment">1</property>
+													</object>
+													<object class="ScaleEntry" id="reverb_lowcut">
+														<property name="visible">true</property>
+														<property name="adjustment">reverb_lowcut_adjustment</property>
+														<property name="unit"> Hz</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">3</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Room Scale</property>
+														<property name="halign">start</property>
+														<property bind-source="reverb_roomscale" bind-property="sensitive" name="sensitive"/>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">4</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="reverb_roomscale_adjustment">
+														<property name="lower">0.50</property>
+														<property name="upper">3.00</property>
+														<property name="step-increment">0.01</property>
+													</object>
+													<object class="ScaleEntry" id="reverb_roomscale">
+														<property name="visible">true</property>
+														<property name="adjustment">reverb_roomscale_adjustment</property>
+														<property name="digits">2</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">4</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Attack</property>
+														<property name="halign">start</property>
+														<property bind-source="reverb_attack" bind-property="sensitive" name="sensitive"/>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">5</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="reverb_attack_adjustment">
+														<property name="lower">5</property>
+														<property name="upper">400</property>
+														<property name="step-increment">1</property>
+													</object>
+													<object class="ScaleEntry" id="reverb_attack">
+														<property name="visible">true</property>
+														<property name="adjustment">reverb_attack_adjustment</property>
+														<property name="unit"> ms</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">5</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Hold</property>
+														<property name="halign">start</property>
+														<property bind-source="reverb_hold" bind-property="sensitive" name="sensitive"/>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">6</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="reverb_hold_adjustment">
+														<property name="lower">5</property>
+														<property name="upper">400</property>
+														<property name="step-increment">1</property>
+													</object>
+													<object class="ScaleEntry" id="reverb_hold">
+														<property name="visible">true</property>
+														<property name="adjustment">reverb_hold_adjustment</property>
+														<property name="unit"> ms</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">6</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Release</property>
+														<property name="halign">start</property>
+														<property bind-source="reverb_release" bind-property="sensitive" name="sensitive"/>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">7</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="reverb_release_adjustment">
+														<property name="lower">5</property>
+														<property name="upper">400</property>
+														<property name="step-increment">1</property>
+													</object>
+													<object class="ScaleEntry" id="reverb_release">
+														<property name="visible">true</property>
+														<property name="adjustment">reverb_release_adjustment</property>
+														<property name="unit"> ms</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">7</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">High Cut</property>
+														<property name="halign">start</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">8</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="reverb_highcut_adjustment">
+														<property name="lower">2000</property>
+														<property name="upper">20000</property>
+														<property name="step-increment">100</property>
+													</object>
+													<object class="ScaleEntry" id="reverb_highcut">
+														<property name="visible">true</property>
+														<property name="adjustment">reverb_highcut_adjustment</property>
+														<property name="unit"> Hz</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">8</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Time</property>
+														<property name="halign">start</property>
+														<property bind-source="reverb_time" bind-property="sensitive" name="sensitive"/>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">9</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="reverb_time_adjustment">
+														<property name="lower">0.1</property>
+														<property name="upper">4.9</property>
+														<property name="step-increment">0.1</property>
+													</object>
+													<object class="ScaleEntry" id="reverb_time">
+														<property name="visible">true</property>
+														<property name="adjustment">reverb_time_adjustment</property>
+														<property name="unit"> s</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">9</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">High Damp</property>
+														<property name="halign">start</property>
+														<property bind-source="reverb_damp" bind-property="sensitive" name="sensitive"/>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">10</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="reverb_damp_adjustment">
+														<property name="lower">2000</property>
+														<property name="upper">20000</property>
+														<property name="step-increment">100</property>
+													</object>
+													<object class="ScaleEntry" id="reverb_damp">
+														<property name="visible">true</property>
+														<property name="adjustment">reverb_damp_adjustment</property>
+														<property name="unit"> Hz</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">10</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Smooth</property>
+														<property name="halign">start</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">11</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="reverb_smooth_adjustment">
+														<property name="lower">0</property>
+														<property name="upper">100</property>
+														<property name="step-increment">1</property>
+													</object>
+													<object class="ScaleEntry" id="reverb_smooth">
+														<property name="visible">true</property>
+														<property name="adjustment">reverb_smooth_adjustment</property>
+														<property name="unit">%</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">11</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Volume</property>
+														<property name="halign">start</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">12</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="reverb_volume_adjustment">
+														<property name="lower">-65</property>
+														<property name="upper">6</property>
+														<property name="step-increment">0.5</property>
+													</object>
+													<object class="ScaleEntry" id="reverb_volume">
+														<property name="visible">true</property>
+														<property name="adjustment">reverb_volume_adjustment</property>
+														<property name="unit"> dB</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">12</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Width</property>
+														<property name="halign">start</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">13</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="reverb_width_adjustment">
+														<property name="lower">0.00</property>
+														<property name="upper">1.00</property>
+														<property name="step-increment">0.01</property>
+													</object>
+													<object class="ScaleEntry" id="reverb_width">
+														<property name="visible">true</property>
+														<property name="adjustment">reverb_width_adjustment</property>
+														<property name="digits">2</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">13</property>
+													</packing>
+												</child>
+											</object>
+										</child>
+									</object>
+								</child>
+								<child>
+									<object class="GtkSeparator">
+										<property name="visible">true</property>
+									</object>
+								</child>
+								<child>
+									<object class="GtkExpander">
+										<property name="visible">true</property>
+										<property name="expanded">false</property>
+										<child type="label">
+											<object class="GtkLabel">
+												<property name="visible">true</property>
+												<property name="label">Echo</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkGrid">
+												<property name="visible">true</property>
+												<property name="row-spacing">4</property>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="hexpand">true</property>
+														<property name="halign">start</property>
+														<property name="label">Enabled</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkSwitch" id="echo_enabled">
+														<property name="visible">true</property>
+														<property name="halign">end</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Type</property>
+														<property name="halign">start</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkComboBoxText" id="echo_type">
+														<property name="visible">true</property>
+														<property name="hexpand">true</property>
+														<items>
+															<item>Stereo Echo</item>
+															<item>Stereo Cross</item>
+															<item>Pong Echo</item>
+														</items>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Delay</property>
+														<property name="halign">start</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">2</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="echo_delay_adjustment">
+														<property name="lower">0.000</property>
+														<property name="upper">2.000</property>
+														<property name="step-increment">0.010</property>
+													</object>
+													<object class="ScaleEntry" id="echo_delay">
+														<property name="visible">true</property>
+														<property name="adjustment">echo_delay_adjustment</property>
+														<property name="digits">3</property>
+														<property name="unit"> s</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">2</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Feedback</property>
+														<property name="halign">start</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">3</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="echo_feedback_adjustment">
+														<property name="lower">0</property>
+														<property name="upper">100</property>
+														<property name="step-increment">1</property>
+													</object>
+													<object class="ScaleEntry" id="echo_feedback">
+														<property name="visible">true</property>
+														<property name="adjustment">echo_feedback_adjustment</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">3</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">High Cut</property>
+														<property name="halign">start</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">4</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkComboBoxText" id="echo_highcut">
+														<property name="visible">true</property>
+														<items>
+															<item>Off</item>
+															<item>16 kHz</item>
+															<item>12 kHz</item>
+															<item>8 kHz</item>
+															<item>4 kHz</item>
+															<item>2 kHz</item>
+														</items>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">4</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Volume</property>
+														<property name="halign">start</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">12</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="echo_volume_adjustment">
+														<property name="lower">-65</property>
+														<property name="upper">6</property>
+														<property name="step-increment">0.5</property>
+													</object>
+													<object class="ScaleEntry" id="echo_volume">
+														<property name="visible">true</property>
+														<property name="adjustment">echo_volume_adjustment</property>
+														<property name="digits">1</property>
+														<property name="unit"> dB</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">12</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="label">Width</property>
+														<property name="halign">start</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">13</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="echo_width_adjustment">
+														<property name="lower">0.00</property>
+														<property name="upper">1.00</property>
+														<property name="step-increment">0.01</property>
+													</object>
+													<object class="ScaleEntry" id="echo_width">
+														<property name="visible">true</property>
+														<property name="adjustment">echo_width_adjustment</property>
+														<property name="digits">2</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">13</property>
+													</packing>
+												</child>
+											</object>
+										</child>
+									</object>
+								</child>
+								<child>
+									<object class="GtkSeparator">
+										<property name="visible">true</property>
+									</object>
+								</child>
+								<child>
+									<object class="GtkExpander">
+										<property name="visible">true</property>
+										<property name="expanded">true</property>
+										<child type="label">
+											<object class="GtkLabel">
+												<property name="visible">true</property>
+												<property name="label">DURec</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkGrid">
+												<property name="visible">true</property>
+												<property name="row-spacing">4</property>
+												<child>
+													<object class="GtkComboBox">
+														<property name="visible">true</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="width">2</property>
+														<property name="top_attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Sample Rate</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkFrame">
+														<property name="visible">true</property>
+														<child>
+															<object class="GtkLabel" id="durec_samplerate">
+																<property name="visible">true</property>
+																<property name="hexpand">true</property>
+															</object>
+														</child>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Channels</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">2</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkFrame">
+														<property name="visible">true</property>
+														<child>
+															<object class="GtkLabel" id="durec_channels">
+																<property name="visible">true</property>
+																<property name="hexpand">true</property>
+															</object>
+														</child>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">2</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkScale">
+														<property name="visible">true</property>
+														<property name="value-pos">right</property>
+														<signal name="format-value" handler="format_durec_position"/>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="width">2</property>
+														<property name="top_attach">3</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkBox">
+														<property name="visible">true</property>
+														<property name="hexpand">true</property>
+														<property name="homogeneous">true</property>
+														<style>
+															<class name="linked"/>
+														</style>
+														<child>
+															<object class="GtkButton" id="durec_stop">
+																<property name="visible">true</property>
+																<property name="image">stop-icon</property>
+															</object>
+														</child>
+														<child>
+															<object class="GtkButton" id="durec_play">
+																<property name="visible">true</property>
+																<property name="image">play-icon</property>
+															</object>
+														</child>
+														<child>
+															<object class="GtkButton" id="durec_record">
+																<property name="visible">true</property>
+																<property name="image">record-icon</property>
+															</object>
+														</child>
+														<child>
+															<object class="GtkButton" id="durec_delete">
+																<property name="visible">true</property>
+																<property name="image">delete-icon</property>
+															</object>
+														</child>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="width">2</property>
+														<property name="top_attach">4</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="hexpand">true</property>
+														<property name="halign">start</property>
+														<property name="label">Record View</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">5</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkSwitch" id="durec_recordview">
+														<property name="visible">true</property>
+														<property name="hexpand">true</property>
+														<property name="halign">end</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">5</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">USB Load</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">6</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkFrame">
+														<property name="visible">true</property>
+														<child>
+															<object class="GtkLabel">
+																<property name="visible">true</property>
+															</object>
+														</child>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">6</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">USB Errors</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">7</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkFrame">
+														<property name="visible">true</property>
+														<child>
+															<object class="GtkLabel">
+																<property name="visible">true</property>
+															</object>
+														</child>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">7</property>
+													</packing>
+												</child>
+											</object>
+										</child>
+									</object>
+								</child>
+								<child>
+									<object class="GtkSeparator">
+										<property name="visible">true</property>
+									</object>
+								</child>
+								<child>
+									<object class="GtkExpander">
+										<property name="visible">true</property>
+										<property name="expanded">true</property>
+										<child type="label">
+											<object class="GtkLabel">
+												<property name="visible">true</property>
+												<property name="label">Control Room</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkGrid">
+												<property name="visible">true</property>
+												<property name="row-spacing">4</property>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="hexpand">true</property>
+														<property name="halign">start</property>
+														<property name="label">Main Out</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkComboBox" id="mainout">
+														<property name="visible">true</property>
+														<property name="hexpand">true</property>
+														<signal name="changed" handler="on_mainout_changed"/>
+														<child>
+															<object class="GtkCellRendererText"/>
+															<attributes>
+																<attribute name="text">1</attribute>
+															</attributes>
+														</child>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Main Mono</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkSwitch" id="mainmono">
+														<property name="visible">true</property>
+														<property name="halign">end</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Mute Enable</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">2</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkSwitch" id="muteenable">
+														<property name="visible">true</property>
+														<property name="halign">end</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">2</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Dim Reduction</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">3</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="dimreduction_adjustment">
+														<property name="lower">-65</property>
+														<property name="upper">0</property>
+														<property name="step-increment">0.5</property>
+													</object>
+													<object class="ScaleEntry" id="dimreduction">
+														<property name="visible">true</property>
+														<property name="adjustment">dimreduction_adjustment</property>
+														<property name="unit"> dB</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">3</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Dim</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">4</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkSwitch" id="dim">
+														<property name="visible">true</property>
+														<property name="halign">end</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">4</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="recallvolume_adjustment">
+														<property name="lower">-65</property>
+														<property name="upper">0</property>
+														<property name="step-increment">0.5</property>
+													</object>
+													<object class="ScaleEntry" id="recallvolume">
+														<property name="visible">true</property>
+														<property name="adjustment">recallvolume_adjustment</property>
+														<property name="unit"> dB</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">3</property>
+													</packing>
+												</child>
+											</object>
+										</child>
+									</object>
+								</child>
+								<child>
+									<object class="GtkSeparator">
+										<property name="visible">true</property>
+									</object>
+								</child>
+								<child>
+									<object class="GtkExpander">
+										<property name="visible">true</property>
+										<property name="expanded">false</property>
+										<child type="label">
+											<object class="GtkLabel">
+												<property name="visible">true</property>
+												<property name="label">Hardware</property>
+											</object>
+										</child>
+										<child>
+											<object class="GtkGrid">
+												<property name="visible">true</property>
+												<property name="row-spacing">4</property>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="hexpand">true</property>
+														<property name="label">Clock Source</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkComboBoxText" id="clock_source">
+														<property name="visible">true</property>
+														<property name="hexpand">true</property>
+														<items>
+															<item>Internal</item>
+															<item>Word Clock</item>
+															<item>S/PDIF</item>
+															<item>AES</item>
+															<item>Optical</item>
+														</items>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Sample Rate</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkFrame">
+														<property name="visible">true</property>
+														<child>
+															<object class="GtkLabel" id="clock_samplerate">
+																<property name="visible">true</property>
+																<property name="hexpand">true</property>
+															</object>
+														</child>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">W. Clock Out</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">2</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkSwitch" id="clock_wckout">
+														<property name="visible">true</property>
+														<property name="halign">end</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">2</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">W. Clock Single</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">3</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkSwitch" id="clock_wcksingle">
+														<property name="visible">true</property>
+														<property name="halign">end</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">3</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">W. Clock Term.</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">4</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkSwitch" id="clock_wckterm">
+														<property name="visible">true</property>
+														<property name="halign">end</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">4</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Optical Out</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">5</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkComboBoxText" id="opticalout">
+														<property name="visible">true</property>
+														<property name="hexpand">true</property>
+														<items>
+															<item>ADAT</item>
+															<item>S/PDIF</item>
+														</items>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">5</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">SPDIF Out</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">6</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkComboBoxText" id="spdifout">
+														<property name="visible">true</property>
+														<items>
+															<item>Consumer</item>
+															<item>Professional</item>
+														</items>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">6</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">CC Mix</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">7</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkComboBoxText" id="ccmix">
+														<property name="visible">true</property>
+														<items>
+															<item>TotalMix</item>
+															<item>6 ch. + phones</item>
+															<item>8 ch.</item>
+															<item>20 ch.</item>
+														</items>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">7</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Standalone MIDI</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">8</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkSwitch" id="standalonemidi">
+														<property name="visible">true</property>
+														<property name="halign">end</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">8</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Standalone ARC</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">9</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkComboBoxText" id="standalonearc">
+														<property name="visible">true</property>
+														<items>
+															<item>Volume</item>
+															<item>1s op</item>
+															<item>Normal</item>
+														</items>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">9</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Lock Keys</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">10</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkComboBoxText" id="lockkeys">
+														<property name="visible">true</property>
+														<items>
+															<item>Off</item>
+															<item>Keys</item>
+															<item>All</item>
+														</items>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">10</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Remap Keys</property>
+													</object>
+													<packing>
+														<property name="left_attach">0</property>
+														<property name="top_attach">11</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkSwitch" id="remapkeys">
+														<property name="visible">true</property>
+														<property name="halign">end</property>
+													</object>
+													<packing>
+														<property name="left_attach">1</property>
+														<property name="top_attach">11</property>
+													</packing>
+												</child>
+											</object>
+										</child>
+									</object>
+								</child>
+							</object>
+						</child>
+					</object>
+					<packing>
+						<property name="shrink">false</property>
+						<property name="resize">false</property>
+					</packing>
+				</child>
+			</object>
+		</child>
+	</template>
+	<object class="GtkImage" id="stop-icon">
+		<property name="icon-name">media-playback-stop-symbolic</property>
+	</object>
+	<object class="GtkImage" id="play-icon">
+		<property name="icon-name">media-playback-start-symbolic</property>
+	</object>
+	<object class="GtkImage" id="record-icon">
+		<property name="icon-name">media-record-symbolic</property>
+	</object>
+	<object class="GtkImage" id="delete-icon">
+		<property name="icon-name">user-trash-symbolic</property>
+	</object>
+</interface>

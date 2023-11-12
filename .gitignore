@@ -1,0 +1,7 @@
+*.o
+/oscmix
+/regtool
+/config.mk
+/gtk/oscmix-gtk
+/gtk/resources.c
+/gtk/gschemas.compiled
