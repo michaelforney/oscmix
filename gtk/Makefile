@@ -33,4 +33,4 @@ oscmix-gtk: $(OBJ)
 
 .PHONY: clean
 clean:
-	rm -f oscmix-gtk $(OBJ)
+	rm -f oscmix-gtk resources.c gschemas.compiled $(OBJ)
