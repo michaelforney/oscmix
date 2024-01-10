@@ -219,6 +219,8 @@ requests rather than writing to a bulk endpoint.
 		0507	playchannel	0=off, 1-60
 		0508	phase		0=off, 1=on, extra data
 		0509	ref level	0=+4dBu, 1=+13dBu, 2=+19dBu
+		050a	crossfeed	int, 0=off, 1-5
+		050b	volume cal.	int*100, -24.0dB-3.0dB
 		050c	lowcut		0=off, 1=on
 			050d	freq		int, 20Hz-500Hz (step?)
 			050e	dB/oct		0=6, 1=12, 2=18, 3=24
@@ -425,6 +427,60 @@ requests rather than writing to a bulk endpoint.
 	358e	filename[6:7]
 	358f	[0:7]=sample rate enum [8:15]=channels
 	3590	track length
+35d0	room eq
+	35d0	output 1
+		35d0	delay		int*100, 0.00ms-42.5ms
+		35d1	enable		0=off 1=on
+		35d2	band 1 type	0=peak 1=shelf 2=high pass 3=low pass
+		35d3	band 1 gain	int*10, -20.0dB-20.0dB
+		35d4	band 1 freq	int, 20Hz-20000Hz
+		35d5	band 1 q	int*10, 0.4-9.9
+		35d6	band 2 gain	int*10, -20.0dB-20.0dB
+		35d7	band 2 freq	int, 20Hz-20000Hz
+		35d8	band 2 q	int*10, 0.4-9.9
+		35d9	band 3 gain	int*10, -20.0dB-20.0dB
+		35da	band 3 freq	int, 20Hz-20000Hz
+		35db	band 3 q	int*10, 0.4-9.9
+		35dc	band 4 gain	int*10, -20.0dB-20.0dB
+		35dd	band 4 freq	int, 20Hz-20000Hz
+		35de	band 4 q	int*10, 0.4-9.9
+		35df	band 5 gain	int*10, -20.0dB-20.0dB
+		35e0	band 5 freq	int, 20Hz-20000Hz
+		35e1	band 5 q	int*10, 0.4-9.9
+		35e2	band 6 gain	int*10, -20.0dB-20.0dB
+		35e3	band 6 freq	int, 20Hz-20000Hz
+		35e4	band 6 q	int*10, 0.4-9.9
+		35e5	band 7 gain	int*10, -20.0dB-20.0dB
+		35e6	band 7 freq	int, 20Hz-20000Hz
+		35e7	band 7 q	int*10, 0.4-9.9
+		35e8	band 8 type	0=peak 1=shelf 2=low pass 3=high pass
+		35e9	band 8 gain	int*10, -20.0dB-20.0dB
+		35ea	band 8 freq	int, 20Hz-20000Hz
+		35eb	band 8 q	int*10, 0.4-9.9
+		35ec	band 9 type	0=peak 1=shelf 2=low pass 3=high pass
+		35ed	band 9 gain	int*10, -20.0dB-20.0dB
+		35ee	band 9 freq	int, 20Hz-20000Hz
+		35ef	band 9 q	int*10, 0.4-9.9
+	35f0	output 2
+		...
+	3610	output 3
+	3630	output 4
+	3650	output 5
+	3670	output 6
+	3690	output 7
+	36b0	output 8
+	36d0	output 9
+	36f0	output 10
+	3710	output 11
+	3730	output 12
+	3750	output 13
+	3770	output 14
+	3790	output 15
+	37b0	output 16
+	37d0	output 17
+	37f0	output 18
+	3810	output 19
+	3830	output 20
 3dff	[USB] written with cycling values 0x0000-0x000f, roughly 5 times a second
 3e00	cue	0xffff=no cue, [0:7]=cue to, [8:15]=cue from	[W] R?
 3e02	control room status	[W]
