@@ -571,7 +571,6 @@ requests rather than writing to a bulk endpoint.
 6280	?	set to 0x8000
 6243	?	set to 0x8000
 63cd	?	set to 0x7f76
-6418	?
 6481	?	set to 0x8000
 ```
 
