@@ -603,7 +603,7 @@ newmix(const struct oscnode *path[], const char *addr, int reg, int val)
 	if (inidx & 1 && in[-1].stereo)
 		--in, --inidx;
 	mix = &out->mix[inidx];
-	fprintf(stderr, "newmix %s %d %d %d\n", newpan ? "pan" : "vol", val, outidx + 1, inidx + 1);
+	//fprintf(stderr, "newmix %s %d %d %d\n", newpan ? "pan" : "vol", val, outidx + 1, inidx + 1);
 	if (in->stereo) {
 		float level0, level1, scale;
 
@@ -627,7 +627,7 @@ newmix(const struct oscnode *path[], const char *addr, int reg, int val)
 			vol = 20 * log10f(level1);
 			pan = -100 * (level0 / level1 - 1);
 		}
-		fprintf(stderr, "\tvol=%f pan=%d level0=%f level1=%f %d %d\n", vol, pan, level0, level1, mix[0].vol, mix[1].vol);
+		//fprintf(stderr, "\tvol=%f pan=%d level0=%f level1=%f %d %d\n", vol, pan, level0, level1, mix[0].vol, mix[1].vol);
 	} else {
 		vol = mix->vol <= -650 ? -65.f : mix->vol / 10.f;
 		pan = mix->pan;
@@ -1494,9 +1494,8 @@ handleregs(uint_least32_t *payload, size_t len)
 	for (i = 0; i < len; ++i) {
 		reg = payload[i] >> 16 & 0x7fff;
 		val = (long)((payload[i] & 0xffff) ^ 0x8000) - 0x8000;
-		if (reg == 0x3050)
 		//if (reg < 0x0500)
-			printf("[%.4x] = %.4x\n", reg, val);
+		//	printf("[%.4x] = %.4x\n", reg, val);
 		/*
 		if (reg >= LEN(regs)) {
 			fprintf(stderr, "unknown reg %04x", reg);
@@ -1521,10 +1520,7 @@ handleregs(uint_least32_t *payload, size_t len)
 			assert(addrend);
 			--addrend;
 			if (reg == off + node->reg && node->new) {
-				//if (reg < 0x0500)
-				//	printf("%s\n", addr);
-				//if (old != val)
-					node->new(&node, addr, reg, val);
+				node->new(&node, addr, reg, val);
 			} else if (node->child) {
 				off += node->reg;
 				node = node->child;
@@ -1537,13 +1533,12 @@ handleregs(uint_least32_t *payload, size_t len)
 				case 0x3083:
 				case 0x3180:
 				case 0x3380:
-				default:
 					break;
+				default:
 					if (reg == off + node->reg)
-						fprintf(stderr, "%.4x %s %.4hx\n", reg, addr, (short)val);
+						fprintf(stderr, "[%.4x]=%.4hx (%s)\n", reg, (short)val, addr);
 					else
-						fprintf(stderr, "%.4x %.4hx\n", reg, (short)val);
-					fprintf(stderr, "%s %.4x\n", addr, off + node->reg);
+						fprintf(stderr, "[%.4x]=%.4hx\n", reg, (short)val);
 				}
 			}
 			break;
