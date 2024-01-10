@@ -939,25 +939,25 @@
 														<child>
 															<object class="GtkButton" id="durec_stop">
 																<property name="visible">true</property>
-																<property name="image">stop-icon</property>
+																<property name="image">stop_icon</property>
 															</object>
 														</child>
 														<child>
 															<object class="GtkButton" id="durec_play">
 																<property name="visible">true</property>
-																<property name="image">play-icon</property>
+																<property name="image">play_icon</property>
 															</object>
 														</child>
 														<child>
 															<object class="GtkButton" id="durec_record">
 																<property name="visible">true</property>
-																<property name="image">record-icon</property>
+																<property name="image">record_icon</property>
 															</object>
 														</child>
 														<child>
 															<object class="GtkButton" id="durec_delete">
 																<property name="visible">true</property>
-																<property name="image">delete-icon</property>
+																<property name="image">delete_icon</property>
 															</object>
 														</child>
 													</object>
@@ -1521,16 +1521,16 @@
 			</object>
 		</child>
 	</template>
-	<object class="GtkImage" id="stop-icon">
+	<object class="GtkImage" id="stop_icon">
 		<property name="icon-name">media-playback-stop-symbolic</property>
 	</object>
-	<object class="GtkImage" id="play-icon">
+	<object class="GtkImage" id="play_icon">
 		<property name="icon-name">media-playback-start-symbolic</property>
 	</object>
-	<object class="GtkImage" id="record-icon">
+	<object class="GtkImage" id="record_icon">
 		<property name="icon-name">media-record-symbolic</property>
 	</object>
-	<object class="GtkImage" id="delete-icon">
+	<object class="GtkImage" id="delete_icon">
 		<property name="icon-name">user-trash-symbolic</property>
 	</object>
 	<object class="GtkListStore" id="durec_files">
