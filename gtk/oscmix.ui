@@ -834,8 +834,15 @@
 												<property name="visible">true</property>
 												<property name="row-spacing">4</property>
 												<child>
-													<object class="GtkComboBox">
+													<object class="GtkComboBox" id="durec_selected">
 														<property name="visible">true</property>
+														<property name="model">durec_files</property>
+														<child>
+															<object class="GtkCellRendererText"/>
+															<attributes>
+																<attribute name="text">0</attribute>
+															</attributes>
+														</child>
 													</object>
 													<packing>
 														<property name="left_attach">0</property>
@@ -858,9 +865,16 @@
 													<object class="GtkFrame">
 														<property name="visible">true</property>
 														<child>
-															<object class="GtkLabel" id="durec_samplerate">
+															<object class="GtkCellView" id="durec_samplerate">
 																<property name="visible">true</property>
-																<property name="hexpand">true</property>
+																<property name="model">durec_files</property>
+																<property name="halign">center</property>
+																<child>
+																	<object class="GtkCellRendererText"/>
+																	<attributes>
+																		<attribute name="text">1</attribute>
+																	</attributes>
+																</child>
 															</object>
 														</child>
 													</object>
@@ -884,9 +898,16 @@
 													<object class="GtkFrame">
 														<property name="visible">true</property>
 														<child>
-															<object class="GtkLabel" id="durec_channels">
+															<object class="GtkCellView" id="durec_channels">
 																<property name="visible">true</property>
-																<property name="hexpand">true</property>
+																<property name="model">durec_files</property>
+																<property name="halign">center</property>
+																<child>
+																	<object class="GtkCellRendererText"/>
+																	<attributes>
+																		<attribute name="text">2</attribute>
+																	</attributes>
+																</child>
 															</object>
 														</child>
 													</object>
@@ -1511,5 +1532,12 @@
 	</object>
 	<object class="GtkImage" id="delete-icon">
 		<property name="icon-name">user-trash-symbolic</property>
+	</object>
+	<object class="GtkListStore" id="durec_files">
+		<columns>
+			<column type="gchararray"/>
+			<column type="gint"/>
+			<column type="gint"/>
+		</columns>
 	</object>
 </interface>

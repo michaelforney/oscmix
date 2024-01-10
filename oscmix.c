@@ -20,15 +20,6 @@
 
 #define LEN(a) (sizeof (a) / sizeof *(a))
 
-struct durecfile {
-	short reg[6];
-	char name[9];
-	bool changed;
-	unsigned long samplerate;
-	unsigned channels;
-	unsigned length;
-};
-
 struct oscnode {
 	const char *name;
 	int reg;
@@ -64,9 +55,39 @@ struct output {
 	struct mix mix[40];
 };
 
+struct durecfile {
+	short reg[6];
+	char name[9];
+	unsigned long samplerate;
+	unsigned channels;
+	unsigned length;
+};
+
+static snd_rawmidi_t *rmidi, *wmidi;
+static int dflag;
+static int nflag;
+static int lflag;
 static struct input inputs[20];
 static struct input playbacks[20];
 static struct output outputs[20];
+static int sendsock[8];
+static size_t sendsocklen;
+static struct {
+	int status;
+	int position;
+	int time;
+	int usberrors;
+	int usbload;
+	float totalspace;
+	float freespace;
+	struct durecfile *files;
+	size_t fileslen;
+	int selected;
+	int recordtime;
+	int index;
+	int next;
+	int playmode;
+} durec = {.index = -1};
 
 enum eqbandtype {
 	EQ_BANDTYPE_PEAK,
@@ -154,17 +175,6 @@ enum lockkeys {
 	LOCKKEYS_KEYS,
 	LOCKKEYS_ALL,
 };
-
-static snd_rawmidi_t *rmidi, *wmidi;
-static int dflag;
-static int nflag;
-static int lflag;
-static short regs[0x4800];
-static int sendsock[8];
-static size_t sendsocklen;
-static struct durecfile *durecfiles;
-static size_t durecfileslen;
-static size_t durecindex = -1;
 
 static int setreg(unsigned reg, unsigned val);
 static void oscsend(const char *addr, const char *type, ...);
@@ -729,36 +739,100 @@ newdurecstatus(const struct oscnode *path[], const char *addr, int reg, int val)
 		[DUREC_STATUS_RECORDING] = "Recording",
 		[DUREC_STATUS_PLAYING] = "Playing",
 	};
+	int status;
+	int position;
 
-	oscsendenum(addr, val & 0xf, names, LEN(names));
-	oscsend("/durec/position", ",i", (val >> 8) * 100 / 65);
+	status = val & 0xf;
+	if (status != durec.status) {
+		durec.status = status;
+		oscsendenum("/durec/status", val & 0xf, names, LEN(names));
+	}
+	position = (val >> 8) * 100 / 65;
+	if (position != durec.position) {
+		durec.position = position;
+		oscsend("/durec/position", ",i", (val >> 8) * 100 / 65);
+	}
+	return 0;
+}
+
+static int
+newdurectime(const struct oscnode *path[], const char *addr, int reg, int val)
+{
+	if (val != durec.time) {
+		durec.time = val;
+		oscsend(addr, ",i", val);
+	}
 	return 0;
 }
 
 static int
 newdurecusbstatus(const struct oscnode *path[], const char *addr, int reg, int val)
 {
-	oscsend("/durec/usbload", ",i", val >> 8);
-	oscsend("/durec/usberrors", ",i", val & 0xff);
+	int usbload, usberrors;
+
+	usbload = val >> 8;
+	if (usbload != durec.usbload) {
+		durec.usbload = usbload;
+		oscsend("/durec/usbload", ",i", val >> 8);
+	}
+	usberrors = val & 0xff;
+	if (usberrors != durec.usberrors) {
+		durec.usberrors = usberrors;
+		oscsend("/durec/usberrors", ",i", val & 0xff);
+	}
+	return 0;
+}
+
+static int
+newdurectotalspace(const struct oscnode *path[], const char *addr, int reg, int val)
+{
+	float totalspace;
+
+	totalspace = val / 16.f;
+	if (totalspace != durec.totalspace) {
+		durec.totalspace = totalspace;
+		oscsend(addr, ",f", totalspace);
+	}
+	return 0;
+}
+
+static int
+newdurecfreespace(const struct oscnode *path[], const char *addr, int reg, int val)
+{
+	float freespace;
+
+	freespace = val / 16.f;
+	if (freespace != durec.freespace) {
+		durec.freespace = freespace;
+		oscsend(addr, ",f", freespace);
+	}
 	return 0;
 }
 
 static int
 newdurecfileslen(const struct oscnode *path[], const char *addr, int reg, int val)
 {
-	if (val < 0)
+	if (val < 0 || val == durec.fileslen)
 		return 0;
-	if (val != durecfileslen) {
-		durecfiles = realloc(durecfiles, val * sizeof *durecfiles);
-		if (!durecfiles)
-			fatal(NULL);
-		if (val > durecfileslen)
-			memset(durecfiles + durecfileslen, 0, (val - durecfileslen) * sizeof *durecfiles);
-		durecfileslen = val;
-		if (durecindex >= durecfileslen)
-			durecindex = -1;
-	}
+	durec.files = realloc(durec.files, val * sizeof *durec.files);
+	if (!durec.files)
+		fatal(NULL);
+	if (val > durec.fileslen)
+		memset(durec.files + durec.fileslen, 0, (val - durec.fileslen) * sizeof *durec.files);
+	durec.fileslen = val;
+	if (durec.index >= durec.fileslen)
+		durec.index = -1;
 	oscsend(addr, ",i", val);
+	return 0;
+}
+
+static int
+newdurecselected(const struct oscnode *path[], const char *addr, int reg, int val)
+{
+	if (val != durec.selected) {
+		durec.selected = val;
+		oscsend(addr, ",i", val);
+	}
 	return 0;
 }
 
@@ -773,27 +847,37 @@ newdurecnext(const struct oscnode *path[], const char *addr, int reg, int val)
 		[DUREC_PLAYMODE_REPEATSINGLE] = "Repeat Single",
 		[DUREC_PLAYMODE_REPEATALL] = "Repeat All",
 	};
+	int next, playmode;
 
-	oscsend(addr, ",i", ((val & 0xfff) ^ 0x800) - 0x800);
-	oscsendenum("/durec/playmode", val >> 12, names, LEN(names));
+	next = ((val & 0xfff) ^ 0x800) - 0x800;
+	if (next != durec.next) {
+		durec.next = next;
+		oscsend(addr, ",i", ((val & 0xfff) ^ 0x800) - 0x800);
+	}
+	playmode = val >> 12;
+	if (playmode != durec.playmode) {
+		durec.playmode = playmode;
+		oscsendenum("/durec/playmode", val >> 12, names, LEN(names));
+	}
+	return 0;
+}
+
+static int
+newdurecrecordtime(const struct oscnode *path[], const char *addr, int reg, int val)
+{
+	if (val != durec.recordtime) {
+		durec.recordtime = val;
+		oscsend(addr, ",i", val);
+	}
 	return 0;
 }
 
 static int
 newdurecindex(const struct oscnode *path[], const char *addr, int reg, int val)
 {
-	if (val + 1 > durecfileslen) {
-		durecfiles = realloc(durecfiles, (val + 1) * sizeof *durecfiles);
-		if (!durecfiles)
-			fatal(NULL);
-		memset(durecfiles + durecfileslen, 0, (val + 1 - durecfileslen) * sizeof *durecfiles);
-		durecfileslen = val + 1;
-	}
-	if (durecindex != -1)
-		memcpy(durecfiles[durecindex].reg, &regs[0x358b], sizeof durecfiles[durecindex].reg);
-	durecindex = val;
-	if (durecindex != -1)
-		memcpy(&regs[0x358b], durecfiles[durecindex].reg, sizeof durecfiles[durecindex].reg);
+	if (val + 1 > durec.fileslen)
+		newdurecfileslen(NULL, "/durec/numfiles", -1, val + 1);
+	durec.index = val;
 	return 0;
 }
 
@@ -803,52 +887,65 @@ newdurecname(const struct oscnode *path[], const char *addr, int reg, int val)
 	struct durecfile *f;
 	char *pos, old[2];
 
-	if (durecindex == -1)
+	if (durec.index == -1)
 		return 0;
-	assert(durecindex < durecfileslen);
-	f = &durecfiles[durecindex];
+	assert(durec.index < durec.fileslen);
+	f = &durec.files[durec.index];
 	reg -= 0x358b;
 	assert(reg < sizeof f->name / 2);
 	pos = f->name + reg * 2;
 	memcpy(old, pos, sizeof old);
 	putle16(pos, val);
 	if (memcmp(old, pos, sizeof old) != 0)
-		f->changed = true;
+		oscsend("/durec/name", ",is", durec.index, f->name);
 	return 0;
 }
 
 static int
-newdurecinfo(const struct oscnode *path[], const char *addr, int reg, int val)
+newdurecinfo(const struct oscnode *path[], const char *unused, int reg, int val)
 {
 	struct durecfile *f;
-	unsigned long oldsamplerate;
-	int oldchannels;
+	unsigned long samplerate;
+	int channels;
 
-	if (durecindex == -1)
+	if (durec.index == -1)
 		return 0;
-	f = &durecfiles[durecindex];
-	oldsamplerate = f->samplerate;
-	oldchannels = f->channels;
-	f->samplerate = getsamplerate(val & 0xff);
-	f->channels = val >> 8;
-	if (oldsamplerate != f->samplerate || oldchannels != f->channels)
-		f->changed = true;
+	f = &durec.files[durec.index];
+	samplerate = getsamplerate(val & 0xff);
+	if (samplerate != f->samplerate) {
+		f->samplerate = samplerate;
+		oscsend("/durec/samplerate", ",ii", durec.index, samplerate);
+	}
+	channels = val >> 8;
+	if (channels != f->channels) {
+		f->channels = channels;
+		oscsend("/durec/channels", ",ii", durec.index, channels);
+	}
 	return 0;
 }
 
 static int
-newdureclength(const struct oscnode *path[], const char *addr, int reg, int val)
+newdureclength(const struct oscnode *path[], const char *unused, int reg, int val)
 {
 	struct durecfile *f;
 	int oldlength;
 
-	if (durecindex == -1)
+	if (durec.index == -1)
 		return 0;
-	f = &durecfiles[durecindex];
-	oldlength = f->length;
-	f->length = val;
-	if (oldlength != f->length)
-		f->changed = true;
+	f = &durec.files[durec.index];
+	if (val != f->length) {
+		f->length = val;
+		oscsend("/durec/length", ",ii", durec.index, val);
+	}
+	return 0;
+}
+
+static int
+setdurecdelete(const struct oscnode *path[], int reg, struct oscmsg *msg)
+{
+	if (oscend(msg) != 0)
+		return -1;
+	setreg(0x3e9b, 0x8000);
 	return 0;
 }
 
@@ -1156,18 +1253,17 @@ static const struct oscnode tree[] = {
 		{"", 19, .new=newdynlevel},
 		{0},
 	}},
-#if 0
 	{"durec", 0x3580, .child=(const struct oscnode[]){
 		{"status", 0, .new=newdurecstatus},
-		{"time", 1, .new=newint},
+		{"time", 1, .new=newdurectime},
 		{"", 2},  /* ? */
 		{"usbload", 3, .new=newdurecusbstatus},
-		{"totalspace", 4, .new=newint16},
-		{"freespace", 5, .new=newint16},
+		{"totalspace", 4, .new=newdurectotalspace},
+		{"freespace", 5, .new=newdurecfreespace},
 		{"numfiles", 6, .new=newdurecfileslen},
-		{"selected", 7, .new=newint},
+		{"selected", 7, .new=newdurecselected},
 		{"next", 8, .new=newdurecnext},
-		{"recordtime", 9, .new=newint},
+		{"recordtime", 9, .new=newdurecrecordtime},
 		{"", 10, .new=newdurecindex},
 		{"", 11, .new=newdurecname},
 		{"", 12, .new=newdurecname},
@@ -1175,9 +1271,10 @@ static const struct oscnode tree[] = {
 		{"", 14, .new=newdurecname},
 		{"", 15, .new=newdurecinfo},
 		{"", 16, .new=newdureclength},
+
+		{"delete", -1, .set=setdurecdelete},
 		{0},
 	}},
-#endif
 	/* write-only */
 	{"register", -1, .set=setregs},
 	{0},
@@ -1510,7 +1607,6 @@ handlesysex(unsigned char *buf, size_t len, uint_least32_t *payload)
 	int ret;
 	size_t i;
 	uint_least32_t *pos;
-	char addr[256];
 
 	//dump("sysex", buf, len);
 	ret = sysexdec(&sysex, buf, len, SYSEX_MFRID | SYSEX_DEVID | SYSEX_SUBID);
@@ -1530,22 +1626,6 @@ handlesysex(unsigned char *buf, size_t len, uint_least32_t *payload)
 		handleregs(payload, pos - payload);
 		fflush(stdout);
 		fflush(stderr);
-		for (i = 0; i < durecfileslen; ++i) {
-			struct durecfile *f;
-
-			f = &durecfiles[i];
-			if (f->changed) {
-				snprintf(addr, sizeof addr, "/durec/%zu/name", i);
-				oscsend(addr, ",s", f->name);
-				snprintf(addr, sizeof addr, "/durec/%zu/samplerate", i);
-				oscsend(addr, ",i", f->samplerate);
-				snprintf(addr, sizeof addr, "/durec/%zu/channels", i);
-				oscsend(addr, ",i", f->channels);
-				snprintf(addr, sizeof addr, "/durec/%zu/length", i);
-				oscsend(addr, ",i", f->length);
-				f->changed = false;
-			}
-		}
 		break;
 	case 1: case 2: case 3: case 4: case 5:
 		handlelevels(sysex.subid, payload, pos - payload);
