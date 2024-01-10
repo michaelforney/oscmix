@@ -26,7 +26,7 @@ resources.c: resources.xml oscmix.ui channel.ui oscmix.css eq-peak.svg eq-shelf.
 	$(GLIB_COMPILE_RESOURCES) --generate-source $<
 
 gschemas.compiled: oscmix.gschema.xml
-	$(GLIB_COMPILE_SCHEMAS)
+	$(GLIB_COMPILE_SCHEMAS) .
 
 oscmix-gtk: $(OBJ)
 	$(CC) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)
