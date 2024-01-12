@@ -957,20 +957,20 @@ static const struct oscnode lowcuttree[] = {
 
 static const struct oscnode eqtree[] = {
 	{"band1type", 1, .set=setenum, .new=newenum, .names=(const char *const[]){
-		"Peak", "Shelf",
-	}, .nameslen=2},
+		"Peak", "Low Shelf", "High Pass", "Low Pass",
+	}, .nameslen=4},
 	{"band1gain", 2, .set=setfixed, .new=newfixed, .scale=0.1, .min=-200, .max=200},
 	{"band1freq", 3, .set=setint, .new=newint, .min=20, .max=20000},
-	{"band1q", 4, .set=setfixed, .new=newfixed, .scale=0.1, .min=7, .max=50},
+	{"band1q", 4, .set=setfixed, .new=newfixed, .scale=0.1, .min=4, .max=99},
 	{"band2gain", 5, .set=setfixed, .new=newfixed, .scale=0.1, .min=-200, .max=200},
 	{"band2freq", 6, .set=setint, .new=newint, .min=20, .max=20000},
-	{"band2q", 7, .set=setfixed, .new=newfixed, .scale=0.1, .min=7, .max=50},
+	{"band2q", 7, .set=setfixed, .new=newfixed, .scale=0.1, .min=4, .max=99},
 	{"band3type", 8, .set=setenum, .new=newenum, .names=(const char *const[]){
-		"Peak", "Shelf", "Low Pass",
+		"Peak", "High Shelf", "Low Pass", "High Pass",
 	}, .nameslen=3},
 	{"band3gain", 9, .set=setfixed, .new=newfixed, .scale=0.1, .min=-200, .max=200},
 	{"band3freq", 10, .set=setint, .new=newint, .min=20, .max=20000},
-	{"band3q", 11, .set=setfixed, .new=newfixed, .scale=0.1, .min=7, .max=50},
+	{"band3q", 11, .set=setfixed, .new=newfixed, .scale=0.1, .min=4, .max=99},
 	{0},
 };
 
@@ -1013,6 +1013,49 @@ static const struct oscnode inputtree[] = {
 	{"name", -1, .set=setinputname},
 	{0},
 };
+
+static const struct oscnode roomeqtree[] = {
+	{"delay", 0x00, .set=setfixed, .new=newfixed, .min=0, .max=425, .scale=0.001},
+	{"enabled", 0x01, .set=setbool, .new=newbool},
+	{"band1type", 0x02, .set=setenum, .new=newenum, .names=(const char *const[]){
+		"Peak", "Low Shelf", "High Pass", "Low Pass",
+	}, .nameslen=4},
+	{"band1gain", 0x03, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
+	{"band1freq", 0x04, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band1q", 0x05, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
+	{"band2gain", 0x06, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
+	{"band2freq", 0x07, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band2q", 0x08, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
+	{"band3gain", 0x09, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
+	{"band3freq", 0x0a, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band3q", 0x0b, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
+	{"band4gain", 0x0c, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
+	{"band4freq", 0x0d, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band4q", 0x0e, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
+	{"band5gain", 0x0f, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
+	{"band5freq", 0x10, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band5q", 0x11, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
+	{"band6gain", 0x12, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
+	{"band6freq", 0x13, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band6q", 0x14, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
+	{"band7gain", 0x15, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
+	{"band7freq", 0x16, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band7q", 0x17, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
+	{"band8type", 0x18, .set=setenum, .new=newenum, .names=(const char *const[]){
+		"Peak", "High Shelf", "Low Pass", "High Pass",
+	}, .nameslen=4},
+	{"band8gain", 0x19, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
+	{"band8freq", 0x1a, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band8q", 0x1b, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
+	{"band9type", 0x1c, .set=setenum, .new=newenum, .names=(const char *const[]){
+		"Peak", "High Shelf", "Low Pass", "High Pass",
+	}, .nameslen=4},
+	{"band9gain", 0x1d, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
+	{"band9freq", 0x1e, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band9q", 0x1f, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
+	{0},
+};
+
 static const struct oscnode outputtree[] = {
 	{"volume", 0x00, .set=setfixed, .new=newfixed, .scale=0.1, .min=-65.0, .max=6.0},
 	{"balance", 0x01, .set=setint, .new=newint, .min=-100, .max=100},
@@ -1026,10 +1069,17 @@ static const struct oscnode outputtree[] = {
 	{"reflevel", 0x09, .set=setenum, .new=newenum, .names=(const char *const[]){
 		"+4dBu", "+13dBu", "+19dBu",
 	}, .nameslen=3}, // TODO: phones
+	{"crossfeed", 0x0a, .set=setint, .new=newint},
+	{"volumecal", 0x0b, .set=setfixed, .new=newfixed, .min=-2400, .max=300, .scale=0.01},
 	{"lowcut", 0x0c, .set=setbool, .new=newbool, .child=lowcuttree},
 	{"eq", 0x0f, .set=setbool, .new=newbool, .child=eqtree},
 	{"dynamics", 0x1b, .set=setbool, .new=newbool, .child=dynamicstree},
 	{"autolevel", 0x23, .set=setbool, .new=newbool, .child=autoleveltree},
+	{"roomeq", -1, .child=roomeqtree},
+	{0},
+};
+static const struct oscnode outputroomeqtree[] = {
+	{"roomeq", 0x00, .child=roomeqtree},
 	{0},
 };
 static const struct oscnode mixtree[] = {
@@ -1273,6 +1323,29 @@ static const struct oscnode tree[] = {
 		{"", 16, .new=newdureclength},
 
 		{"delete", -1, .set=setdurecdelete},
+		{0},
+	}},
+	{"output", 0x35d0, .child=(const struct oscnode[]){
+		{"1", 0x000, .child=outputroomeqtree},
+		{"2", 0x020, .child=outputroomeqtree},
+		{"3", 0x040, .child=outputroomeqtree},
+		{"4", 0x060, .child=outputroomeqtree},
+		{"5", 0x080, .child=outputroomeqtree},
+		{"6", 0x0a0, .child=outputroomeqtree},
+		{"7", 0x0c0, .child=outputroomeqtree},
+		{"8", 0x0e0, .child=outputroomeqtree},
+		{"9", 0x100, .child=outputroomeqtree},
+		{"10", 0x120, .child=outputroomeqtree},
+		{"11", 0x140, .child=outputroomeqtree},
+		{"12", 0x160, .child=outputroomeqtree},
+		{"13", 0x180, .child=outputroomeqtree},
+		{"14", 0x1a0, .child=outputroomeqtree},
+		{"15", 0x1c0, .child=outputroomeqtree},
+		{"16", 0x1e0, .child=outputroomeqtree},
+		{"17", 0x200, .child=outputroomeqtree},
+		{"18", 0x220, .child=outputroomeqtree},
+		{"19", 0x240, .child=outputroomeqtree},
+		{"20", 0x260, .child=outputroomeqtree},
 		{0},
 	}},
 	/* write-only */

@@ -377,23 +377,9 @@
 													</packing>
 												</child>
 												<child>
-													<object class="GtkListStore" id="eq_band1type_model">
-														<columns>
-															<column type="GdkPixbuf"/>
-															<column type="gchararray"/>
-														</columns>
-														<data>
-															<row>
-																<col id="0">resource:///oscmix/eq-peak.svg</col>
-															</row>
-															<row>
-																<col id="0">resource:///oscmix/eq-shelf.svg</col>
-															</row>
-														</data>
-													</object>
 													<object class="GtkComboBox" id="eq_band1type">
 														<property name="visible">true</property>
-														<property name="model">eq_band1type_model</property>
+														<property name="model">eq_bandtype_model_low</property>
 														<child>
 															<object class="GtkCellRendererPixbuf"/>
 															<attributes>
@@ -417,26 +403,9 @@
 													</packing>
 												</child>
 												<child>
-													<object class="GtkListStore" id="eq_band3type_model">
-														<columns>
-															<column type="GdkPixbuf"/>
-															<column type="gchararray"/>
-														</columns>
-														<data>
-															<row>
-																<col id="0">resource:///oscmix/eq-peak.svg</col>
-															</row>
-															<row>
-																<col id="0">resource:///oscmix/eq-shelf.svg</col>
-															</row>
-															<row>
-																<col id="0">resource:///oscmix/eq-lowpass.svg</col>
-															</row>
-														</data>
-													</object>
 													<object class="GtkComboBox" id="eq_band3type">
 														<property name="visible">true</property>
-														<property name="model">eq_band3type_model</property>
+														<property name="model">eq_bandtype_model_high</property>
 														<child>
 															<object class="GtkCellRendererPixbuf"/>
 															<attributes>
@@ -574,8 +543,8 @@
 												</child>
 												<child>
 													<object class="GtkAdjustment" id="eq_band1q">
-														<property name="lower">0.7</property>
-														<property name="upper">5.0</property>
+														<property name="lower">0.4</property>
+														<property name="upper">9.9</property>
 														<property name="page-increment">0.1</property>
 													</object>
 													<object class="ScaleEntry">
@@ -590,8 +559,8 @@
 												</child>
 												<child>
 													<object class="GtkAdjustment" id="eq_band2q">
-														<property name="lower">0.7</property>
-														<property name="upper">5.0</property>
+														<property name="lower">0.4</property>
+														<property name="upper">9.9</property>
 														<property name="page-increment">0.1</property>
 													</object>
 													<object class="ScaleEntry">
@@ -606,8 +575,8 @@
 												</child>
 												<child>
 													<object class="GtkAdjustment" id="eq_band3q">
-														<property name="lower">0.7</property>
-														<property name="upper">5.0</property>
+														<property name="lower">0.4</property>
+														<property name="upper">9.9</property>
 														<property name="page-increment">0.1</property>
 													</object>
 													<object class="ScaleEntry">
@@ -795,6 +764,44 @@
 		<property name="upper">0</property>
 		<property name="value">-65</property>
 		<property name="step-increment">0.5</property>
+	</object>
+	<object class="GtkListStore" id="eq_bandtype_model_low">
+		<columns>
+			<column type="GdkPixbuf"/>
+		</columns>
+		<data>
+			<row>
+				<col id="0">resource:///oscmix/eq-peak.svg</col>
+			</row>
+			<row>
+				<col id="0">resource:///oscmix/eq-lowshelf.svg</col>
+			</row>
+			<row>
+				<col id="0">resource:///oscmix/eq-highpass.svg</col>
+			</row>
+			<row>
+				<col id="0">resource:///oscmix/eq-lowpass.svg</col>
+			</row>
+		</data>
+	</object>
+	<object class="GtkListStore" id="eq_bandtype_model_high">
+		<columns>
+			<column type="GdkPixbuf"/>
+		</columns>
+		<data>
+			<row>
+				<col id="0">resource:///oscmix/eq-peak.svg</col>
+			</row>
+			<row>
+				<col id="0">resource:///oscmix/eq-highshelf.svg</col>
+			</row>
+			<row>
+				<col id="0">resource:///oscmix/eq-lowpass.svg</col>
+			</row>
+			<row>
+				<col id="0">resource:///oscmix/eq-highpass.svg</col>
+			</row>
+		</data>
 	</object>
 	<object class="GtkImage" id="phase-icon">
 		<property name="icon-name">action-unavailable-symbolic</property>

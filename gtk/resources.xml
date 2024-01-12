@@ -6,7 +6,9 @@
 		<file>channel.ui</file>
 		<file>scaleentry.ui</file>
 		<file>eq-peak.svg</file>
-		<file>eq-shelf.svg</file>
+		<file>eq-lowshelf.svg</file>
+		<file>eq-highshelf.svg</file>
 		<file>eq-lowpass.svg</file>
+		<file>eq-highpass.svg</file>
 	</gresource>
 </gresources>

@@ -18,11 +18,20 @@ OBJ=\
 	resources.o\
 	../osc.o
 
+RES=\
+	oscmix.ui\
+	channel.ui\
+	oscmix.css\
+	eq-peak.svg\
+	eq-lowshelf.svg\
+	eq-highshelf.svg\
+	eq-lowpass.svg
+
 all: oscmix-gtk gschemas.compiled
 
 $(OBJ): channel.h scaleentry.h mixer.h
 
-resources.c: resources.xml oscmix.ui channel.ui oscmix.css eq-peak.svg eq-shelf.svg eq-lowpass.svg
+resources.c: resources.xml $(RES)
 	$(GLIB_COMPILE_RESOURCES) --generate-source $<
 
 gschemas.compiled: oscmix.gschema.xml
