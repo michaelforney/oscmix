@@ -219,8 +219,8 @@
 														<property name="label">Enabled</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">0</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">0</property>
 													</packing>
 												</child>
 												<child>
@@ -229,8 +229,8 @@
 														<property name="halign">end</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">0</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">0</property>
 													</packing>
 												</child>
 												<child>
@@ -240,8 +240,8 @@
 														<property name="label">Type</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">1</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">1</property>
 													</packing>
 												</child>
 												<child>
@@ -268,8 +268,8 @@
 														</items>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">1</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">1</property>
 													</packing>
 												</child>
 												<child>
@@ -279,8 +279,8 @@
 														<property name="halign">start</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">2</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">2</property>
 													</packing>
 												</child>
 												<child>
@@ -295,8 +295,8 @@
 														<property name="unit"> ms</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">2</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">2</property>
 													</packing>
 												</child>
 												<child>
@@ -306,8 +306,8 @@
 														<property name="halign">start</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">3</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">3</property>
 													</packing>
 												</child>
 												<child>
@@ -322,8 +322,8 @@
 														<property name="unit"> Hz</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">3</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">3</property>
 													</packing>
 												</child>
 												<child>
@@ -334,8 +334,8 @@
 														<property bind-source="reverb_roomscale" bind-property="sensitive" name="sensitive"/>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">4</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">4</property>
 													</packing>
 												</child>
 												<child>
@@ -350,8 +350,8 @@
 														<property name="digits">2</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">4</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">4</property>
 													</packing>
 												</child>
 												<child>
@@ -362,8 +362,8 @@
 														<property bind-source="reverb_attack" bind-property="sensitive" name="sensitive"/>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">5</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">5</property>
 													</packing>
 												</child>
 												<child>
@@ -378,8 +378,8 @@
 														<property name="unit"> ms</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">5</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">5</property>
 													</packing>
 												</child>
 												<child>
@@ -390,8 +390,8 @@
 														<property bind-source="reverb_hold" bind-property="sensitive" name="sensitive"/>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">6</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">6</property>
 													</packing>
 												</child>
 												<child>
@@ -406,8 +406,8 @@
 														<property name="unit"> ms</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">6</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">6</property>
 													</packing>
 												</child>
 												<child>
@@ -418,8 +418,8 @@
 														<property bind-source="reverb_release" bind-property="sensitive" name="sensitive"/>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">7</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">7</property>
 													</packing>
 												</child>
 												<child>
@@ -434,8 +434,8 @@
 														<property name="unit"> ms</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">7</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">7</property>
 													</packing>
 												</child>
 												<child>
@@ -445,8 +445,8 @@
 														<property name="halign">start</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">8</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">8</property>
 													</packing>
 												</child>
 												<child>
@@ -461,8 +461,8 @@
 														<property name="unit"> Hz</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">8</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">8</property>
 													</packing>
 												</child>
 												<child>
@@ -473,8 +473,8 @@
 														<property bind-source="reverb_time" bind-property="sensitive" name="sensitive"/>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">9</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">9</property>
 													</packing>
 												</child>
 												<child>
@@ -489,8 +489,8 @@
 														<property name="unit"> s</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">9</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">9</property>
 													</packing>
 												</child>
 												<child>
@@ -501,8 +501,8 @@
 														<property bind-source="reverb_damp" bind-property="sensitive" name="sensitive"/>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">10</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">10</property>
 													</packing>
 												</child>
 												<child>
@@ -517,8 +517,8 @@
 														<property name="unit"> Hz</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">10</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">10</property>
 													</packing>
 												</child>
 												<child>
@@ -528,8 +528,8 @@
 														<property name="halign">start</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">11</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">11</property>
 													</packing>
 												</child>
 												<child>
@@ -544,8 +544,8 @@
 														<property name="unit">%</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">11</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">11</property>
 													</packing>
 												</child>
 												<child>
@@ -555,8 +555,8 @@
 														<property name="halign">start</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">12</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">12</property>
 													</packing>
 												</child>
 												<child>
@@ -571,8 +571,8 @@
 														<property name="unit"> dB</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">12</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">12</property>
 													</packing>
 												</child>
 												<child>
@@ -582,8 +582,8 @@
 														<property name="halign">start</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">13</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">13</property>
 													</packing>
 												</child>
 												<child>
@@ -598,8 +598,8 @@
 														<property name="digits">2</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">13</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">13</property>
 													</packing>
 												</child>
 											</object>
@@ -633,8 +633,8 @@
 														<property name="label">Enabled</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">0</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">0</property>
 													</packing>
 												</child>
 												<child>
@@ -643,8 +643,8 @@
 														<property name="halign">end</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">0</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">0</property>
 													</packing>
 												</child>
 												<child>
@@ -654,8 +654,8 @@
 														<property name="halign">start</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">1</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">1</property>
 													</packing>
 												</child>
 												<child>
@@ -669,8 +669,8 @@
 														</items>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">1</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">1</property>
 													</packing>
 												</child>
 												<child>
@@ -680,8 +680,8 @@
 														<property name="halign">start</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">2</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">2</property>
 													</packing>
 												</child>
 												<child>
@@ -697,8 +697,8 @@
 														<property name="unit"> s</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">2</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">2</property>
 													</packing>
 												</child>
 												<child>
@@ -708,8 +708,8 @@
 														<property name="halign">start</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">3</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">3</property>
 													</packing>
 												</child>
 												<child>
@@ -723,8 +723,8 @@
 														<property name="adjustment">echo_feedback_adjustment</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">3</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">3</property>
 													</packing>
 												</child>
 												<child>
@@ -734,8 +734,8 @@
 														<property name="halign">start</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">4</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">4</property>
 													</packing>
 												</child>
 												<child>
@@ -751,8 +751,8 @@
 														</items>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">4</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">4</property>
 													</packing>
 												</child>
 												<child>
@@ -762,8 +762,8 @@
 														<property name="halign">start</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">12</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">12</property>
 													</packing>
 												</child>
 												<child>
@@ -779,8 +779,8 @@
 														<property name="unit"> dB</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">12</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">12</property>
 													</packing>
 												</child>
 												<child>
@@ -790,8 +790,8 @@
 														<property name="halign">start</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">13</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">13</property>
 													</packing>
 												</child>
 												<child>
@@ -806,8 +806,8 @@
 														<property name="digits">2</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">13</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">13</property>
 													</packing>
 												</child>
 											</object>
@@ -845,9 +845,9 @@
 														</child>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
+														<property name="left-attach">0</property>
 														<property name="width">2</property>
-														<property name="top_attach">0</property>
+														<property name="top-attach">0</property>
 													</packing>
 												</child>
 												<child>
@@ -857,8 +857,8 @@
 														<property name="label">Sample Rate</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">1</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">1</property>
 													</packing>
 												</child>
 												<child>
@@ -879,8 +879,8 @@
 														</child>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">1</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">1</property>
 													</packing>
 												</child>
 												<child>
@@ -890,8 +890,8 @@
 														<property name="label">Channels</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">2</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">2</property>
 													</packing>
 												</child>
 												<child>
@@ -912,8 +912,8 @@
 														</child>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">2</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">2</property>
 													</packing>
 												</child>
 												<child>
@@ -923,9 +923,9 @@
 														<signal name="format-value" handler="format_durec_position"/>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
+														<property name="left-attach">0</property>
 														<property name="width">2</property>
-														<property name="top_attach">3</property>
+														<property name="top-attach">3</property>
 													</packing>
 												</child>
 												<child>
@@ -962,9 +962,9 @@
 														</child>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
+														<property name="left-attach">0</property>
 														<property name="width">2</property>
-														<property name="top_attach">4</property>
+														<property name="top-attach">4</property>
 													</packing>
 												</child>
 												<child>
@@ -975,8 +975,8 @@
 														<property name="label">Record View</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">5</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">5</property>
 													</packing>
 												</child>
 												<child>
@@ -986,8 +986,8 @@
 														<property name="halign">end</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">5</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">5</property>
 													</packing>
 												</child>
 												<child>
@@ -997,8 +997,8 @@
 														<property name="label">USB Load</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">6</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">6</property>
 													</packing>
 												</child>
 												<child>
@@ -1011,8 +1011,8 @@
 														</child>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">6</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">6</property>
 													</packing>
 												</child>
 												<child>
@@ -1022,8 +1022,8 @@
 														<property name="label">USB Errors</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">7</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">7</property>
 													</packing>
 												</child>
 												<child>
@@ -1036,8 +1036,8 @@
 														</child>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">7</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">7</property>
 													</packing>
 												</child>
 											</object>
@@ -1071,8 +1071,8 @@
 														<property name="label">Main Out</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">0</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">0</property>
 													</packing>
 												</child>
 												<child>
@@ -1088,8 +1088,8 @@
 														</child>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">0</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">0</property>
 													</packing>
 												</child>
 												<child>
@@ -1099,8 +1099,8 @@
 														<property name="label">Main Mono</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">1</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">1</property>
 													</packing>
 												</child>
 												<child>
@@ -1109,8 +1109,8 @@
 														<property name="halign">end</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">1</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">1</property>
 													</packing>
 												</child>
 												<child>
@@ -1120,8 +1120,8 @@
 														<property name="label">Mute Enable</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">2</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">2</property>
 													</packing>
 												</child>
 												<child>
@@ -1130,8 +1130,8 @@
 														<property name="halign">end</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">2</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">2</property>
 													</packing>
 												</child>
 												<child>
@@ -1141,8 +1141,8 @@
 														<property name="label">Dim Reduction</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">3</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">3</property>
 													</packing>
 												</child>
 												<child>
@@ -1157,8 +1157,8 @@
 														<property name="unit"> dB</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">3</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">3</property>
 													</packing>
 												</child>
 												<child>
@@ -1168,8 +1168,8 @@
 														<property name="label">Dim</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">4</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">4</property>
 													</packing>
 												</child>
 												<child>
@@ -1178,8 +1178,8 @@
 														<property name="halign">end</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">4</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">4</property>
 													</packing>
 												</child>
 												<child>
@@ -1194,8 +1194,8 @@
 														<property name="unit"> dB</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">3</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">3</property>
 													</packing>
 												</child>
 											</object>
@@ -1229,8 +1229,8 @@
 														<property name="label">Clock Source</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">0</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">0</property>
 													</packing>
 												</child>
 												<child>
@@ -1246,8 +1246,8 @@
 														</items>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">0</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">0</property>
 													</packing>
 												</child>
 												<child>
@@ -1257,8 +1257,8 @@
 														<property name="label">Sample Rate</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">1</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">1</property>
 													</packing>
 												</child>
 												<child>
@@ -1272,8 +1272,8 @@
 														</child>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">1</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">1</property>
 													</packing>
 												</child>
 												<child>
@@ -1283,8 +1283,8 @@
 														<property name="label">W. Clock Out</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">2</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">2</property>
 													</packing>
 												</child>
 												<child>
@@ -1293,8 +1293,8 @@
 														<property name="halign">end</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">2</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">2</property>
 													</packing>
 												</child>
 												<child>
@@ -1304,8 +1304,8 @@
 														<property name="label">W. Clock Single</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">3</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">3</property>
 													</packing>
 												</child>
 												<child>
@@ -1314,8 +1314,8 @@
 														<property name="halign">end</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">3</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">3</property>
 													</packing>
 												</child>
 												<child>
@@ -1325,8 +1325,8 @@
 														<property name="label">W. Clock Term.</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">4</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">4</property>
 													</packing>
 												</child>
 												<child>
@@ -1335,8 +1335,8 @@
 														<property name="halign">end</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">4</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">4</property>
 													</packing>
 												</child>
 												<child>
@@ -1346,8 +1346,8 @@
 														<property name="label">Optical Out</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">5</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">5</property>
 													</packing>
 												</child>
 												<child>
@@ -1360,8 +1360,8 @@
 														</items>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">5</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">5</property>
 													</packing>
 												</child>
 												<child>
@@ -1371,8 +1371,8 @@
 														<property name="label">SPDIF Out</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">6</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">6</property>
 													</packing>
 												</child>
 												<child>
@@ -1384,8 +1384,8 @@
 														</items>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">6</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">6</property>
 													</packing>
 												</child>
 												<child>
@@ -1395,8 +1395,8 @@
 														<property name="label">CC Mix</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">7</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">7</property>
 													</packing>
 												</child>
 												<child>
@@ -1410,8 +1410,8 @@
 														</items>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">7</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">7</property>
 													</packing>
 												</child>
 												<child>
@@ -1421,8 +1421,8 @@
 														<property name="label">Standalone MIDI</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">8</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">8</property>
 													</packing>
 												</child>
 												<child>
@@ -1431,8 +1431,8 @@
 														<property name="halign">end</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">8</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">8</property>
 													</packing>
 												</child>
 												<child>
@@ -1442,8 +1442,8 @@
 														<property name="label">Standalone ARC</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">9</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">9</property>
 													</packing>
 												</child>
 												<child>
@@ -1456,8 +1456,8 @@
 														</items>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">9</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">9</property>
 													</packing>
 												</child>
 												<child>
@@ -1467,8 +1467,8 @@
 														<property name="label">Lock Keys</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">10</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">10</property>
 													</packing>
 												</child>
 												<child>
@@ -1481,8 +1481,8 @@
 														</items>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">10</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">10</property>
 													</packing>
 												</child>
 												<child>
@@ -1492,8 +1492,8 @@
 														<property name="label">Remap Keys</property>
 													</object>
 													<packing>
-														<property name="left_attach">0</property>
-														<property name="top_attach">11</property>
+														<property name="left-attach">0</property>
+														<property name="top-attach">11</property>
 													</packing>
 												</child>
 												<child>
@@ -1502,8 +1502,8 @@
 														<property name="halign">end</property>
 													</object>
 													<packing>
-														<property name="left_attach">1</property>
-														<property name="top_attach">11</property>
+														<property name="left-attach">1</property>
+														<property name="top-attach">11</property>
 													</packing>
 												</child>
 											</object>
