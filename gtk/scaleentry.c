@@ -33,7 +33,8 @@ scale_entry_buildable_init(GtkBuildableIface *iface)
 }
 
 G_DEFINE_TYPE_WITH_CODE(ScaleEntry, scale_entry, GTK_TYPE_BOX,
-	G_IMPLEMENT_INTERFACE(GTK_TYPE_BUILDABLE, scale_entry_buildable_init))
+	G_IMPLEMENT_INTERFACE(GTK_TYPE_BUILDABLE, scale_entry_buildable_init)
+	G_IMPLEMENT_INTERFACE(GTK_TYPE_ORIENTABLE, NULL))
 
 static void
 on_value_changed(GtkAdjustment *adj, gpointer ptr)
@@ -175,6 +176,7 @@ scale_entry_init(ScaleEntry *self)
 {
 	gtk_widget_init_template(GTK_WIDGET(self));
 	g_signal_connect(self->entry, "activate", G_CALLBACK(on_activate), self);
+	g_object_bind_property(self, "orientation", self->button, "orientation", G_BINDING_SYNC_CREATE);
 }
 
 GtkAdjustment *
