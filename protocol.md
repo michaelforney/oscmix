@@ -499,9 +499,10 @@ requests rather than writing to a bulk endpoint.
 3e09	date	[0:4]=day, [5:8]=month, [9:13]=year	[W]
 3e9a	durec	[W]
 	3e9a	play control	0x8120=stop record, 0x8121=stop, 0x8122=record, 0x8123=play/pause
-	3e9b	delete		0x8000=delete
+	3e9b	delete		int, index with high bit set
+	3e9c	track select	int
 	3e9d	seek		int, seconds
-	3e9e	track select	0=previous, 1=next
+	3e9e	track next/prev	0=previous, 1=next
 	3e9f	next track	0xffff=stop, 0x8000=track 1, 0x8001=track 2, ...
 	3ea0	play mode	0x8000=single, 0x8001=UFX single, 0x8002=continuous, 0x8003=single next, 0x8004=repeat single, 0x8005=repeat all
 3f00	[CC] written with cycling values 0x0000-0x000f, roughly 30 times a second	[W]
