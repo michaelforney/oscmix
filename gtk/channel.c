@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdbool.h>
 #include "channel.h"
+#include "eqplot.h"
 #include "mixer.h"
 
 struct _Channel {
@@ -46,6 +47,7 @@ struct _Channel {
 		GtkWidget *output;
 		GtkWidget *play_record;
 	} ui;
+	EQPlot *eq_plot;
 	GtkWidget *eq_band1type;
 	GtkAdjustment *eq_band1gain;
 	GtkAdjustment *eq_band1freq;
@@ -329,6 +331,53 @@ on_volume_output(GtkSpinButton *button, gpointer ptr)
 }
 
 static void
+on_eq_bandtype_changed(GtkComboBox *combo, gpointer ptr, int band)
+{
+	GtkTreeModel *model;
+	GtkTreeIter iter;
+	EQFilterType type;
+
+	if (gtk_combo_box_get_active_iter(combo, &iter)) {
+		model = gtk_combo_box_get_model(combo);
+		gtk_tree_model_get(model, &iter, 0, &type, -1);
+		eq_plot_set_band_type(OSCMIX_CHANNEL(ptr)->eq_plot, band, type);
+	}
+}
+
+static void on_eq_band1type_changed(GtkComboBox *combo, gpointer ptr) { on_eq_bandtype_changed(combo, ptr, 0); }
+static void on_eq_band3type_changed(GtkComboBox *combo, gpointer ptr) { on_eq_bandtype_changed(combo, ptr, 2); }
+
+static void
+on_eq_bandgain_changed(GtkAdjustment *adj, gpointer ptr, int band)
+{
+	eq_plot_set_band_gain(OSCMIX_CHANNEL(ptr)->eq_plot, band, gtk_adjustment_get_value(adj));
+}
+
+static void on_eq_band1gain_changed(GtkAdjustment *adj, gpointer ptr) { on_eq_bandgain_changed(adj, ptr, 0); }
+static void on_eq_band2gain_changed(GtkAdjustment *adj, gpointer ptr) { on_eq_bandgain_changed(adj, ptr, 1); }
+static void on_eq_band3gain_changed(GtkAdjustment *adj, gpointer ptr) { on_eq_bandgain_changed(adj, ptr, 2); }
+
+static void
+on_eq_bandfreq_changed(GtkAdjustment *adj, gpointer ptr, int band)
+{
+	eq_plot_set_band_freq(OSCMIX_CHANNEL(ptr)->eq_plot, band, gtk_adjustment_get_value(adj));
+}
+
+static void on_eq_band1freq_changed(GtkAdjustment *adj, gpointer ptr) { on_eq_bandfreq_changed(adj, ptr, 0); }
+static void on_eq_band2freq_changed(GtkAdjustment *adj, gpointer ptr) { on_eq_bandfreq_changed(adj, ptr, 1); }
+static void on_eq_band3freq_changed(GtkAdjustment *adj, gpointer ptr) { on_eq_bandfreq_changed(adj, ptr, 2); }
+
+static void
+on_eq_bandq_changed(GtkAdjustment *adj, gpointer ptr, int band)
+{
+	eq_plot_set_band_q(OSCMIX_CHANNEL(ptr)->eq_plot, band, gtk_adjustment_get_value(adj));
+}
+
+static void on_eq_band1q_changed(GtkAdjustment *adj, gpointer ptr) { on_eq_bandq_changed(adj, ptr, 0); }
+static void on_eq_band2q_changed(GtkAdjustment *adj, gpointer ptr) { on_eq_bandq_changed(adj, ptr, 1); }
+static void on_eq_band3q_changed(GtkAdjustment *adj, gpointer ptr) { on_eq_bandq_changed(adj, ptr, 2); }
+
+static void
 on_output_changed(GtkComboBox *combo, gpointer ptr)
 {
 	Channel *self, *output;
@@ -348,6 +397,7 @@ on_output_changed(GtkComboBox *combo, gpointer ptr)
 static void
 channel_class_init(ChannelClass *class)
 {
+	g_type_ensure(eq_plot_get_type());
 	G_OBJECT_CLASS(class)->constructed = channel_constructed;
 	G_OBJECT_CLASS(class)->set_property = channel_set_property;
 	G_OBJECT_CLASS(class)->get_property = channel_get_property;
@@ -380,6 +430,7 @@ channel_class_init(ChannelClass *class)
 	gtk_widget_class_bind_template_child_full(GTK_WIDGET_CLASS(class), "fx_label", false, G_STRUCT_OFFSET(Channel, ui.fx_label));
 	gtk_widget_class_bind_template_child_full(GTK_WIDGET_CLASS(class), "reflevel", false, G_STRUCT_OFFSET(Channel, ui.reflevel));
 	gtk_widget_class_bind_template_child_full(GTK_WIDGET_CLASS(class), "eq", false, G_STRUCT_OFFSET(Channel, ui.eq));
+	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), Channel, eq_plot);
 	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), Channel, eq_band1type);
 	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), Channel, eq_band1gain);
 	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), Channel, eq_band1freq);
@@ -400,6 +451,17 @@ channel_class_init(ChannelClass *class)
 	gtk_widget_class_bind_template_child_full(GTK_WIDGET_CLASS(class), "play_record", false, G_STRUCT_OFFSET(Channel, ui.play_record));
 	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_stereo_toggled);
 	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_volume_output);
+	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_eq_band1type_changed);
+	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_eq_band3type_changed);
+	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_eq_band1gain_changed);
+	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_eq_band2gain_changed);
+	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_eq_band3gain_changed);
+	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_eq_band1freq_changed);
+	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_eq_band2freq_changed);
+	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_eq_band3freq_changed);
+	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_eq_band1q_changed);
+	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_eq_band2q_changed);
+	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_eq_band3q_changed);
 	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_output_changed);
 
 	g_object_class_install_property(G_OBJECT_CLASS(class), PROP_TYPE,

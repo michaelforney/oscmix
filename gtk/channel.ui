@@ -306,6 +306,7 @@
 										<child>
 											<object class="GtkGrid">
 												<property name="visible">true</property>
+												<property name="row-spacing">2</property>
 												<child>
 													<object class="GtkLabel">
 														<property name="visible">true</property>
@@ -327,13 +328,25 @@
 													</packing>
 												</child>
 												<child>
+													<object class="EQPlot" id="eq_plot">
+														<property name="visible">true</property>
+														<property name="vexpand">true</property>
+														<property name="n-bands">3</property>
+													</object>
+													<packing>
+														<property name="left-attach">0</property>
+														<property name="top-attach">1</property>
+														<property name="width">4</property>
+													</packing>
+												</child>
+												<child>
 													<object class="GtkLabel">
 														<property name="visible">true</property>
 														<property name="label">Band</property>
 													</object>
 													<packing>
 														<property name="left-attach">0</property>
-														<property name="top-attach">1</property>
+														<property name="top-attach">2</property>
 													</packing>
 												</child>
 												<child>
@@ -343,7 +356,7 @@
 													</object>
 													<packing>
 														<property name="left-attach">1</property>
-														<property name="top-attach">1</property>
+														<property name="top-attach">2</property>
 													</packing>
 												</child>
 												<child>
@@ -353,7 +366,7 @@
 													</object>
 													<packing>
 														<property name="left-attach">2</property>
-														<property name="top-attach">1</property>
+														<property name="top-attach">2</property>
 													</packing>
 												</child>
 												<child>
@@ -363,7 +376,7 @@
 													</object>
 													<packing>
 														<property name="left-attach">3</property>
-														<property name="top-attach">1</property>
+														<property name="top-attach">2</property>
 													</packing>
 												</child>
 												<child>
@@ -373,23 +386,24 @@
 													</object>
 													<packing>
 														<property name="left-attach">0</property>
-														<property name="top-attach">2</property>
+														<property name="top-attach">3</property>
 													</packing>
 												</child>
 												<child>
 													<object class="GtkComboBox" id="eq_band1type">
 														<property name="visible">true</property>
 														<property name="model">eq_bandtype_model_low</property>
+														<signal name="changed" handler="on_eq_band1type_changed"/>
 														<child>
 															<object class="GtkCellRendererPixbuf"/>
 															<attributes>
-																<attribute name="pixbuf">0</attribute>
+																<attribute name="pixbuf">1</attribute>
 															</attributes>
 														</child>
 													</object>
 													<packing>
 														<property name="left-attach">1</property>
-														<property name="top-attach">2</property>
+														<property name="top-attach">3</property>
 													</packing>
 												</child>
 												<child>
@@ -399,23 +413,24 @@
 													</object>
 													<packing>
 														<property name="left-attach">2</property>
-														<property name="top-attach">2</property>
+														<property name="top-attach">3</property>
 													</packing>
 												</child>
 												<child>
 													<object class="GtkComboBox" id="eq_band3type">
 														<property name="visible">true</property>
 														<property name="model">eq_bandtype_model_high</property>
+														<signal name="changed" handler="on_eq_band3type_changed"/>
 														<child>
 															<object class="GtkCellRendererPixbuf"/>
 															<attributes>
-																<attribute name="pixbuf">0</attribute>
+																<attribute name="pixbuf">1</attribute>
 															</attributes>
 														</child>
 													</object>
 													<packing>
 														<property name="left-attach">3</property>
-														<property name="top-attach">2</property>
+														<property name="top-attach">3</property>
 													</packing>
 												</child>
 												<child>
@@ -425,7 +440,7 @@
 													</object>
 													<packing>
 														<property name="left-attach">0</property>
-														<property name="top-attach">3</property>
+														<property name="top-attach">4</property>
 													</packing>
 												</child>
 												<child>
@@ -433,6 +448,7 @@
 														<property name="lower">-20</property>
 														<property name="upper">20</property>
 														<property name="page-increment">0.5</property>
+														<signal name="value-changed" handler="on_eq_band1gain_changed"/>
 													</object>
 													<object class="ScaleEntry">
 														<property name="visible">true</property>
@@ -441,7 +457,7 @@
 													</object>
 													<packing>
 														<property name="left-attach">1</property>
-														<property name="top-attach">3</property>
+														<property name="top-attach">4</property>
 													</packing>
 												</child>
 												<child>
@@ -449,6 +465,7 @@
 														<property name="lower">-20</property>
 														<property name="upper">20</property>
 														<property name="page-increment">0.5</property>
+														<signal name="value-changed" handler="on_eq_band2gain_changed"/>
 													</object>
 													<object class="ScaleEntry">
 														<property name="visible">true</property>
@@ -457,7 +474,7 @@
 													</object>
 													<packing>
 														<property name="left-attach">2</property>
-														<property name="top-attach">3</property>
+														<property name="top-attach">4</property>
 													</packing>
 												</child>
 												<child>
@@ -465,6 +482,7 @@
 														<property name="lower">-20</property>
 														<property name="upper">20</property>
 														<property name="page-increment">0.5</property>
+														<signal name="value-changed" handler="on_eq_band3gain_changed"/>
 													</object>
 													<object class="ScaleEntry">
 														<property name="visible">true</property>
@@ -473,7 +491,7 @@
 													</object>
 													<packing>
 														<property name="left-attach">3</property>
-														<property name="top-attach">3</property>
+														<property name="top-attach">4</property>
 													</packing>
 												</child>
 												<child>
@@ -483,7 +501,7 @@
 													</object>
 													<packing>
 														<property name="left-attach">0</property>
-														<property name="top-attach">4</property>
+														<property name="top-attach">5</property>
 													</packing>
 												</child>
 												<child>
@@ -491,6 +509,7 @@
 														<property name="lower">20</property>
 														<property name="upper">20000</property>
 														<property name="page-increment">1</property>
+														<signal name="value-changed" handler="on_eq_band1freq_changed"/>
 													</object>
 													<object class="ScaleEntry">
 														<property name="visible">true</property>
@@ -498,7 +517,7 @@
 													</object>
 													<packing>
 														<property name="left-attach">1</property>
-														<property name="top-attach">4</property>
+														<property name="top-attach">5</property>
 													</packing>
 												</child>
 												<child>
@@ -506,6 +525,7 @@
 														<property name="lower">20</property>
 														<property name="upper">20000</property>
 														<property name="page-increment">1</property>
+														<signal name="value-changed" handler="on_eq_band2freq_changed"/>
 													</object>
 													<object class="ScaleEntry">
 														<property name="visible">true</property>
@@ -513,7 +533,7 @@
 													</object>
 													<packing>
 														<property name="left-attach">2</property>
-														<property name="top-attach">4</property>
+														<property name="top-attach">5</property>
 													</packing>
 												</child>
 												<child>
@@ -521,6 +541,7 @@
 														<property name="lower">20</property>
 														<property name="upper">20000</property>
 														<property name="page-increment">1</property>
+														<signal name="value-changed" handler="on_eq_band3freq_changed"/>
 													</object>
 													<object class="ScaleEntry">
 														<property name="visible">true</property>
@@ -528,7 +549,7 @@
 													</object>
 													<packing>
 														<property name="left-attach">3</property>
-														<property name="top-attach">4</property>
+														<property name="top-attach">5</property>
 													</packing>
 												</child>
 												<child>
@@ -538,7 +559,7 @@
 													</object>
 													<packing>
 														<property name="left-attach">0</property>
-														<property name="top-attach">5</property>
+														<property name="top-attach">6</property>
 													</packing>
 												</child>
 												<child>
@@ -546,6 +567,7 @@
 														<property name="lower">0.4</property>
 														<property name="upper">9.9</property>
 														<property name="page-increment">0.1</property>
+														<signal name="value-changed" handler="on_eq_band1q_changed"/>
 													</object>
 													<object class="ScaleEntry">
 														<property name="visible">true</property>
@@ -554,7 +576,7 @@
 													</object>
 													<packing>
 														<property name="left-attach">1</property>
-														<property name="top-attach">5</property>
+														<property name="top-attach">6</property>
 													</packing>
 												</child>
 												<child>
@@ -562,6 +584,7 @@
 														<property name="lower">0.4</property>
 														<property name="upper">9.9</property>
 														<property name="page-increment">0.1</property>
+														<signal name="value-changed" handler="on_eq_band2q_changed"/>
 													</object>
 													<object class="ScaleEntry">
 														<property name="visible">true</property>
@@ -570,7 +593,7 @@
 													</object>
 													<packing>
 														<property name="left-attach">2</property>
-														<property name="top-attach">5</property>
+														<property name="top-attach">6</property>
 													</packing>
 												</child>
 												<child>
@@ -578,6 +601,7 @@
 														<property name="lower">0.4</property>
 														<property name="upper">9.9</property>
 														<property name="page-increment">0.1</property>
+														<signal name="value-changed" handler="on_eq_band3q_changed"/>
 													</object>
 													<object class="ScaleEntry">
 														<property name="visible">true</property>
@@ -586,7 +610,7 @@
 													</object>
 													<packing>
 														<property name="left-attach">3</property>
-														<property name="top-attach">5</property>
+														<property name="top-attach">6</property>
 													</packing>
 												</child>
 											</object>
@@ -767,39 +791,49 @@
 	</object>
 	<object class="GtkListStore" id="eq_bandtype_model_low">
 		<columns>
+			<column type="EQFilterType"/>
 			<column type="GdkPixbuf"/>
 		</columns>
 		<data>
 			<row>
-				<col id="0">resource:///oscmix/eq-peak.svg</col>
+				<col id="0">peak</col>
+				<col id="1">resource:///oscmix/eq-peak.svg</col>
 			</row>
 			<row>
-				<col id="0">resource:///oscmix/eq-lowshelf.svg</col>
+				<col id="0">lowshelf</col>
+				<col id="1">resource:///oscmix/eq-lowshelf.svg</col>
 			</row>
 			<row>
-				<col id="0">resource:///oscmix/eq-highpass.svg</col>
+				<col id="0">highpass</col>
+				<col id="1">resource:///oscmix/eq-highpass.svg</col>
 			</row>
 			<row>
-				<col id="0">resource:///oscmix/eq-lowpass.svg</col>
+				<col id="0">lowpass</col>
+				<col id="1">resource:///oscmix/eq-lowpass.svg</col>
 			</row>
 		</data>
 	</object>
 	<object class="GtkListStore" id="eq_bandtype_model_high">
 		<columns>
+			<column type="EQFilterType"/>
 			<column type="GdkPixbuf"/>
 		</columns>
 		<data>
 			<row>
-				<col id="0">resource:///oscmix/eq-peak.svg</col>
+				<col id="0">peak</col>
+				<col id="1">resource:///oscmix/eq-peak.svg</col>
 			</row>
 			<row>
-				<col id="0">resource:///oscmix/eq-highshelf.svg</col>
+				<col id="0">highshelf</col>
+				<col id="1">resource:///oscmix/eq-highshelf.svg</col>
 			</row>
 			<row>
-				<col id="0">resource:///oscmix/eq-lowpass.svg</col>
+				<col id="0">lowpass</col>
+				<col id="1">resource:///oscmix/eq-lowpass.svg</col>
 			</row>
 			<row>
-				<col id="0">resource:///oscmix/eq-highpass.svg</col>
+				<col id="0">highpass</col>
+				<col id="1">resource:///oscmix/eq-highpass.svg</col>
 			</row>
 		</data>
 	</object>

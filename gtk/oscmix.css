@@ -24,8 +24,8 @@ scale#pan {
 	padding-top: 4px;
 	font-size: 10px;
 }
-/*
-combobox {
-	-GtkComboBox-appears-as-list: true;
+eqplot {
+	border: 1px solid;
+	border-radius: 5px;
+	border-color: @borders;
 }
-*/

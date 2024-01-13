@@ -14,6 +14,7 @@ OBJ=\
 	main.o\
 	mixer.o\
 	channel.o\
+	eqplot.o\
 	scaleentry.o\
 	resources.o\
 	../osc.o
