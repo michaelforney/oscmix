@@ -382,6 +382,36 @@ on_durec_file_changed(GtkComboBox *combo, gpointer ptr)
 }
 
 static void
+on_durec_stop(GtkButton *button, gpointer ptr)
+{
+	mixer_send(OSCMIX_WINDOW(ptr)->osc, "/durec/stop", NULL);
+}
+
+static void
+on_durec_play(GtkButton *button, gpointer ptr)
+{
+	mixer_send(OSCMIX_WINDOW(ptr)->osc, "/durec/play", NULL);
+}
+
+static void
+on_durec_record(GtkButton *button, gpointer ptr)
+{
+	mixer_send(OSCMIX_WINDOW(ptr)->osc, "/durec/record", NULL);
+}
+
+static void
+on_durec_delete(GtkButton *button, gpointer ptr)
+{
+	OSCMixWindow *self;
+	GValue val = {0};
+
+	self = OSCMIX_WINDOW(ptr);
+	g_value_init(&val, G_TYPE_INT);
+	g_value_set_int(&val, gtk_combo_box_get_active(self->durec_file));
+	mixer_send(self->osc, "/durec/delete", &val);
+}
+
+static void
 oscmix_window_class_init(OSCMixWindowClass *class)
 {
 	gtk_widget_class_set_template_from_resource(GTK_WIDGET_CLASS(class), "/oscmix/oscmix.ui");
@@ -445,6 +475,10 @@ oscmix_window_class_init(OSCMixWindowClass *class)
 	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_send_addr_changed);
 	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_recv_addr_changed);
 	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_mainout_changed);
+	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_durec_stop);
+	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_durec_play);
+	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_durec_record);
+	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_durec_delete);
 }
 
 static void

@@ -953,11 +953,41 @@ newdureclength(const struct oscnode *path[], const char *unused, int reg, int va
 }
 
 static int
-setdurecdelete(const struct oscnode *path[], int reg, struct oscmsg *msg)
+setdurecstop(const struct oscnode *path[], int reg, struct oscmsg *msg)
 {
 	if (oscend(msg) != 0)
 		return -1;
-	setreg(0x3e9b, 0x8000);
+	setreg(0x3e9a, 0x8120);
+	return 0;
+}
+
+static int
+setdurecplay(const struct oscnode *path[], int reg, struct oscmsg *msg)
+{
+	if (oscend(msg) != 0)
+		return -1;
+	setreg(0x3e9a, 0x8123);
+	return 0;
+}
+
+static int
+setdurecrecord(const struct oscnode *path[], int reg, struct oscmsg *msg)
+{
+	if (oscend(msg) != 0)
+		return -1;
+	setreg(0x3e9a, 0x8122);
+	return 0;
+}
+
+static int
+setdurecdelete(const struct oscnode *path[], int reg, struct oscmsg *msg)
+{
+	int val;
+
+	val = oscgetint(msg);
+	if (oscend(msg) != 0)
+		return -1;
+	setreg(0x3e9b, 0x8000 | val);
 	return 0;
 }
 
@@ -1334,6 +1364,9 @@ static const struct oscnode tree[] = {
 		{"", 15, .new=newdurecinfo},
 		{"", 16, .new=newdureclength},
 
+		{"stop", -1, .set=setdurecstop},
+		{"play", -1, .set=setdurecplay},
+		{"record", -1, .set=setdurecrecord},
 		{"delete", -1, .set=setdurecdelete},
 		{0},
 	}},

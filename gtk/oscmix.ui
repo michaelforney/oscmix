@@ -943,24 +943,28 @@
 															<object class="GtkButton" id="durec_stop">
 																<property name="visible">true</property>
 																<property name="image">stop_icon</property>
+																<signal name="clicked" handler="on_durec_stop"/>
 															</object>
 														</child>
 														<child>
 															<object class="GtkButton" id="durec_play">
 																<property name="visible">true</property>
 																<property name="image">play_icon</property>
+																<signal name="clicked" handler="on_durec_play"/>
 															</object>
 														</child>
 														<child>
 															<object class="GtkButton" id="durec_record">
 																<property name="visible">true</property>
 																<property name="image">record_icon</property>
+																<signal name="clicked" handler="on_durec_record"/>
 															</object>
 														</child>
 														<child>
 															<object class="GtkButton" id="durec_delete">
 																<property name="visible">true</property>
 																<property name="image">delete_icon</property>
+																<signal name="clicked" handler="on_durec_delete"/>
 															</object>
 														</child>
 													</object>

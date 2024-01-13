@@ -229,26 +229,30 @@ mixer_send(Mixer *self, const char *addr, GValue *val)
 	msg.end = buf + sizeof buf;
 	msg.err = NULL;
 	oscputstr(&msg, addr);
-	switch (G_VALUE_TYPE(val)) {
-	case G_TYPE_STRING:
-		oscputstr(&msg, ",s");
-		oscputstr(&msg, g_value_get_string(val));
-		break;
-	case G_TYPE_BOOLEAN:
-		oscputstr(&msg, ",i");
-		oscputint(&msg, g_value_get_boolean(val));
-		break;
-	case G_TYPE_INT:
-		oscputstr(&msg, ",i");
-		oscputint(&msg, g_value_get_int(val));
-		break;
-	case G_TYPE_FLOAT:
-		oscputstr(&msg, ",f");
-		oscputfloat(&msg, g_value_get_float(val));
-		break;
-	default:
-		g_critical("unknown value type '%s'", g_type_name(G_VALUE_TYPE(val)));
-		return;
+	if (val) {
+		switch (G_VALUE_TYPE(val)) {
+		case G_TYPE_STRING:
+			oscputstr(&msg, ",s");
+			oscputstr(&msg, g_value_get_string(val));
+			break;
+		case G_TYPE_BOOLEAN:
+			oscputstr(&msg, ",i");
+			oscputint(&msg, g_value_get_boolean(val));
+			break;
+		case G_TYPE_INT:
+			oscputstr(&msg, ",i");
+			oscputint(&msg, g_value_get_int(val));
+			break;
+		case G_TYPE_FLOAT:
+			oscputstr(&msg, ",f");
+			oscputfloat(&msg, g_value_get_float(val));
+			break;
+		default:
+			g_critical("unknown value type '%s'", g_type_name(G_VALUE_TYPE(val)));
+			return;
+		}
+	} else {
+		oscputstr(&msg, ",");
 	}
 	err = NULL;
 	ret = g_socket_send_to(self->socket, self->send_address, (char *)buf, msg.buf - buf, NULL, &err);
