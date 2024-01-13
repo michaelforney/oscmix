@@ -917,9 +917,12 @@
 													</packing>
 												</child>
 												<child>
+													<object class="GtkAdjustment" id="durec_time">
+													</object>
 													<object class="GtkScale">
 														<property name="visible">true</property>
 														<property name="value-pos">right</property>
+														<property name="adjustment">durec_time</property>
 														<signal name="format-value" handler="format_durec_position"/>
 													</object>
 													<packing>
@@ -1536,6 +1539,7 @@
 	<object class="GtkListStore" id="durec_files">
 		<columns>
 			<column type="gchararray"/>
+			<column type="gint"/>
 			<column type="gint"/>
 			<column type="gint"/>
 		</columns>

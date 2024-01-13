@@ -111,6 +111,7 @@ struct _OSCMixWindow {
 	GtkComboBox *durec_file;
 	GtkCellView *durec_samplerate;
 	GtkCellView *durec_channels;
+	GtkAdjustment *durec_time;
 };
 
 G_DECLARE_FINAL_TYPE(OSCMixWindow, oscmix_window, OSCMIX, WINDOW, GtkApplicationWindow)
@@ -329,6 +330,22 @@ on_durec_channels(GValue *arg, guint len, gpointer ptr)
 }
 
 static void
+on_durec_length(GValue *arg, guint len, gpointer ptr)
+{
+	OSCMixWindow *self;
+	GtkTreeIter iter;
+	int index;
+
+	if (len < 2 || !G_VALUE_HOLDS_INT(&arg[0]) || !G_VALUE_HOLDS_INT(&arg[1]))
+		return;
+	self = OSCMIX_WINDOW(ptr);
+	index = g_value_get_int(&arg[0]);
+	if (!gtk_tree_model_iter_nth_child(GTK_TREE_MODEL(self->durec_files), &iter, NULL, index))
+		gtk_list_store_insert(self->durec_files, &iter, index);
+	gtk_list_store_set_value(self->durec_files, &iter, 3, &arg[1]);
+}
+
+static void
 on_durec_numfiles(GValue *arg, guint len, gpointer ptr)
 {
 	OSCMixWindow *self;
@@ -351,6 +368,7 @@ on_durec_file_changed(GtkComboBox *combo, gpointer ptr)
 	OSCMixWindow *self;
 	GtkTreeIter iter;
 	GtkTreePath *path;
+	int length;
 
 	self = OSCMIX_WINDOW(ptr);
 	if (gtk_combo_box_get_active_iter(combo, &iter)) {
@@ -358,6 +376,8 @@ on_durec_file_changed(GtkComboBox *combo, gpointer ptr)
 		gtk_cell_view_set_displayed_row(self->durec_samplerate, path);
 		gtk_cell_view_set_displayed_row(self->durec_channels, path);
 		gtk_tree_path_free(path);
+		gtk_tree_model_get(GTK_TREE_MODEL(self->durec_files), &iter, 3, &length, -1);
+		gtk_adjustment_set_upper(self->durec_time, length);
 	}
 }
 
@@ -418,6 +438,7 @@ oscmix_window_class_init(OSCMixWindowClass *class)
 	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), OSCMixWindow, durec_file);
 	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), OSCMixWindow, durec_samplerate);
 	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), OSCMixWindow, durec_channels);
+	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), OSCMixWindow, durec_time);
 
 	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), format_durec_position);
 	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_reverb_type_changed);
@@ -567,6 +588,8 @@ oscmix_window_init(OSCMixWindow *self)
 	mixer_connect(self->osc, "/durec/name", on_durec_name, self);
 	mixer_connect(self->osc, "/durec/samplerate", on_durec_samplerate, self);
 	mixer_connect(self->osc, "/durec/channels", on_durec_channels, self);
+	mixer_connect(self->osc, "/durec/length", on_durec_length, self);
+	mixer_bind(self->osc, "/durec/time", G_TYPE_INT, self->durec_time, "value");
 	mixer_bind(self->osc, "/durec/file", G_TYPE_INT, self->durec_file, "active");
 	g_signal_connect(self->durec_file, "changed", G_CALLBACK(on_durec_file_changed), self);
 
