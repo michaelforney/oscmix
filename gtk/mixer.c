@@ -247,7 +247,7 @@ mixer_send(Mixer *self, const char *addr, GValue *val)
 		oscputfloat(&msg, g_value_get_float(val));
 		break;
 	default:
-		g_critical("unknown value type '%s' %zu %zu", g_type_name(G_VALUE_TYPE(val)), G_VALUE_TYPE(val), G_TYPE_FLOAT);
+		g_critical("unknown value type '%s'", g_type_name(G_VALUE_TYPE(val)));
 		return;
 	}
 	err = NULL;
