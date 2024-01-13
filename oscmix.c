@@ -370,6 +370,29 @@ newoutputstereo(const struct oscnode *path[], const char *addr, int reg, int val
 }
 
 static int
+setinputname(const struct oscnode *path[], int reg, struct oscmsg *msg)
+{
+	const char *name;
+	char namebuf[12];
+	int i, ch, val;
+
+	ch = reg >> 6;
+	if (ch >= 20)
+		return -1;
+	name = oscgetstr(msg);
+	if (oscend(msg) != 0)
+		return -1;
+	strncpy(namebuf, name, sizeof namebuf);
+	namebuf[sizeof namebuf - 1] = '\0';
+	reg = 0x3200 + ch * 8;
+	for (i = 0; i < sizeof namebuf; i += 2, ++reg) {
+		val = getle16(namebuf + i);
+		setreg(reg, val);
+	}
+	return 0;
+}
+
+static int
 setinputgain(const struct oscnode *path[], int reg, struct oscmsg *msg)
 {
 	float val;
@@ -652,29 +675,6 @@ setregs(const struct oscnode *path[], int unused, struct oscmsg *msg)
 	return oscend(msg);
 }
 
-static int
-setinputname(const struct oscnode *path[], int reg, struct oscmsg *msg)
-{
-	const char *name;
-	char namebuf[12];
-	int i, ch, val;
-
-	ch = reg >> 6;
-	if (ch >= 20)
-		return -1;
-	name = oscgetstr(msg);
-	if (oscend(msg) != 0)
-		return -1;
-	strncpy(namebuf, name, sizeof namebuf);
-	namebuf[sizeof namebuf - 1] = '\0';
-	reg = 0x3200 + ch * 8;
-	for (i = 0; i < sizeof namebuf; i += 2, ++reg) {
-		val = getle16(namebuf + i);
-		setreg(reg, val);
-	}
-	return 0;
-}
-
 static long
 getsamplerate(int val)
 {
@@ -940,7 +940,6 @@ static int
 newdureclength(const struct oscnode *path[], const char *unused, int reg, int val)
 {
 	struct durecfile *f;
-	int oldlength;
 
 	if (durec.index == -1)
 		return 0;
@@ -1601,7 +1600,7 @@ static void
 handleregs(uint_least32_t *payload, size_t len)
 {
 	size_t i;
-	int reg, val, old, off;
+	int reg, val, off;
 	const struct oscnode *node;
 	char addr[256], *addrend;
 	/*
@@ -1660,7 +1659,6 @@ handleregs(uint_least32_t *payload, size_t len)
 				}
 			}
 			break;
-			++node;
 		}
 	}
 }

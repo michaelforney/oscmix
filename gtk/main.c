@@ -414,6 +414,7 @@ on_durec_delete(GtkButton *button, gpointer ptr)
 static void
 oscmix_window_class_init(OSCMixWindowClass *class)
 {
+	g_type_ensure(scale_entry_get_type());
 	gtk_widget_class_set_template_from_resource(GTK_WIDGET_CLASS(class), "/oscmix/oscmix.ui");
 	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), OSCMixWindow, send_host);
 	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), OSCMixWindow, send_port);
@@ -569,7 +570,6 @@ oscmix_window_init(OSCMixWindow *self)
 {
 	GSettings *settings;
 
-	g_type_ensure(scale_entry_get_type());
 	gtk_widget_init_template(GTK_WIDGET(self));
 	self->osc = mixer_new();
 
@@ -654,7 +654,6 @@ activate(GtkApplication *app, gpointer unused)
 	win = g_object_new(oscmix_window_get_type(), "application", app, NULL);
 	gtk_window_set_application(GTK_WINDOW(win), app);
 	gtk_window_present(GTK_WINDOW(win));
-
 }
 
 int
