@@ -82,7 +82,7 @@ static struct {
 	float freespace;
 	struct durecfile *files;
 	size_t fileslen;
-	int selected;
+	int file;
 	int recordtime;
 	int index;
 	int next;
@@ -827,10 +827,22 @@ newdurecfileslen(const struct oscnode *path[], const char *addr, int reg, int va
 }
 
 static int
-newdurecselected(const struct oscnode *path[], const char *addr, int reg, int val)
+setdurecfile(const struct oscnode *path[], int reg, struct oscmsg *msg)
 {
-	if (val != durec.selected) {
-		durec.selected = val;
+	int val;
+
+	val = oscgetint(msg);
+	if (oscend(msg) != 0)
+		return -1;
+	setreg(0x3e9c, val | 0x8000);
+	return 0;
+}
+
+static int
+newdurecfile(const struct oscnode *path[], const char *addr, int reg, int val)
+{
+	if (val != durec.file) {
+		durec.file = val;
 		oscsend(addr, ",i", val);
 	}
 	return 0;
@@ -1311,7 +1323,7 @@ static const struct oscnode tree[] = {
 		{"totalspace", 4, .new=newdurectotalspace},
 		{"freespace", 5, .new=newdurecfreespace},
 		{"numfiles", 6, .new=newdurecfileslen},
-		{"selected", 7, .new=newdurecselected},
+		{"file", 7, .new=newdurecfile, .set=setdurecfile},
 		{"next", 8, .new=newdurecnext},
 		{"recordtime", 9, .new=newdurecrecordtime},
 		{"", 10, .new=newdurecindex},

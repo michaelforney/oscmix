@@ -834,7 +834,7 @@
 												<property name="visible">true</property>
 												<property name="row-spacing">4</property>
 												<child>
-													<object class="GtkComboBox" id="durec_selected">
+													<object class="GtkComboBox" id="durec_file">
 														<property name="visible">true</property>
 														<property name="model">durec_files</property>
 														<child>

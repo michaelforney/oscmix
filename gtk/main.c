@@ -107,10 +107,10 @@ struct _OSCMixWindow {
 	GtkTreeModel *outputs_model;
 
 	/* durec */
-	GtkComboBox *durec_selected;
+	GtkListStore *durec_files;
+	GtkComboBox *durec_file;
 	GtkCellView *durec_samplerate;
 	GtkCellView *durec_channels;
-	GtkListStore *durec_files;
 };
 
 G_DECLARE_FINAL_TYPE(OSCMixWindow, oscmix_window, OSCMIX, WINDOW, GtkApplicationWindow)
@@ -346,7 +346,7 @@ on_durec_numfiles(GValue *arg, guint len, gpointer ptr)
 }
 
 static void
-on_durec_selected(GtkComboBox *combo, gpointer ptr)
+on_durec_file_changed(GtkComboBox *combo, gpointer ptr)
 {
 	OSCMixWindow *self;
 	GtkTreeIter iter;
@@ -415,7 +415,7 @@ oscmix_window_class_init(OSCMixWindowClass *class)
 	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), OSCMixWindow, outputs);
 
 	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), OSCMixWindow, durec_files);
-	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), OSCMixWindow, durec_selected);
+	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), OSCMixWindow, durec_file);
 	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), OSCMixWindow, durec_samplerate);
 	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), OSCMixWindow, durec_channels);
 
@@ -567,8 +567,8 @@ oscmix_window_init(OSCMixWindow *self)
 	mixer_connect(self->osc, "/durec/name", on_durec_name, self);
 	mixer_connect(self->osc, "/durec/samplerate", on_durec_samplerate, self);
 	mixer_connect(self->osc, "/durec/channels", on_durec_channels, self);
-	mixer_bind(self->osc, "/durec/selected", G_TYPE_INT, self->durec_selected, "active");
-	g_signal_connect(self->durec_selected, "changed", G_CALLBACK(on_durec_selected), self);
+	mixer_bind(self->osc, "/durec/file", G_TYPE_INT, self->durec_file, "active");
+	g_signal_connect(self->durec_file, "changed", G_CALLBACK(on_durec_file_changed), self);
 
 	self->inputs_array = g_ptr_array_new();
 	self->outputs_store = gtk_list_store_new(1, channel_get_type());
