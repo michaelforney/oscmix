@@ -98,6 +98,24 @@ number containing the mean of the squares of the peak levels shifted
 left by 4 (as above), multiplied by 2 so that the RMS levels of a
 sine wave matches the peak levels.
 
+### Output loopback
+
+Sub ID 3 is used by the host to enable or disable loopback mode for
+output channels. The payload contains a single 32-bit integer with
+the following format:
+
+	[0:6]	output channel
+	[7]	loopback enabled
+	[8-31]	unused
+
+### EQ+D record
+
+Sub ID 4 is used by the host to enable or disable EQ+D in recordings.
+The payload is a single 32-bit integer with the following format:
+
+	[0]	eq+d enabled
+	[1-31]	unused
+
 ## USB-mode
 
 ### Registers
@@ -617,7 +635,3 @@ The pan law is contant power with sin/cos taper and -3 dB center.
 	6	128000	[USB-only]
 	7	176400
 	8	192000
-
-## TODO
-
-0410 0000 0000	eq+d record
