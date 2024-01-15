@@ -187,11 +187,6 @@ requests rather than writing to a bulk endpoint.
 			0024	maxgain		int*10, 0.0dB-18.0dB
 			0025	headroom	int*10, 3dB-12dB
 			0026	risetime	int*10, 0.1s-9.9s
-		0028	?
-		002a	?
-		0030	?
-		0031	?
-		0033	?
 	0040	mic 2
 		...
 	0080	inst 3
@@ -501,6 +496,7 @@ requests rather than writing to a bulk endpoint.
 	3830	output 20
 3dff	[USB] written with cycling values 0x0000-0x000f, roughly 5 times a second
 3e00	cue	0xffff=no cue, [0:7]=cue to, [8:15]=cue from	[W] R?
+3e01	?
 3e02	control room status	[W]
 	[0]=?
 	[8]=main mono
@@ -509,6 +505,7 @@ requests rather than writing to a bulk endpoint.
 	[13]=speaker B
 	[14]=dim enabled
 	[15]=?
+3e03	?
 3e04	0x67cd	trigger register dump	[W]
 3e05	?
 3e06	store state	0x0910=slot 1 0x0911=slot 2 0x0912=slot 3 0x0913=slot 4 0x0914=slot 5 0x0915=slot 6	[W]
@@ -523,7 +520,7 @@ requests rather than writing to a bulk endpoint.
 	3e9e	track next/prev	0=previous, 1=next
 	3e9f	next track	0xffff=stop, 0x8000=track 1, 0x8001=track 2, ...
 	3ea0	play mode	0x8000=single, 0x8001=UFX single, 0x8002=continuous, 0x8003=single next, 0x8004=repeat single, 0x8005=repeat all
-3f00	[CC] written with cycling values 0x0000-0x000f, roughly 30 times a second	[W]
+3f00	[CC] written with cycling values 0x0000-0x000f, roughly (29.4, 24.3 idle) times a second	[W]
 4000	mixer	[W]
 	4000	mix 1
 		4000	inputs
