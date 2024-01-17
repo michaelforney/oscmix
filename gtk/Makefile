@@ -30,7 +30,7 @@ RES=\
 
 all: oscmix-gtk gschemas.compiled
 
-$(OBJ): channel.h scaleentry.h mixer.h
+$(OBJ): channel.h scaleentry.h mixer.h eqplot.h
 
 resources.c: resources.xml $(RES)
 	$(GLIB_COMPILE_RESOURCES) --generate-source $<
