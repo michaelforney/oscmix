@@ -47,6 +47,7 @@ struct _Channel {
 		GtkWidget *output;
 		GtkWidget *play_record;
 	} ui;
+	GtkAdjustment *pan;
 	EQPlot *eq_plot;
 	GtkWidget *eq_band1type;
 	GtkAdjustment *eq_band1gain;
@@ -126,6 +127,7 @@ channel_constructed(GObject *obj)
 		gtk_widget_destroy(GTK_WIDGET(self->ui.dynamics_box));
 		break;
 	case CHANNEL_TYPE_OUTPUT:
+		mixer_bind(osc, g_strdup_printf("/output/%d/balance", self->id), G_TYPE_INT, self->pan, "value");
 		mixer_bind(osc, g_strdup_printf("/output/%d/fxreturn", self->id), G_TYPE_FLOAT, self->ui.fx, "value");
 		mixer_bind(osc, g_strdup_printf("/output/%d/volume", self->id), G_TYPE_FLOAT, self->ui.volume, "value");
 		gtk_label_set_text(GTK_LABEL(self->ui.fx_label), "FX Return");
@@ -430,6 +432,7 @@ channel_class_init(ChannelClass *class)
 	gtk_widget_class_bind_template_child_full(GTK_WIDGET_CLASS(class), "fx_label", false, G_STRUCT_OFFSET(Channel, ui.fx_label));
 	gtk_widget_class_bind_template_child_full(GTK_WIDGET_CLASS(class), "reflevel", false, G_STRUCT_OFFSET(Channel, ui.reflevel));
 	gtk_widget_class_bind_template_child_full(GTK_WIDGET_CLASS(class), "eq", false, G_STRUCT_OFFSET(Channel, ui.eq));
+	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), Channel, pan);
 	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), Channel, eq_plot);
 	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), Channel, eq_band1type);
 	gtk_widget_class_bind_template_child(GTK_WIDGET_CLASS(class), Channel, eq_band1gain);
