@@ -9,9 +9,9 @@ mode are mentioned as well.
 
 The protocol details were obtained by inspecting USB traffic between
 TotalMix FX (version 1.86) and a UCX II. For CC-mode, the iPad
-version of TotalMix FX was used; a Raspberry Pi, Linux's raw-gadget
-driver, and a small proxy program were used to capture the USB
-packets.
+version of TotalMix FX was used; a Raspberry Pi and Linux's USB
+gadget MIDI function were used to capture the SysEx packets. See
+[capture.md](capture.md) for more details.
 
 This document is not official in any way, and the information
 presented here may be subtly off, or just plain wrong.
@@ -346,7 +346,7 @@ requests rather than writing to a bulk endpoint.
 	307f	remap keys		0=off 1=on
 	3080	fx load	[R]
 		[0:7]	fx load
-		[8:15]	always 0x1a?
+		[8:15]	dsp version
 	3081	?
 	3082	set by device many times a second
 	3083	?
