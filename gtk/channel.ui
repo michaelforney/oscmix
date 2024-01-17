@@ -719,9 +719,205 @@
 										<property name="visible">true</property>
 										<property name="orientation">vertical</property>
 										<child>
-											<object class="GtkCheckButton" id="dynamics">
+											<object class="GtkGrid">
 												<property name="visible">true</property>
-												<property name="label">Dynamics</property>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Dynamics</property>
+													</object>
+													<packing>
+														<property name="top-attach">0</property>
+														<property name="left-attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkSwitch" id="dynamics">
+														<property name="visible">true</property>
+														<property name="halign">end</property>
+													</object>
+													<packing>
+														<property name="top-attach">0</property>
+														<property name="left-attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Gain</property>
+													</object>
+													<packing>
+														<property name="top-attach">1</property>
+														<property name="left-attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="dynamics_gain">
+														<property name="lower">-30</property>
+														<property name="upper">30</property>
+														<property name="value">0</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">dynamics_gain</property>
+													</object>
+													<packing>
+														<property name="top-attach">1</property>
+														<property name="left-attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Attack</property>
+													</object>
+													<packing>
+														<property name="top-attach">2</property>
+														<property name="left-attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="dynamics_attack">
+														<property name="lower">0</property>
+														<property name="upper">200</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">dynamics_attack</property>
+													</object>
+													<packing>
+														<property name="top-attach">2</property>
+														<property name="left-attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Release</property>
+													</object>
+													<packing>
+														<property name="top-attach">3</property>
+														<property name="left-attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="dynamics_release">
+														<property name="lower">100</property>
+														<property name="upper">999</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">dynamics_release</property>
+													</object>
+													<packing>
+														<property name="top-attach">3</property>
+														<property name="left-attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Comp. Thres.</property>
+													</object>
+													<packing>
+														<property name="top-attach">4</property>
+														<property name="left-attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="dynamics_compthres">
+														<property name="lower">-60</property>
+														<property name="upper">0</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">dynamics_compthres</property>
+													</object>
+													<packing>
+														<property name="top-attach">4</property>
+														<property name="left-attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Comp. Ratio</property>
+													</object>
+													<packing>
+														<property name="top-attach">5</property>
+														<property name="left-attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="dynamics_compratio">
+														<property name="lower">1</property>
+														<property name="upper">10</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">dynamics_compratio</property>
+													</object>
+													<packing>
+														<property name="top-attach">5</property>
+														<property name="left-attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Exp. Thres.</property>
+													</object>
+													<packing>
+														<property name="top-attach">6</property>
+														<property name="left-attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="dynamics_expthres">
+														<property name="lower">-60</property>
+														<property name="upper">0</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">dynamics_expthres</property>
+													</object>
+													<packing>
+														<property name="top-attach">6</property>
+														<property name="left-attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Exp. Ratio</property>
+													</object>
+													<packing>
+														<property name="top-attach">7</property>
+														<property name="left-attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="dynamics_expratio">
+														<property name="lower">1</property>
+														<property name="upper">10</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">dynamics_expratio</property>
+													</object>
+													<packing>
+														<property name="top-attach">7</property>
+														<property name="left-attach">1</property>
+													</packing>
+												</child>
 											</object>
 										</child>
 										<child>
@@ -730,42 +926,104 @@
 											</object>
 										</child>
 										<child>
-											<object class="GtkCheckButton" id="autolevel">
+											<object class="GtkGrid">
 												<property name="visible">true</property>
-												<property name="label">Auto Level</property>
-											</object>
-										</child>
-										<child>
-											<object class="GtkLabel">
-												<property name="visible">true</property>
-												<property name="label">Max Gain</property>
-											</object>
-										</child>
-										<child>
-											<object class="GtkSpinButton" id="maxgain">
-												<property name="visible">true</property>
-											</object>
-										</child>
-										<child>
-											<object class="GtkLabel">
-												<property name="visible">true</property>
-												<property name="label">Headroom</property>
-											</object>
-										</child>
-										<child>
-											<object class="GtkSpinButton" id="headroom">
-												<property name="visible">true</property>
-											</object>
-										</child>
-										<child>
-											<object class="GtkLabel">
-												<property name="visible">true</property>
-												<property name="label">Rise Time</property>
-											</object>
-										</child>
-										<child>
-											<object class="GtkSpinButton" id="risetime">
-												<property name="visible">true</property>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Auto Level</property>
+													</object>
+													<packing>
+														<property name="top-attach">0</property>
+														<property name="left-attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkSwitch" id="autolevel">
+														<property name="visible">true</property>
+														<property name="halign">end</property>
+													</object>
+													<packing>
+														<property name="top-attach">0</property>
+														<property name="left-attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Max Gain</property>
+													</object>
+													<packing>
+														<property name="top-attach">1</property>
+														<property name="left-attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="autolevel_maxgain">
+														<property name="lower">0</property>
+														<property name="upper">18</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">autolevel_maxgain</property>
+													</object>
+													<packing>
+														<property name="top-attach">1</property>
+														<property name="left-attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Headroom</property>
+													</object>
+													<packing>
+														<property name="top-attach">2</property>
+														<property name="left-attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="autolevel_headroom">
+														<property name="lower">3</property>
+														<property name="upper">12</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">autolevel_headroom</property>
+													</object>
+													<packing>
+														<property name="top-attach">2</property>
+														<property name="left-attach">1</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkLabel">
+														<property name="visible">true</property>
+														<property name="halign">start</property>
+														<property name="label">Rise Time</property>
+													</object>
+													<packing>
+														<property name="top-attach">3</property>
+														<property name="left-attach">0</property>
+													</packing>
+												</child>
+												<child>
+													<object class="GtkAdjustment" id="autolevel_risetime">
+														<property name="lower">3</property>
+														<property name="upper">12</property>
+													</object>
+													<object class="ScaleEntry">
+														<property name="visible">true</property>
+														<property name="adjustment">autolevel_risetime</property>
+													</object>
+													<packing>
+														<property name="top-attach">3</property>
+														<property name="left-attach">1</property>
+													</packing>
+												</child>
 											</object>
 										</child>
 									</object>
