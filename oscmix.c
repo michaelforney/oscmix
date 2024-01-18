@@ -1,15 +1,19 @@
 #define _XOPEN_SOURCE 700
+#include <assert.h>
 #include <errno.h>
 #include <limits.h>
 #include <math.h>
+#include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
+#include <fcntl.h>
 #include <netdb.h>
 #include <pthread.h>
 #include <signal.h>
+#include <strings.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <alsa/asoundlib.h>
