@@ -50,7 +50,7 @@ To determine your MIDI device, look for it in the output of `amidi -l`
 
 For example:
 
-```
+```sh
 alsarawio 2,0,1 oscmix
 ```
 
@@ -62,7 +62,7 @@ of the Fireface UCX II) in the output of `aconnect -l`.
 
 For example:
 
-```
+```sh
 alsaseqio 24:1 oscmix
 ```
 
@@ -73,7 +73,9 @@ On BSD systems, you can launch oscmix with file descriptors 6 and
 
 For example:
 
-`oscmix 6<>/dev/rmidi1 7>&6`
+```sh
+oscmix 6<>/dev/rmidi1 7>&6
+```
 
 ## GTK UI
 
