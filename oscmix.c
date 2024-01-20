@@ -575,6 +575,38 @@ newinputhiz(const struct oscnode *path[], const char *addr, int reg, int val)
 }
 
 static int
+setoutputloopback(const struct oscnode *path[], int reg, struct oscmsg *msg)
+{
+	bool val;
+	unsigned char buf[4], sysexbuf[7 + 5];
+	int idx;
+
+	val = oscgetint(msg);
+	if (oscend(msg) != 0)
+		return -1;
+	idx = path[-1] - path[-2]->child;
+	if (val)
+		idx |= 0x80;
+	putle32(buf, idx);
+	writesysex(3, buf, sizeof buf, sysexbuf);
+	return 0;
+}
+
+static int
+seteqdrecord(const struct oscnode *path[], int reg, struct oscmsg *msg)
+{
+	bool val;
+	unsigned char buf[4], sysexbuf[7 + 5];
+
+	val = oscgetint(msg);
+	if (oscend(msg) != 0)
+		return -1;
+	putle32(buf, val);
+	writesysex(4, buf, sizeof buf, sysexbuf);
+	return 0;
+}
+
+static int
 setdb(int reg, float db)
 {
 	int val;
@@ -1224,6 +1256,7 @@ static const struct oscnode outputtree[] = {
 	{"dynamics", 0x1b, .set=setbool, .new=newbool, .child=dynamicstree},
 	{"autolevel", 0x23, .set=setbool, .new=newbool, .child=autoleveltree},
 	{"roomeq", -1, .child=roomeqtree},
+	{"loopback", -1, .set=setoutputloopback},
 	{0},
 };
 static const struct oscnode outputroomeqtree[] = {
@@ -1427,6 +1460,8 @@ static const struct oscnode tree[] = {
 			"Off", "Keys", "All",
 		}, .nameslen=3},
 		{"remapkeys", 15, .set=setbool, .new=newbool},
+
+		{"eqdrecord", -1, .set=seteqdrecord},
 		{0},
 	}},
 	{"input", 0x3180, .child=(const struct oscnode[]){
