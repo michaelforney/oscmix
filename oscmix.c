@@ -181,6 +181,7 @@ enum lockkeys {
 };
 
 static void oscsend(const char *addr, const char *type, ...);
+static void oscflush(void);
 static void oscsendenum(const char *addr, int val, const char *const names[], size_t nameslen);
 
 static void
@@ -1107,8 +1108,18 @@ setdurecdelete(const struct oscnode *path[], int reg, struct oscmsg *msg)
 static void
 refresh(void)
 {
+	struct input *pb;
+	char addr[256];
+	int i;
+
 	setreg(0x3e04, 0x67cd);
 	refreshing = true;
+	for (i = 0; i < LEN(playbacks); ++i) {
+		pb = &playbacks[i];
+		snprintf(addr, sizeof addr, "/playback/%d/stereo", i);
+		oscsend(addr, ",i", pb->stereo);
+	}
+	oscflush();
 }
 
 static int
@@ -2003,6 +2014,9 @@ main(int argc, char *argv[])
 		recvsock[recvsocklen++] = opensock((char[]){"udp!127.0.0.1!7000"}, AI_PASSIVE);
 	if (sendsocklen == 0)
 		sendsock[sendsocklen++] = opensock((char[]){"udp!127.0.0.1!8000"}, 0);
+
+	for (i = 0; i < LEN(playbacks); ++i)
+		playbacks[i].stereo = true;
 
 	sigfillset(&set);
 	pthread_sigmask(SIG_SETMASK, &set, NULL);
