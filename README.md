@@ -84,6 +84,13 @@ communicates with oscmix using OSC.
 
 ![oscmix-gtk](https://github.com/michaelforney/oscmix/assets/52851/0a79f155-bbe3-4424-ae2a-1b2e044ea84d)
 
+To run oscmix-gtk without installing, set the `GSETTINGS_SCHEMA_DIR`
+environment variable.
+
+```sh
+GSETTINGS_SCHEMA_DIR=$PWD/gtk ./gtk/oscmix-gtk
+```
+
 ## OSC API
 
 The OSC API is not yet final and may change without notice.
