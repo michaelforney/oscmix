@@ -634,18 +634,16 @@ setmix(const struct oscnode *path[], int reg, struct oscmsg *msg)
 	struct output *out;
 	struct input *in;
 
-	outidx = (reg & 0xfff) >> 6;
-	if (outidx >= LEN(outputs))
-		return -1;
+	outidx = path[-2] - path[-3]->child;
+	assert(outidx <= LEN(outputs));
 	out = &outputs[outidx];
 
-	inidx = reg & 0x3f;
-	if (inidx < LEN(inputs))
-		in = &inputs[inidx];
-	else if (inidx - 0x20 < LEN(playbacks))
-		in = &playbacks[inidx - 0x20];
+	inidx = path[0] - path[-1]->child;
+	assert(inidx < LEN(inputs));
+	if (reg & 0x20)
+		in = &playbacks[inidx];
 	else
-		return -1;
+		in = &inputs[inidx];
 
 	vol = oscgetfloat(msg);
 	printf("setmix %d %d %f\n", (reg >> 6) & 0x3f, reg & 0x3f, vol);
