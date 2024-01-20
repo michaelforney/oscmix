@@ -51,6 +51,7 @@ struct mix {
 
 struct input {
 	bool stereo;
+	bool mute;
 	float width;
 };
 
@@ -389,26 +390,72 @@ newbool(const struct oscnode *path[], const char *addr, int reg, int val)
 }
 
 static int
+setlevel(int reg, float level)
+{
+	long val;
+
+	fprintf(stderr, "setlevel %.4x %f\n", reg, level);
+	val = level * 0x8000l;
+	assert(val >= 0);
+	assert(val <= 0x10000);
+	if (val > 0x4000)
+		val = (val >> 3) - 0x8000;
+	return setreg(reg, val);
+}
+
+static void
+setlevels(struct output *out, struct input *in, struct mix *mix)
+{
+	int reg;
+	float level, theta;
+
+	reg = 0x4000 | (out - outputs) << 6 | (in - inputs);
+	level = in->mute ? 0 : mix->vol <= -650 ? 0 : powf(10, mix->vol / 200.f);
+	if (out->stereo) {
+		theta = (mix->pan + 100) / 400.f * M_PI;
+		setlevel(reg, level * cosf(theta));
+		setlevel(reg + 0x40, level * sinf(theta));
+	} else {
+		setlevel(reg, level);
+	}
+}
+
+static int
 setinputmute(const struct oscnode *path[], int reg, struct oscmsg *msg)
 {
-	//int ch;
-	//struct output *out;
-
-	if (setbool(path, reg, msg) != 0)
-		return -1;
-	//ch = reg >> 6;
-	/*
-	for (out = state.output; out != state.output + LEN(state.output); ++out) {
-		
-	}
-	//ch = (reg & 0xff) >> 
+	struct input *in;
+	struct output *out;
+	struct mix *mix;
+	int inidx, outidx;
 	bool val;
 
 	val = oscgetint(msg);
 	if (oscend(msg) != 0)
 		return -1;
+	inidx = path[-1] - path[-2]->child;
+	assert(inidx <= LEN(inputs));
+	/* mutex */
+	in = &inputs[inidx];
+	if (inidx % 2 == 1 && in[-1].stereo)
+		--in, --inidx;
 	setreg(reg, val);
-	*/
+	if (in->mute != val) {
+		in->mute = val;
+		if (in->stereo)
+			in[1].mute = val;
+		for (outidx = 0; outidx < LEN(outputs); ++outidx) {
+			out = &outputs[outidx];
+			mix = &out->mix[inidx];
+			if (mix->vol > -650)
+				setlevels(out, in, mix);
+			if (in->stereo && (++mix)->vol > -650)
+				setlevels(out, in + 1, mix);
+			if (out->stereo) {
+				assert(outidx % 2 == 0);
+				++outidx;
+			}
+		}
+	}
 	return 0;
 }
 
@@ -550,18 +597,6 @@ setpan(int reg, int pan)
 
 	fprintf(stderr, "setpan %.4x %d\n", reg, pan);
 	val = (pan & 0x7fff) | 0x8000;
-	return setreg(reg, val);
-}
-
-static int
-setlevel(int reg, float level)
-{
-	int val;
-
-	fprintf(stderr, "setlevel %.4x %f\n", reg, level);
-	assert(level >= 0);
-	assert(level <= 2);
-	val = level > 0.5 ? (int)(level * 0x1000) | 0x8000 : (int)(level * 0x8000);
 	return setreg(reg, val);
 }
 
