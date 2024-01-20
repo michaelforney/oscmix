@@ -82,7 +82,7 @@ oscmix 6<>/dev/rmidi1 7>&6
 The [gtk](gtk) directory contains oscmix-gtk, a GTK frontend that
 communicates with oscmix using OSC.
 
-![oscmix-gtk](https://github.com/michaelforney/oscmix/assets/52851/0a79f155-bbe3-4424-ae2a-1b2e044ea84d)
+![oscmix-gtk](https://mforney.org/misc/oscmix.png)
 
 To run oscmix-gtk without installing, set the `GSETTINGS_SCHEMA_DIR`
 environment variable.
