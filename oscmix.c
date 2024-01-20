@@ -251,9 +251,7 @@ writesysex(int subid, const unsigned char *buf, size_t len, unsigned char *sysex
 	sysex.datalen = len * 5 / 4;
 	sysex.subid = subid;
 	sysexlen = sysexenc(&sysex, sysexbuf, SYSEX_MFRID | SYSEX_DEVID | SYSEX_SUBID);
-	//assert(len == sizeof sysexbuf);
 	base128enc(sysex.data, buf, len);
-	//dump("sysex", sysexbuf, sysexlen);
 
 	if (midiwrite(sysexbuf, sysexlen) != 0)
 		fatal("write 7:");
@@ -266,7 +264,7 @@ setreg(unsigned reg, unsigned val)
 	unsigned char buf[4], sysexbuf[7 + 5];
 	unsigned par;
 
-	if (reg != 0x3f00)
+	if (dflag && reg != 0x3f00)
 		fprintf(stderr, "setreg %#.4x %#.4x\n", reg, val);
 	regval = (reg & 0x7fff) << 16 | (val & 0xffff);
 	par = regval >> 16 ^ regval;
@@ -276,7 +274,6 @@ setreg(unsigned reg, unsigned val)
 	par ^= par >> 1;
 	regval |= (~par & 1) << 31;
 	putle32(buf, regval);
-	//dump("->", buf, sizeof buf);
 
 	writesysex(0, buf, sizeof buf, sysexbuf);
 	return 0;
@@ -383,8 +380,6 @@ setbool(const struct oscnode *path[], int reg, struct oscmsg *msg)
 static int
 newbool(const struct oscnode *path[], const char *addr, int reg, int val)
 {
-	if (reg >= 0x0500 && reg < 0x1000 && (reg & 0x3f) == 0x4)
-		printf("new stereo %s %d\n", addr, val);
 	oscsend(addr, ",i", val != 0);
 	return 0;
 }
@@ -544,7 +539,6 @@ newinput48v_reflevel(const struct oscnode *path[], const char *addr, int reg, in
 	int ch;
 	const char *const names[] = {"+7dBu", "+13dBu", "+19dBu"};
 
-	fprintf(stderr, "newinput48v_reflevel %.4x %.4hx\n", reg, (short)val);
 	ch = (reg >> 6) + 1;
 	if (ch >= 1 && ch <= 2) {
 		return newbool(path, addr, reg, val);
@@ -605,10 +599,8 @@ setmix(const struct oscnode *path[], int reg, struct oscmsg *msg)
 {
 	int outidx, inidx, pan;
 	float vol, level, theta, width;
-	//bool outstereo, instereo;
 	struct output *out;
 	struct input *in;
-	/* XXX: int promotion */
 
 	outidx = (reg & 0xfff) >> 6;
 	if (outidx >= LEN(outputs))
@@ -622,12 +614,6 @@ setmix(const struct oscnode *path[], int reg, struct oscmsg *msg)
 		in = &playbacks[inidx - 0x20];
 	else
 		return -1;
-	/*
-	outstereo = regs[0x0504 | (reg >> 6 & 0x3f) << 6];
-	instereo = regs[0x0002 | (reg & 0x3f) << 6];
-	*/
-	//outstereo = false;
-	//instereo = false;
 
 	vol = oscgetfloat(msg);
 	printf("setmix %d %d %f\n", (reg >> 6) & 0x3f, reg & 0x3f, vol);
@@ -726,7 +712,6 @@ newmix(const struct oscnode *path[], const char *addr, int reg, int val)
 	if (inidx & 1 && in[-1].stereo)
 		--in, --inidx;
 	mix = &out->mix[inidx];
-	//fprintf(stderr, "newmix %s %d %d %d\n", newpan ? "pan" : "vol", val, outidx + 1, inidx + 1);
 	if (in->stereo) {
 		float level0, level1, scale;
 
@@ -750,7 +735,6 @@ newmix(const struct oscnode *path[], const char *addr, int reg, int val)
 			vol = 20 * log10f(level1);
 			pan = -100 * (level0 / level1 - 1);
 		}
-		//fprintf(stderr, "\tvol=%f pan=%d level0=%f level1=%f %d %d\n", vol, pan, level0, level1, mix[0].vol, mix[1].vol);
 	} else {
 		vol = mix->vol <= -650 ? -65.f : mix->vol / 10.f;
 		pan = mix->pan;
@@ -1105,9 +1089,11 @@ setrefresh(const struct oscnode *path[], int reg, struct oscmsg *msg)
 }
 
 static int
-refreshdone(const struct oscnode *path[], int reg, struct oscmsg *msg)
+refreshdone(const struct oscnode *path[], const char *addr, int reg, int val)
 {
 	refreshing = false;
+	if (dflag)
+		fprintf(stderr, "refresh done\n");
 	return 0;
 }
 
@@ -1542,8 +1528,6 @@ dispatch(unsigned char *buf, size_t len)
 	struct oscmsg msg;
 	int reg;
 
-	//dump("osc <-", buf, len);
-
 	if (len % 4 != 0)
 		return -1;
 	msg.err = NULL;
@@ -1559,21 +1543,11 @@ dispatch(unsigned char *buf, size_t len)
 	}
 	++msg.type;
 
-	fprintf(stderr, "dispatch %s %s\n", addr, msg.type);
-	/*
-	if (buf == end) {
-		fprintf(stderr, "bad osc packet: no type string\n");
-		return -1;
-	}
-	*/
-
 	reg = 0;
 	pathlen = 0;
 	for (node = tree; node->name;) {
-		//printf("%s\n", node->name);
 		next = match(addr + 1, node->name);
 		if (next) {
-			//printf("match next=%s\n", next);
 			assert(pathlen < LEN(path));
 			path[pathlen++] = node;
 			reg += node->reg;
@@ -1581,7 +1555,6 @@ dispatch(unsigned char *buf, size_t len)
 				node = node->child;
 				addr = next;
 			} else {
-				//printf("dispatch %s\n", node->name);
 				if (node->set) {
 					node->set(path + pathlen - 1, reg, &msg);
 					if (msg.err)
@@ -1674,7 +1647,6 @@ oscflush(void)
 	if (oscmsg.buf) {
 		buf = oscbuf;
 		len = oscmsg.buf - oscbuf;
-		//dump("bundle", buf, len);
 		for (i = 0; i < sendsocklen; ++i) {
 			ret = write(sendsock[i], buf, len);
 			if (ret < 0) {
@@ -1700,19 +1672,6 @@ handleregs(uint_least32_t *payload, size_t len)
 	for (i = 0; i < len; ++i) {
 		reg = payload[i] >> 16 & 0x7fff;
 		val = (long)((payload[i] & 0xffff) ^ 0x8000) - 0x8000;
-		//if (reg < 0x0500)
-		//	printf("[%.4x] = %.4x\n", reg, val);
-		/*
-		if (reg >= LEN(regs)) {
-			fprintf(stderr, "unknown reg %04x", reg);
-			continue;
-		}
-		old = regs[reg];
-		if (old != val) {
-			regs[reg] = val;
-			//regchange(reg, val, old);
-		}
-		*/
 		addrend = addr;
 		off = 0;
 		node = tree;
@@ -1734,7 +1693,7 @@ handleregs(uint_least32_t *payload, size_t len)
 				off += node->reg;
 				node = node->child;
 				continue;
-			} else if (reg != off + node->reg) {
+			} else if (dflag && reg != off + node->reg) {
 				switch (reg) {
 				case 0x3080:
 				case 0x3081:
@@ -1744,10 +1703,8 @@ handleregs(uint_least32_t *payload, size_t len)
 				case 0x3380:
 					break;
 				default:
-					if (reg == off + node->reg)
-						fprintf(stderr, "[%.4x]=%.4hx (%s)\n", reg, (short)val, addr);
-					else
-						fprintf(stderr, "[%.4x]=%.4hx\n", reg, (short)val);
+					fprintf(stderr, "[%.4x]=%.4hx (%.hx %s)\n", reg, (short)val, off + node->reg, addr);
+					break;
 				}
 			}
 			break;
@@ -1811,7 +1768,6 @@ handlesysex(unsigned char *buf, size_t len, uint_least32_t *payload)
 	size_t i;
 	uint_least32_t *pos;
 
-	//dump("sysex", buf, len);
 	ret = sysexdec(&sysex, buf, len, SYSEX_MFRID | SYSEX_DEVID | SYSEX_SUBID);
 	if (ret != 0 || sysex.mfrid != 0x200d || sysex.devid != 0x10 || sysex.datalen % 5 != 0) {
 		if (ret == 0)
@@ -1820,7 +1776,6 @@ handlesysex(unsigned char *buf, size_t len, uint_least32_t *payload)
 			fprintf(stderr, "ignoring unknown sysex packet\n");
 		return;
 	}
-	//dump("sysex", sysex.data, sysex.datalen);
 	pos = payload;
 	for (i = 0; i < sysex.datalen; i += 5)
 		*pos++ = getle32_7bit(sysex.data + i);
@@ -1851,7 +1806,6 @@ midiread(void *arg)
 		ret = read(6, dataend, (data + sizeof data) - dataend);
 		if (ret < 0)
 			fatal("read 6:");
-		//dump(NULL, dataend, ret);
 		dataend += ret;
 		datapos = data;
 		for (;;) {
@@ -1874,7 +1828,6 @@ midiread(void *arg)
 				
 			}
 			++nextpos;
-			//dump("sysex", datapos, nextpos - datapos);
 			handlesysex(datapos, nextpos - datapos, payload);
 			datapos = nextpos;
 		}
