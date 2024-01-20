@@ -80,6 +80,8 @@ For example:
 The [gtk](gtk) directory contains oscmix-gtk, a GTK frontend that
 communicates with oscmix using OSC.
 
+![oscmix-gtk](https://github.com/michaelforney/oscmix/assets/52851/0a79f155-bbe3-4424-ae2a-1b2e044ea84d)
+
 ## OSC API
 
 The OSC API is not yet final and may change without notice.
