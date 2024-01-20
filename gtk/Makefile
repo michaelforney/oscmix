@@ -4,11 +4,15 @@ CFLAGS+=-std=c11
 
 -include ../config.mk
 
+GTK_CFLAGS?=$$(pkg-config --cflags --cflags gtk+-3.0)
+GTK_LDFLAGS?=$$(pkg-config --libs-only-L --libs-only-other gtk+-3.0)
+GTK_LDLIBS?=$$(pkg-config --libs-only-l gtk+-3.0)
+GLIB_COMPILE_RESOURCES?=glib-compile-resources
+GLIB_COMPILE_SCHEMAS?=glib-compile-schemas
+
 CFLAGS+=$(GTK_CFLAGS)
 LDFLAGS+=$(GTK_LDFLAGS)
 LDLIBS+=$(GTK_LDLIBS)
-GLIB_COMPILE_RESOURCES?=glib-compile-resources
-GLIB_COMPILE_SCHEMAS?=glib-compile-schemas
 
 OBJ=\
 	main.o\
