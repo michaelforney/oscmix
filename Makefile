@@ -16,7 +16,7 @@ all: $(TARGET)
 	$(MAKE) -C gtk
 
 oscmix: oscmix.o sysex.o osc.o
-	$(CC) $(LDFLAGS) -o $@ oscmix.o sysex.o osc.o -lm
+	$(CC) $(LDFLAGS) -o $@ oscmix.o sysex.o osc.o -l pthread -l m
 
 alsaseqio.o: alsaseqio.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(ALSA_CFLAGS) -c -o $@ alsaseqio.c
