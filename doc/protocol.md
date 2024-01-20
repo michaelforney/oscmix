@@ -49,10 +49,10 @@ For example, the number 0x1A2B3C4D is encoded as follows:
 
 Sub ID 0 is used by the host to set registers, and by the device
 to notify the host of changes to registers. In this case, each
-32-bit integer in the payload contains the register in the upper
-15 bits, and the value in the lower 16 bits. The high bit is used
-as a parity: it is set if and only if the number of set bits in the
-register and value is even.
+32-bit integer in the payload contains the register in bits 16-30,
+and the value in the lower 16 bits. The high bit is used as a parity:
+it is set if and only if the number of set bits in the register and
+value is even.
 
 #### Example
 
@@ -106,7 +106,7 @@ the following format:
 
 	[0:6]	output channel
 	[7]	loopback enabled
-	[8-31]	unused
+	[8:31]	unused
 
 ### EQ+D record
 
@@ -114,7 +114,7 @@ Sub ID 4 is used by the host to enable or disable EQ+D in recordings.
 The payload is a single 32-bit integer with the following format:
 
 	[0]	eq+d enabled
-	[1-31]	unused
+	[1:31]	unused
 
 ## USB-mode
 
@@ -152,7 +152,7 @@ requests rather than writing to a bulk endpoint.
 		0001	fxsend		int*10
 		0002	stereo		0=off, 1=on
 		0003	record		0=off, 1=on
-		0004	?		all channels set to 0xa, ipad sets to 0x19, 0x9c, 0x1e, 0x20, 0x22, 0xa2, 0x24, 0xa4, 0x26, 0xa6
+		0004	?		all channels set to 0xa
 		0005	play channel	0=off, 1-60
 		0006	msproc		0=off, 1=on
 		0007	phase		0=off, 1=on
@@ -296,7 +296,7 @@ requests rather than writing to a bulk endpoint.
 	2040	mix 2
 		...
 	24c0	mix 20
-2fc0	?
+2fc0	?	sent when register dump finished
 3000	reverb		0=off, 1=on
 	3001	type		int, 0=Small Room, 1=Medium Room, 2=Large Room, 3=Walls,
 				     4=Shorty, 5=Attack, 6=Swagger, 7=Old School,
@@ -569,7 +569,7 @@ requests rather than writing to a bulk endpoint.
 
 Value format
 
-	[0-14]	signed 15-bit integer, phase-inverted if negative (only on playback channels and playback fxsend)
+	[0:14]	signed 15-bit integer, phase-inverted if negative (only on playback channels and playback fxsend)
 	[15]	full scale reference, if set, 0x1000, otherwise 0x8000
 
 Decibel to register value
