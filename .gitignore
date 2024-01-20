@@ -1,6 +1,7 @@
 *.o
 /oscmix
-/regtool
+/alsarawio
+/alsaseqio
 /config.mk
 /gtk/oscmix-gtk
 /gtk/resources.c
