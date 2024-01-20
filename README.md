@@ -5,17 +5,23 @@ class-compliant mode, allowing full control of the device's
 functionality through OSC on POSIX operating systems supporting USB
 MIDI.
 
+## Current status
+
+Most things work, but still needs a lot more testing, polish,
+cleanup. Some things still need to be hooked up in the UI or implemented in oscmix.
+
 ## Usage
 
 ```
 oscmix [-dl] [-r recvaddr]... [-s sendaddr]...
 ```
 
-`oscmix` reads and writes MIDI SysEx messages from/to file descriptors
+oscmix reads and writes MIDI SysEx messages from/to file descriptors
 6 and 7 respectively, which are expected to be opened.
 
-The `-d` flag enables debug messages. The `-l` flag will enable
-level meters.
+The `-d` flag enables debug messages.
+
+The `-l` flag enables level meters.
 
 The `-r` flag can be specified multiple times, one for each address
 to listen on for OSC messages.
@@ -26,12 +32,14 @@ to send OSC messages to.
 Addresses are specified using the syntax `proto!addr!port`. At the
 moment, only `udp` is supported.
 
-By default, `oscmix` will listen on `udp!127.0.0.1!7000` and send
-to `udp!127.0.0.1!8000`. Any addresses specified replace these
-defaults; if you want to send to or listen on multiple addresses,
-pass them all to `oscmix`.
+By default, oscmix will listen on `udp!127.0.0.1!7000` and send to
+`udp!127.0.0.1!8000`. Any addresses specified replace these defaults;
+if you want to send to or listen on multiple addresses, pass them
+all to `oscmix`.
 
-## Linux
+## Running
+
+### Linux
 
 On Linux systems, you can use bundled `alsarawio` program open and
 configure a given raw MIDI subdevice and set up these file descriptors
@@ -58,9 +66,9 @@ For example:
 alsaseqio 24:1 oscmix
 ```
 
-## BSD
+### BSD
 
-On BSD systems, you can launch `oscmix` with file descriptors 6 and
+On BSD systems, you can launch oscmix with file descriptors 6 and
 7 redirected to the appropriate MIDI device.
 
 For example:
@@ -69,8 +77,8 @@ For example:
 
 ## GTK UI
 
-The [gtk](gtk) directory contains `oscmix-gtk`, a GTK frontend that
-communicates with `oscmix` using OSC.
+The [gtk](gtk) directory contains oscmix-gtk, a GTK frontend that
+communicates with oscmix using OSC.
 
 ## OSC API
 
