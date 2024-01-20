@@ -1308,6 +1308,7 @@ static const struct oscnode mixtree[] = {
 		{"20", 0x13, .set=setmix, .new=newmix},
 		{0},
 	}},
+	{0},
 };
 static const struct oscnode tree[] = {
 	{"input", 0, .child=(const struct oscnode[]){
