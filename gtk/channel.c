@@ -105,6 +105,7 @@ channel_constructed(GObject *obj)
 	self->quark = g_quark_from_string(prefix);
 	gtk_label_set_text(GTK_LABEL(self->ui.name), self->name);
 	mixer_bind(osc, g_strdup_printf("%s/mute", prefix), G_TYPE_BOOLEAN, self->ui.mute, "active");
+	mixer_bind(osc, g_strdup_printf("%s/stereo", prefix), G_TYPE_BOOLEAN, self->ui.stereo, "active");
 	mixer_bind(osc, g_strdup_printf("/%s/%d/record", type->value_nick, self->id), G_TYPE_BOOLEAN, self->ui.record, "active");
 	//bind_osc(g_strdup_printf("/%s/%d/playchan", type->value_nick, self->id), G_TYPE_INT, self->ui.stereo, "active");
 	mixer_bind(osc, g_strdup_printf("/%s/%d/msproc", type->value_nick, self->id), G_TYPE_BOOLEAN, self->ui.msproc, "active");
@@ -147,7 +148,6 @@ channel_constructed(GObject *obj)
 	if (self->type != CHANNEL_TYPE_OUTPUT)
 		mixer_bind(osc, g_strdup_printf("/%s/%d/fxsend", type->value_nick, self->id), G_TYPE_FLOAT, self->ui.fx, "value");
 	if (self->type != CHANNEL_TYPE_PLAYBACK) {
-		mixer_bind(osc, g_strdup_printf("/%s/%d/stereo", type->value_nick, self->id), G_TYPE_BOOLEAN, self->ui.stereo, "active");
 		mixer_bind(osc, g_strdup_printf("/%s/%d/eq", type->value_nick, self->id), G_TYPE_BOOLEAN, self->ui.eq, "active");
 		mixer_bind(osc, g_strdup_printf("%s/eq/band1type", prefix), G_TYPE_INT, self->eq_band1type, "active");
 		mixer_bind(osc, g_strdup_printf("%s/eq/band1gain", prefix), G_TYPE_FLOAT, self->eq_band1gain, "value");
@@ -207,7 +207,7 @@ channel_set_property(GObject *obj, guint id, const GValue *val, GParamSpec *spec
 	case PROP_RIGHT:
 		self->right = OSCMIX_CHANNEL(g_value_get_object(val));
 		if (self->right) {
-			//g_object_bind_property(self->ui.stereo, "active", self->right->ui.stereo, "active", G_BINDING_BIDIRECTIONAL);
+			g_object_bind_property(self->ui.stereo, "active", self->right->ui.stereo, "active", G_BINDING_BIDIRECTIONAL);
 			g_object_bind_property(self->right->ui.level, "value", self->ui.level_right, "value", G_BINDING_DEFAULT);
 			g_object_bind_property(self->right->ui.phase, "active", self->ui.phase_right, "active", G_BINDING_BIDIRECTIONAL);
 		}
