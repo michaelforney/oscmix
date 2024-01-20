@@ -15,8 +15,8 @@
 #include <signal.h>
 #include <strings.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <unistd.h>
-#include <alsa/asoundlib.h>
 #include "arg.h"
 #include "intpack.h"
 #include "osc.h"
@@ -67,9 +67,7 @@ struct durecfile {
 	unsigned length;
 };
 
-static snd_rawmidi_t *rmidi, *wmidi;
 static int dflag;
-static int nflag;
 static int lflag;
 static struct input inputs[20];
 static struct input playbacks[20];
@@ -92,6 +90,7 @@ static struct {
 	int next;
 	int playmode;
 } durec = {.index = -1};
+static bool refreshing;
 
 enum eqbandtype {
 	EQ_BANDTYPE_PEAK,
@@ -180,7 +179,6 @@ enum lockkeys {
 	LOCKKEYS_ALL,
 };
 
-static int setreg(unsigned reg, unsigned val);
 static void oscsend(const char *addr, const char *type, ...);
 static void oscsendenum(const char *addr, int val, const char *const names[], size_t nameslen);
 
@@ -218,6 +216,69 @@ dump(const char *name, const void *ptr, size_t len)
 	for (i = 1; i < len; ++i)
 		printf(" %.2x", buf[i]);
 	putchar('\n');
+}
+
+static int
+midiwrite(const void *buf, size_t len)
+{
+	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+	ssize_t ret;
+
+	pthread_mutex_lock(&lock);
+	while (len > 0) {
+		ret = write(7, buf, len);
+		if (ret < 0)
+			goto error;
+		buf = (char *)buf + ret;
+		len -= ret;
+	}
+	ret = 0;
+error:
+	pthread_mutex_unlock(&lock);
+	return ret;
+}
+
+static void
+writesysex(int subid, const unsigned char *buf, size_t len, unsigned char *sysexbuf)
+{
+	struct sysex sysex;
+	size_t sysexlen;
+
+	sysex.mfrid = 0x200d;
+	sysex.devid = 0x10;
+	sysex.data = NULL;
+	sysex.datalen = len * 5 / 4;
+	sysex.subid = subid;
+	sysexlen = sysexenc(&sysex, sysexbuf, SYSEX_MFRID | SYSEX_DEVID | SYSEX_SUBID);
+	//assert(len == sizeof sysexbuf);
+	base128enc(sysex.data, buf, len);
+	//dump("sysex", sysexbuf, sysexlen);
+
+	if (midiwrite(sysexbuf, sysexlen) != 0)
+		fatal("write 7:");
+}
+
+static int
+setreg(unsigned reg, unsigned val)
+{
+	unsigned long regval;
+	unsigned char buf[4], sysexbuf[7 + 5];
+	unsigned par;
+
+	if (reg != 0x3f00)
+		fprintf(stderr, "setreg %#.4x %#.4x\n", reg, val);
+	regval = (reg & 0x7fff) << 16 | (val & 0xffff);
+	par = regval >> 16 ^ regval;
+	par ^= par >> 8;
+	par ^= par >> 4;
+	par ^= par >> 2;
+	par ^= par >> 1;
+	regval |= (~par & 1) << 31;
+	putle32(buf, regval);
+	//dump("->", buf, sizeof buf);
+
+	writesysex(0, buf, sizeof buf, sysexbuf);
+	return 0;
 }
 
 static int
@@ -994,6 +1055,27 @@ setdurecdelete(const struct oscnode *path[], int reg, struct oscmsg *msg)
 	return 0;
 }
 
+static void
+refresh(void)
+{
+	setreg(0x3e04, 0x67cd);
+	refreshing = true;
+}
+
+static int
+setrefresh(const struct oscnode *path[], int reg, struct oscmsg *msg)
+{
+	refresh();
+	return 0;
+}
+
+static int
+refreshdone(const struct oscnode *path[], int reg, struct oscmsg *msg)
+{
+	refreshing = false;
+	return 0;
+}
+
 static const struct oscnode lowcuttree[] = {
 	{"freq", 1, .set=setint, .new=newint, .min=20, .max=500},
 	{"slope", 2, .set=setint, .new=newint},
@@ -1245,6 +1327,7 @@ static const struct oscnode tree[] = {
 		{"20", 0x4c0, .child=mixtree},
 		{0},
 	}},
+	{"", 0x2fc0, .new=refreshdone},
 	{"reverb", 0x3000, .set=setbool, .new=newbool, .child=(const struct oscnode[]){
 		{"type", 0x01, .set=setenum, .new=newenum, .names=(const char *const[]){
 			"Small Room", "Medium Room", "Large Room", "Walls",
@@ -1398,48 +1481,9 @@ static const struct oscnode tree[] = {
 	}},
 	/* write-only */
 	{"register", -1, .set=setregs},
+	{"refresh", -1, .set=setrefresh},
 	{0},
 };
-
-static int
-setreg(unsigned reg, unsigned val)
-{
-	struct sysex sysex;
-	unsigned long regval;
-	unsigned char buf[4], sysexbuf[12];
-	unsigned par;
-	size_t len;
-	ssize_t ret;
-
-	if (reg != 0x3f00)
-		fprintf(stderr, "setreg %#.4x %#.4x\n", reg, val);
-	regval = (reg & 0x7fff) << 16 | (val & 0xffff);
-	par = regval >> 16 ^ regval;
-	par ^= par >> 8;
-	par ^= par >> 4;
-	par ^= par >> 2;
-	par ^= par >> 1;
-	regval |= (~par & 1) << 31;
-	putle32(buf, regval);
-	//dump("->", buf, sizeof buf);
-
-	sysex.mfrid = 0x200d;
-	sysex.devid = 0x10;
-	sysex.data = NULL;
-	sysex.datalen = 5;
-	sysex.subid = 0;
-	len = sysexenc(&sysex, sysexbuf, SYSEX_MFRID | SYSEX_DEVID | SYSEX_SUBID);
-	assert(len == sizeof sysexbuf);
-	base128enc(sysex.data, buf, sizeof buf);
-	//dump("sysex", sysexbuf, len);
-
-	if (!nflag) {
-		ret = snd_rawmidi_write(wmidi, sysexbuf, sizeof sysexbuf);
-		if (ret != sizeof sysexbuf)
-			fatal("snd_rawmidi_write: %s", snd_strerror(ret));
-	}
-	return 0;
-}
 
 static const char *
 match(const char *pat, const char *str)
@@ -1589,13 +1633,20 @@ oscflush(void)
 {
 	const unsigned char *buf;
 	size_t len, i;
+	ssize_t ret;
 
 	if (oscmsg.buf) {
 		buf = oscbuf;
 		len = oscmsg.buf - oscbuf;
 		//dump("bundle", buf, len);
-		for (i = 0; i < sendsocklen; ++i)
-			write(sendsock[i], buf, len);
+		for (i = 0; i < sendsocklen; ++i) {
+			ret = write(sendsock[i], buf, len);
+			if (ret < 0) {
+				perror("write");
+			} else if (ret != len) {
+				fprintf(stderr, "write: %zd != %zu", ret, len);
+			}
+		}
 		oscmsg.buf = NULL;
 	}
 }
@@ -1760,9 +1811,9 @@ midiread(void *arg)
 
 	dataend = data;
 	for (;;) {
-		ret = snd_rawmidi_read(rmidi, dataend, (data + sizeof data) - dataend);
+		ret = read(6, dataend, (data + sizeof data) - dataend);
 		if (ret < 0)
-			fatal("snd_rawmidi_read: %s", snd_strerror(ret));
+			fatal("read 6:");
 		//dump(NULL, dataend, ret);
 		dataend += ret;
 		datapos = data;
@@ -1794,85 +1845,38 @@ midiread(void *arg)
 	return NULL;
 }
 
+static void *
+sockread(void *arg)
+{
+	int fd;
+	ssize_t ret;
+	unsigned char buf[8192];
+
+	fd = *(int *)arg;
+	for (;;) {
+		ret = recv(fd, buf, sizeof buf, 0);
+		if (ret < 0) {
+			perror("recv");
+			break;
+		}
+		dispatch(buf, ret);
+	}
+	return NULL;
+}
+
 static void
-timerevent(union sigval sv)
+timer(void)
 {
 	static int serial;
-	struct sysex sysex;
 	unsigned char buf[7];
-	size_t len;
-	ssize_t ret;
 
-	if (lflag) {
+	if (lflag && !refreshing) {
 		/* XXX: ~60 times per second levels, ~30 times per second serial */
-		sysex.mfrid = 0x200d;
-		sysex.devid = 0x10;
-		sysex.subid = 2;
-		sysex.data = NULL;
-		sysex.datalen = 0;
-		len = sysexenc(&sysex, buf, SYSEX_MFRID | SYSEX_DEVID | SYSEX_SUBID);
-		assert(len == sizeof buf);
-		ret = snd_rawmidi_write(wmidi, buf, sizeof buf);
-		if (ret < 0)
-			fatal("snd_rawmidi_write: %s", snd_strerror(ret));
+		writesysex(2, NULL, 0, buf);
 	}
 
 	setreg(0x3f00, serial);
 	serial = (serial + 1) & 0xf;
-}
-
-static void
-midiopen(const char *port, snd_rawmidi_t **rmidi, snd_rawmidi_t **wmidi)
-{
-	snd_ctl_t *ctl;
-	snd_rawmidi_info_t *info;
-	int card, dev, err;
-	char portbuf[3 + (sizeof card * CHAR_BIT + 2) / 3 + 1];
-
-	ctl = NULL;
-	if (!port) {
-		port = portbuf;
-		card = -1;
-		for (;;) {
-			err = snd_card_next(&card);
-			if (err)
-				fatal("snd_card_next: %s", snd_strerror(err));
-			if (card < 0)
-				break;
-			sprintf(portbuf, "hw:%d", card);
-			err = snd_ctl_open(&ctl, port, 0);
-			if (err)
-				fatal("snd_ctl_open %s: %s", port, snd_strerror(err));
-			err = snd_rawmidi_info_malloc(&info);
-			if (err)
-				fatal("snd_rawmidi_info_malloc: %s", snd_strerror(err));
-			dev = -1;
-			for (;;) {
-				err = snd_ctl_rawmidi_next_device(ctl, &dev);
-				if (err)
-					fatal("snd_ctl_rawmidi_next_device: %s", snd_strerror(err));
-				if (dev < 0)
-					break;
-				snd_rawmidi_info_set_device(info, dev);
-				err = snd_ctl_rawmidi_info(ctl, info);
-				if (err)
-					fatal("snd_ctl_rawmidi_info: %s", snd_strerror(err));
-				if (strncmp(snd_rawmidi_info_get_name(info), "Fireface UCX II (", 17) == 0)
-					goto found;
-			}
-		}
-		if (card == -1)
-			fatal("could not find UCX II midi device");
-	found:
-		err = snd_ctl_rawmidi_prefer_subdevice(ctl, 1);
-		if (err)
-			fatal("snd_ctl_rawmidi_prefer_subdevice 1: %s", port, snd_strerror(err));
-	}
-	err = snd_rawmidi_open(rmidi, wmidi, port, 0);
-	if (err)
-		fatal("snd_rawmidi_open: %s", snd_strerror(err));
-	if (ctl)
-		snd_ctl_close(ctl);
 }
 
 static void
@@ -1882,7 +1886,7 @@ usage(void)
 }
 
 static int
-opensock(char *addr)
+opensock(char *addr, int flags)
 {
 	struct addrinfo hint;
 	char *type, *port, *sep;
@@ -1908,6 +1912,9 @@ opensock(char *addr)
 	}
 	if (strcmp(type, "udp") == 0) {
 		memset(&hint, 0, sizeof hint);
+		hint.ai_flags = flags;
+		hint.ai_family = AF_UNSPEC;
+		hint.ai_socktype = SOCK_DGRAM;
 		hint.ai_protocol = IPPROTO_UDP;
 		err = getaddrinfo(addr, port, &hint, &ais);
 		if (err != 0)
@@ -1915,10 +1922,8 @@ opensock(char *addr)
 		for (ai = ais; ai; ai = ai->ai_next) {
 			sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
 			if (sock >= 0) {
-				if (connect(sock, ai->ai_addr, ai->ai_addrlen) == 0) {
-					printf("connected\n");
+				if ((flags & AI_PASSIVE ? bind : connect)(sock, ai->ai_addr, ai->ai_addrlen) == 0)
 					break;
-				}
 				close(sock);
 				sock = -1;
 			}
@@ -1935,22 +1940,14 @@ opensock(char *addr)
 int
 main(int argc, char *argv[])
 {
-	static const struct addrinfo hint = {
-		.ai_family = AF_UNSPEC,
-		.ai_socktype = SOCK_DGRAM,
-		.ai_flags = AI_PASSIVE,
-	};
-	const char *port;
-	unsigned char *buf;
-	struct addrinfo *addr, *ai;
-	int err, sock;
-	ssize_t ret;
-	pthread_t readthread;
-	struct sigevent sev;
-	timer_t timer;
-	struct itimerspec ts;
+	int err, sig, i;
+	struct itimerval it;
+	int recvsock[8];
+	size_t recvsocklen;
+	pthread_t midireader, sockreader[LEN(recvsock)];
+	sigset_t set;
 
-	port = NULL;
+	recvsocklen = 0;
 	ARGBEGIN {
 	case 'd':
 		dflag = 1;
@@ -1958,76 +1955,58 @@ main(int argc, char *argv[])
 	case 'l':
 		lflag = 1;
 		break;
-	case 'n':
-		nflag = 1;
-		break;
-	case 'p':
-		port = EARGF(usage());
+	case 'r':
+		if (recvsocklen == LEN(recvsock))
+			fatal("too many recv sockets");
+		recvsock[recvsocklen++] = opensock(EARGF(usage()), AI_PASSIVE);
 		break;
 	case 's':
 		if (sendsocklen == LEN(sendsock))
 			fatal("too many send sockets");
-		sendsock[sendsocklen++] = opensock(EARGF(usage()));
+		sendsock[sendsocklen++] = opensock(EARGF(usage()), 0);
 		break;
 	default:
 		usage();
 		break;
 	} ARGEND
 
-	if (!nflag)
-		midiopen(port, &rmidi, &wmidi);
+	if (fcntl(6, F_GETFD) < 0)
+		fatal("fcntl 6:");
+	if (fcntl(7, F_GETFD) < 0)
+		fatal("fcntl 7:");
 
-	memset(&sev, 0, sizeof sev);
-	sev.sigev_notify = SIGEV_THREAD;
-	sev.sigev_notify_function = timerevent;
-	timer_create(CLOCK_MONOTONIC, &sev, &timer);
-	ts.it_interval.tv_sec = 0;
-	ts.it_interval.tv_nsec = 100000000;
-	ts.it_value = ts.it_interval;
-	timer_settime(timer, 0, &ts, NULL);
+	if (recvsocklen == 0)
+		recvsock[recvsocklen++] = opensock((char[]){"udp!127.0.0.1!7000"}, AI_PASSIVE);
+	if (sendsocklen == 0)
+		sendsock[sendsocklen++] = opensock((char[]){"udp!127.0.0.1!8000"}, 0);
 
-	if (!nflag) {
-		err = pthread_create(&readthread, NULL, midiread, NULL);
+	sigfillset(&set);
+	pthread_sigmask(SIG_SETMASK, &set, NULL);
+	err = pthread_create(&midireader, NULL, midiread, NULL);
+	if (err) {
+		fprintf(stderr, "pthread_create: %s\n", strerror(err));
+		return 1;
+	}
+	for (i = 0; i < recvsocklen; ++i) {
+		err = pthread_create(&sockreader[i], NULL, sockread, &recvsock[i]);
 		if (err) {
 			fprintf(stderr, "pthread_create: %s\n", strerror(err));
 			return 1;
 		}
 	}
 
-	err = getaddrinfo(NULL, "7000", &hint, &addr);
-	if (err != 0) {
-		fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(err));
-		return 1;
-	}
-	sock = -1;
-	for (ai = addr; ai; ai = ai->ai_next) {
-		sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-		if (sock >= 0) {
-			if (bind(sock, ai->ai_addr, ai->ai_addrlen) == 0)
-				break;
-			close(sock);
-			sock = -1;
-		}
-	}
-	if (sock < 0) {
-		fprintf(stderr, "socket: %s\n", strerror(errno));
-		return 1;
-	}
+	sigemptyset(&set);
+	sigaddset(&set, SIGALRM);
+	pthread_sigmask(SIG_SETMASK, &set, NULL);
+	it.it_interval.tv_sec = 0;
+	it.it_interval.tv_usec = 100000;
+	it.it_value = it.it_interval;
+	if (setitimer(ITIMER_REAL, &it, NULL) != 0)
+		fatal("setitimer:");
 
-	buf = malloc(8192);
-	if (!buf) {
-		fprintf(stderr, "%s\n", strerror(errno));
-		return 1;
-	}
-
-	setreg(0x3e04, 0x67cd);
-
+	refresh();
 	for (;;) {
-		ret = recv(sock, buf, 8192, 0);
-		if (ret < 0) {
-			perror("recv");
-			return 1;
-		}
-		dispatch(buf, ret);
+		sigwait(&set, &sig);
+		timer();
 	}
 }
