@@ -155,6 +155,8 @@ address_resolved(GObject *obj, GAsyncResult *res, gpointer ptr)
 	}
 	g_object_set(self->osc, "send-address", addr, NULL);
 	g_object_unref(obj);
+
+	mixer_send(self->osc, "/refresh", NULL);
 }
 
 static void
