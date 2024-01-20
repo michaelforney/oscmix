@@ -1574,6 +1574,7 @@ dispatch(unsigned char *buf, size_t len)
 		next = match(addr + 1, node->name);
 		if (next) {
 			//printf("match next=%s\n", next);
+			assert(pathlen < LEN(path));
 			path[pathlen++] = node;
 			reg += node->reg;
 			if (*next) {
@@ -1693,10 +1694,8 @@ handleregs(uint_least32_t *payload, size_t len)
 	int reg, val, off;
 	const struct oscnode *node;
 	char addr[256], *addrend;
-	/*
 	const struct oscnode *path[8];
 	size_t pathlen;
-	*/
 
 	for (i = 0; i < len; ++i) {
 		reg = payload[i] >> 16 & 0x7fff;
@@ -1717,6 +1716,7 @@ handleregs(uint_least32_t *payload, size_t len)
 		addrend = addr;
 		off = 0;
 		node = tree;
+		pathlen = 0;
 		while (node->name) {
 			if (reg >= off + node[1].reg && node[1].name && node[1].reg != -1) {
 				++node;
@@ -1726,8 +1726,10 @@ handleregs(uint_least32_t *payload, size_t len)
 			addrend = memccpy(addrend, node->name, '\0', addr + sizeof addr - addrend);
 			assert(addrend);
 			--addrend;
+			assert(pathlen < LEN(path));
+			path[pathlen++] = node;
 			if (reg == off + node->reg && node->new) {
-				node->new(&node, addr, reg, val);
+				node->new(path + pathlen - 1, addr, reg, val);
 			} else if (node->child) {
 				off += node->reg;
 				node = node->child;
