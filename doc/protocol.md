@@ -83,9 +83,9 @@ the level packets is as follows:
 	[<channel 1 rms low 32 bits> <channel 1 rms high 32 bits> <channel 1 peak>]...
 
 Sub IDs 1 and 4 contain levels for the input channels (post-FX and
-pre-FX respectively), sub IDs 3 and 5 contain levels for playback
-channels (post-FX and pre-FX), and sub ID 4 contains levels for the
-playback channels.
+pre-FX respectively), sub IDs 3 and 5 contain levels for output
+channels (pre-fader/FX and post-fader/FX), and sub ID 2 contains
+levels for the playback channels.
 
 Peak levels are given as a 32-integer with the following format:
 
