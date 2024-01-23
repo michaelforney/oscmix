@@ -632,3 +632,35 @@ The pan law is contant power with sin/cos taper and -3 dB center.
 	6	128000	[USB-only]
 	7	176400
 	8	192000
+
+### EQ Filters
+
+#### Low Pass
+
+$$H(s) = \frac{1}{s^2 + \frac{s}{Q} + 1}$$
+
+$$\left|H\left(i\frac{f}{f_0}\right)\right|^2 = \frac{f_0^4}{(f_0^2 - f^2)^2 + \frac{f_0^2}{Q^2} f^2} = \frac{f_0^4}{f^4 + \left(\frac{1}{Q^2} - 2\right) f_0^2 f^2 + f_0^4}$$
+
+#### High Pass
+
+$$H(s) = \frac{s^2}{s^2 + \frac{s}{Q} + 1}$$
+
+$$\left|H\left(i\frac{f}{f_0}\right)\right|^2 = \frac{f^4}{(f_0^2 - f^2)^2 + \frac{f_0^2}{Q^2} f^2} = \frac{f^4}{f^4 + \left(\frac{1}{Q^2} - 2\right) f_0^2 f^2 + f_0^4}$$
+
+#### Low Shelf
+
+$$H(s) = A \frac{s^2 + \frac{\sqrt{A}}{Q} s + A}{A s^2 + \frac{\sqrt{A}}{Q} s + 1}$$
+
+$$\left|H\left(i\frac{f}{f_0}\right)\right|^2 = A^2 \frac{(A f_0^2 - f^2)^2 + \frac{A}{Q^2} f_0^2 f^2}{(f_0^2 - A f^2)^2 + \frac{A}{Q^2} f_0^2 f^2} = \frac{f^4 + \left(\frac{1}{Q^2} - 2\right) A f_0^2 f^2 + A^2 f_0^4}{f^4 + \left(\frac{1}{Q^2} - 2\right) \frac{f_0^2}{A} + \frac{f_0^4}{A^2}}$$
+
+#### High Shelf
+
+$$H(s) = A \frac{A s^2 + \frac{\sqrt{A}}{Q} s + 1}{s^2 + \frac{\sqrt{A}}{Q} s + A}$$
+
+$$\left|H\left(i\frac{f}{f_0}\right)\right|^2 = A^2 \frac{(f_0^2 - A f^2)^2 + \frac{A}{Q^2} f_0^2 f^2}{(A f_0^2 - f^2)^2 + \frac{A}{Q^2} f_0^2 f^2} = \frac{A^4 f^4 + \left(\frac{1}{Q^2} - 2\right) A^3 f_0^2 f^2 + A^2 f_0^4}{f^4 + \left(\frac{1}{Q^2} - 2\right) A f_0^2 f^2 + A^2 f_0^4}$$
+
+#### Peak
+
+$$H(s) = \frac{s^2 + s\frac{A}{Q} + 1}{s^2 + s \frac{1}{AQ} + 1}$$
+
+$$\left|H\left(i\frac{f}{f_0}\right)\right|^2 = \frac{(f_0^2 - f^2)^2 + \frac{A^2 f_0^2}{Q^2} f^2}{(f_0^2 - f^2)^2 + \frac{f_0^2}{A^2 Q^2} f^2} = \frac{f^4 + \left(\frac{A^2}{Q^2} - 2\right) f_0^2 f^2 + f_0^4}{f^4 + \left(\frac{1}{A^2 Q^2} - 2\right) f_0^2 f^2 + f_0^4}$$
