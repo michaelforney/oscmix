@@ -1,0 +1,292 @@
+* {
+	font-family: sans-serif;
+}
+summary {
+	font-weight: bold;
+}
+#channels {
+	display: flex;
+	flex-direction: column;
+	justify-content: stretch;
+	overflow-y: auto;
+	height: 100%;
+	width: calc(100% - 250px);
+}
+#channels > details {
+}
+#channels details:not([open]) + .channel-strip {
+	display: none;
+}
+#channels > hr {
+	margin-left: 0;
+	margin-right: 0;
+}
+.sidebar {
+	background-color: whitesmoke;
+	border-left: 1px solid gray;
+	position: fixed;
+	width: 250px;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	padding: 4px;
+	overflow: auto;
+}
+.sidebar fieldset {
+	row-gap: 4px;
+	padding: 4px;
+}
+.sidebar-section :is(span, output) {
+	text-align: right;
+}
+output {
+	border: 1px solid gray;
+	border-radius: 2px;
+	font-size: smaller;
+	padding: 2px;
+}
+fieldset > label {
+	display: contents;
+}
+.sidebar-section input[type="checkbox"] {
+	display: inline-block;
+}
+.channel-strip {
+	display: flex;
+	flex-basis: 400px;
+	min-width: 200px;
+	flex-shrink: 1;
+	/*
+	overflow-x: auto;
+	overflow-y: auto;
+	*/
+	row-gap: 8px;
+	column-gap: 3px;
+	margin-top: 0;
+	margin-bottom: 0;
+	box-sizing: border-box;
+}
+.channel-outer.channel-left:has(.channel-stereo:checked) + .channel-outer {
+	display: none;
+}
+.channel {
+	border-radius: 4px;
+	display: flex;
+	flex-direction: column;
+}
+.channel, .channel-panel {
+	border: 1px solid gray;
+}
+.channel-panel {
+	border-top-right-radius: 4px;
+	border-bottom-right-radius: 4px;
+	background-color: whitesmoke;
+	border-left: 0;
+	padding: 4px;
+	overflow-y: auto;
+}
+.channel-panel fieldset {
+	font-size: 0.9em;
+}
+.channel-panel svg {
+	border: 1px solid;
+	border-radius: 3px;
+	background-color: white;
+	width: 100%;
+	box-sizing: border-box;
+	height: 75px;
+}
+.channel-panel {
+	width: 200px;
+}
+.channel-panel-settings > div {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+}
+.channel-panel-settings > div span {
+	text-align: right;
+}
+.channel-panel-settings select {
+	width: 100%;
+}
+summary {
+	overflow: hidden;
+}
+summary > input {
+	float: right;
+}
+.channel:has(.channel-show-settings:not(:checked)) ~ .channel-panel-settings {
+	display: none;
+}
+.channel:has(.channel-show-eq:not(:checked)) ~ .channel-panel-eq {
+	display: none;
+}
+.channel:has(.channel-show-dynamics:not(:checked)) ~ .channel-panel-dynamics {
+	display: none;
+}
+.channel-outer {
+	display: flex;
+};
+.channel:not(:first-child) {
+	border-left: 0;
+}
+.channel-name {
+	text-align: center;
+	font-weight: bold;
+	border-bottom: 1px solid gray;
+}
+.channel-mute {
+	display: flex;
+	justify-content: center;
+}
+.channel-mute > label:first-of-type {
+	border-top-left-radius: 4px;
+	border-bottom-left-radius: 4px;
+	margin-left: 2px;
+	border-left-width: 1px;
+}
+.channel-mute > label:last-of-type {
+	border-top-right-radius: 4px;
+	border-bottom-right-radius: 4px;
+	margin-right: 2px;
+}
+.channel-mute > label {
+	border-left-width: 0;
+	margin-top: 2px;
+	margin-bottom: 2px;
+	flex-grow: 1;
+}
+.channel-mute > label > input {
+	display: none;
+}
+.channel-volume {
+	display: flex;
+	flex-grow: 1;
+}
+.channel-volume meter {
+	inline-size: auto;
+	writing-mode: vertical-lr;
+	margin: 2px 0 2px auto;
+	vertical-align: 0;
+}
+.channel-left:has(.channel-stereo:checked) .channel-volume meter {
+	block-size: 8px;
+}
+.channel-left:has(.channel-stereo:checked) .channel-volume meter + meter {
+	display: block;
+	block-size: 8px;
+}
+.channel-volume meter + meter {
+	margin-left: 0;
+}
+.channel-volume meter:not(:only-of-type) {
+	block-size: 8px;
+}
+.channel-volume input[type="range"] {
+	/*height: 240px;*/
+	writing-mode: vertical-lr;
+	margin: 2px auto 2px 2px;
+}
+.channel input[type="number"] {
+	text-align: center;
+	width: 75px;
+}
+.channel-eq-controls {
+	display: grid;
+	grid-template-columns: 0fr 1fr 1fr 1fr;
+	width: 100%;
+}
+.channel-eq-controls {
+}
+.channel-eq-controls :nth-child(n+2):nth-child(-n+4) {
+	text-align: center;
+}
+fieldset {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	border: 0;
+	padding: 0;
+}
+fieldset span {
+	text-align: right;
+}
+.channel-eq-controls :nth-child(4n+1) {
+	margin-right: 2px;
+}
+.channel-eq-controls select {
+	width: 100%;
+}
+.channel-eq-controls input[type="number"] {
+	box-sizing: border-box;
+	width: 100%;
+}
+.panel-buttons {
+	margin-top: auto;
+	margin-bottom: 4px;
+}
+.label-button {
+	display: block;
+	font-size: small;
+	background-color: buttonface;
+	border: 1px solid buttonborder;
+	text-align: center;
+	padding: 1px;
+}
+.label-button:hover {
+	filter: brightness(0.95);
+}
+.label-button:active {
+	filter: brightness(1.02);
+}
+.label-button:has(> input[type="checkbox"]:checked) {
+	filter: brightness(0.85);
+}
+.panel-buttons label {
+	display: block;
+	font-size: small;
+	font-variant-emoji: text;
+	color: buttontext;
+	background-color: buttonface;
+	border-style: solid;
+	border-color: buttonborder;
+	border-width: 1px 0 0 1px;
+	text-align: center;
+	padding: 2px;
+}
+.channel:has(~ .channel-panel-eq :is(.channel-eq-enabled, .channel-lowcut-enabled):checked) .channel-show-eq-label,
+.channel:has(~ .channel-panel-dynamics :is(.channel-dynamics-enabled, .channel-autolevel-enabled):checked) .channel-show-dynamics-label {
+	box-shadow: inset 0 0 0.5em selecteditem;
+}
+.panel-buttons label:first-of-type {
+	border-top-left-radius: 4px;
+}
+.panel-buttons label:last-child {
+	border-bottom-width: 1px;
+	border-bottom-left-radius: 4px;
+}
+.panel-buttons label:hover {
+	filter: brightness(0.95);
+}
+.panel-buttons input[type="checkbox"] {
+	display: none;
+}
+.panel-buttons label:has(input[type="checkbox"]:checked) {
+	filter: brightness(0.85);
+}
+.channel-eq-grid {
+	stroke: black;
+}
+.channel-eq-curve {
+	fill: none;
+	stroke: selecteditem;
+	stroke-width: 3;
+}
+#connection-status {
+	color: darkred;
+}
+#connection-status.connected {
+	color: darkgreen;
+}
+html, body {
+	height: 100%;
+}
