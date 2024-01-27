@@ -23,17 +23,18 @@ The `-d` flag enables debug messages.
 
 The `-l` flag enables level meters.
 
-The `-r` flag can be specified multiple times, one for each address
-to listen on for OSC messages.
+The `-r` flag specifies the address to listen for OSC messages on.
 
-The `-s` flag can be specified multiple times, one for each address
-to send OSC messages to.
+The `-s` flag specifies the address to send OSC messages to.
 
-Addresses are specified using the syntax `proto!addr!port`. At the
-moment, only `udp` is supported.
+The `-m` flag is shorthand for `-s udp!224.0.0.1!8222`.
 
-By default, oscmix will listen on `udp!127.0.0.1!7000` and send to
-`udp!127.0.0.1!8000`. Any addresses specified replace these defaults;
+Addresses are specified using the syntax `proto!addr!port`. Currently,
+only `udp` is supported. Alternatively, if the address string is a
+number, oscmix will read or write to that file descriptor.
+
+By default, oscmix will listen on `udp!127.0.0.1!7222` and send to
+`udp!127.0.0.1!8222`. Any addresses specified replace these defaults;
 if you want to send to or listen on multiple addresses, pass them
 all to `oscmix`.
 

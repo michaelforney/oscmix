@@ -70,11 +70,10 @@ struct durecfile {
 
 static int dflag;
 static int lflag;
+static int rfd, wfd;
 static struct input inputs[20];
 static struct input playbacks[20];
 static struct output outputs[20];
-static int sendsock[8];
-static size_t sendsocklen;
 static struct {
 	int status;
 	int position;
@@ -1686,19 +1685,17 @@ static void
 oscflush(void)
 {
 	const unsigned char *buf;
-	size_t len, i;
+	size_t len;
 	ssize_t ret;
 
 	if (oscmsg.buf) {
 		buf = oscbuf;
 		len = oscmsg.buf - oscbuf;
-		for (i = 0; i < sendsocklen; ++i) {
-			ret = write(sendsock[i], buf, len);
-			if (ret < 0) {
-				perror("write");
-			} else if (ret != len) {
-				fprintf(stderr, "write: %zd != %zu", ret, len);
-			}
+		ret = write(wfd, buf, len);
+		if (ret < 0) {
+			perror("write");
+		} else if (ret != len) {
+			fprintf(stderr, "write: %zd != %zu", ret, len);
 		}
 		oscmsg.buf = NULL;
 	}
@@ -1881,7 +1878,7 @@ midiread(void *arg)
 }
 
 static void *
-sockread(void *arg)
+oscread(void *arg)
 {
 	int fd;
 	ssize_t ret;
@@ -1917,16 +1914,22 @@ timer(void)
 static void
 usage(void)
 {
+	fprintf(stderr, "usage: oscmix [-ml]\n");
 	exit(1);
 }
 
 static int
-opensock(char *addr, int flags)
+openaddr(char *addr, int flags)
 {
 	struct addrinfo hint;
-	char *type, *port, *sep;
+	char *type, *port, *sep, *end;
 	struct addrinfo *ais, *ai;
 	int err, sock;
+	long val;
+
+	val = strtol(addr, &end, 0);
+	if (*addr && !*end && val >= 0 && val < INT_MAX)
+		return val;
 
 	type = addr;
 	addr = NULL;
@@ -1976,13 +1979,19 @@ int
 main(int argc, char *argv[])
 {
 	int err, sig, i;
+	char *recvaddr, *sendaddr;
+	pthread_t midireader, oscreader;
 	struct itimerval it;
-	int recvsock[8];
-	size_t recvsocklen;
-	pthread_t midireader, sockreader[LEN(recvsock)];
 	sigset_t set;
 
-	recvsocklen = 0;
+	if (fcntl(6, F_GETFD) < 0)
+		fatal("fcntl 6:");
+	if (fcntl(7, F_GETFD) < 0)
+		fatal("fcntl 7:");
+
+	recvaddr = (char []){"udp!127.0.0.1!7222"};
+	sendaddr = (char []){"udp!127.0.0.1!8222"};
+
 	ARGBEGIN {
 	case 'd':
 		dflag = 1;
@@ -1991,29 +2000,21 @@ main(int argc, char *argv[])
 		lflag = 1;
 		break;
 	case 'r':
-		if (recvsocklen == LEN(recvsock))
-			fatal("too many recv sockets");
-		recvsock[recvsocklen++] = opensock(EARGF(usage()), AI_PASSIVE);
+		recvaddr = EARGF(usage());
 		break;
 	case 's':
-		if (sendsocklen == LEN(sendsock))
-			fatal("too many send sockets");
-		sendsock[sendsocklen++] = opensock(EARGF(usage()), 0);
+		sendaddr = EARGF(usage());
+		break;
+	case 'm':
+		sendaddr = (char []){"udp!224.0.0.1!8222"};
 		break;
 	default:
 		usage();
 		break;
 	} ARGEND
 
-	if (fcntl(6, F_GETFD) < 0)
-		fatal("fcntl 6:");
-	if (fcntl(7, F_GETFD) < 0)
-		fatal("fcntl 7:");
-
-	if (recvsocklen == 0)
-		recvsock[recvsocklen++] = opensock((char[]){"udp!127.0.0.1!7000"}, AI_PASSIVE);
-	if (sendsocklen == 0)
-		sendsock[sendsocklen++] = opensock((char[]){"udp!127.0.0.1!8000"}, 0);
+	rfd = openaddr(recvaddr, AI_PASSIVE);
+	wfd = openaddr(sendaddr, 0);
 
 	for (i = 0; i < LEN(playbacks); ++i)
 		playbacks[i].stereo = true;
@@ -2021,17 +2022,11 @@ main(int argc, char *argv[])
 	sigfillset(&set);
 	pthread_sigmask(SIG_SETMASK, &set, NULL);
 	err = pthread_create(&midireader, NULL, midiread, NULL);
-	if (err) {
-		fprintf(stderr, "pthread_create: %s\n", strerror(err));
-		return 1;
-	}
-	for (i = 0; i < recvsocklen; ++i) {
-		err = pthread_create(&sockreader[i], NULL, sockread, &recvsock[i]);
-		if (err) {
-			fprintf(stderr, "pthread_create: %s\n", strerror(err));
-			return 1;
-		}
-	}
+	if (err)
+		fatal("pthread_create: %s", strerror(err));
+	err = pthread_create(&oscreader, NULL, oscread, &rfd);
+	if (err)
+		fatal("pthread_create: %s", strerror(err));
 
 	sigemptyset(&set);
 	sigaddset(&set, SIGALRM);
