@@ -1911,7 +1911,7 @@ oscread(void *arg)
 
 	fd = *(int *)arg;
 	for (;;) {
-		ret = recv(fd, buf, sizeof buf, 0);
+		ret = read(fd, buf, sizeof buf);
 		if (ret < 0) {
 			perror("recv");
 			break;
