@@ -222,21 +222,16 @@ dump(const char *name, const void *ptr, size_t len)
 static int
 midiwrite(const void *buf, size_t len)
 {
-	static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 	ssize_t ret;
 
-	pthread_mutex_lock(&lock);
 	while (len > 0) {
 		ret = write(7, buf, len);
 		if (ret < 0)
-			goto error;
+			return -1;
 		buf = (char *)buf + ret;
 		len -= ret;
 	}
-	ret = 0;
-error:
-	pthread_mutex_unlock(&lock);
-	return ret;
+	return 0;
 }
 
 static void
