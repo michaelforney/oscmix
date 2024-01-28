@@ -222,13 +222,15 @@ dump(const char *name, const void *ptr, size_t len)
 static int
 midiwrite(const void *buf, size_t len)
 {
+	const unsigned char *pos;
 	ssize_t ret;
 
+	pos = buf;
 	while (len > 0) {
-		ret = write(7, buf, len);
+		ret = write(7, pos, len);
 		if (ret < 0)
 			return -1;
-		buf = (char *)buf + ret;
+		pos += ret;
 		len -= ret;
 	}
 	return 0;
