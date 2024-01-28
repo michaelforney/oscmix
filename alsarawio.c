@@ -53,7 +53,7 @@ main(int argc, char *argv[])
 	}
 
 	snprintf(path, sizeof path, "/dev/snd/controlC%d", card);
-	ctlfd = open(path, O_RDWR);
+	ctlfd = open(path, O_RDWR | O_CLOEXEC);
 	if (ctlfd < 0) {
 		fprintf(stderr, "open %s: %s\n", path, strerror(errno));
 		return 1;
@@ -64,7 +64,7 @@ main(int argc, char *argv[])
 	}
 
 	snprintf(path, sizeof path, "/dev/snd/midiC%dD%d", card, dev);
-	fd = open(path, O_RDWR);
+	fd = open(path, O_RDWR | O_CLOEXEC);
 	if (fd < 0) {
 		fprintf(stderr, "open %s: %s\n", path, strerror(errno));
 		return 1;
@@ -86,7 +86,6 @@ main(int argc, char *argv[])
 		fprintf(stderr, "could not open subdevice %d\n", subdev);
 		return 1;
 	}
-	close(ctlfd);
 
 	memset(&params, 0, sizeof params);
 	params.stream = SNDRV_RAWMIDI_STREAM_INPUT;
@@ -107,7 +106,6 @@ main(int argc, char *argv[])
 		perror("dup2");
 		return 1;
 	}
-	close(fd);
 	execvp(argv[1], argv + 1);
 	perror("execvp");
 	return 1;
