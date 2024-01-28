@@ -155,14 +155,14 @@ getle64(const void *p)
 	const unsigned char *b = p;
 	uint_least64_t v;
 
-	v = b[0] & 0xfful;
-	v |= (b[1] & 0xfful) << 8;
-	v |= (b[2] & 0xfful) << 16;
-	v |= (b[3] & 0xfful) << 24;
-	v |= (b[4] & 0xfful) << 32;
-	v |= (b[5] & 0xfful) << 40;
-	v |= (b[6] & 0xfful) << 48;
-	v |= (b[7] & 0xfful) << 56;
+	v = b[0] & 0xffull;
+	v |= (b[1] & 0xffull) << 8;
+	v |= (b[2] & 0xffull) << 16;
+	v |= (b[3] & 0xffull) << 24;
+	v |= (b[4] & 0xffull) << 32;
+	v |= (b[5] & 0xffull) << 40;
+	v |= (b[6] & 0xffull) << 48;
+	v |= (b[7] & 0xffull) << 56;
 	return v;
 }
 
@@ -172,14 +172,14 @@ getbe64(const void *p)
 	const unsigned char *b = p;
 	uint_least64_t v;
 
-	v = (b[0] & 0xfful) << 56;
-	v |= (b[1] & 0xfful) << 48;
-	v |= (b[2] & 0xfful) << 40;
-	v |= (b[3] & 0xfful) << 32;
-	v |= (b[4] & 0xfful) << 24;
-	v |= (b[5] & 0xfful) << 16;
-	v |= (b[6] & 0xfful) << 8;
-	v |= b[7] & 0xfful;
+	v = (b[0] & 0xffull) << 56;
+	v |= (b[1] & 0xffull) << 48;
+	v |= (b[2] & 0xffull) << 40;
+	v |= (b[3] & 0xffull) << 32;
+	v |= (b[4] & 0xffull) << 24;
+	v |= (b[5] & 0xffull) << 16;
+	v |= (b[6] & 0xffull) << 8;
+	v |= b[7] & 0xffull;
 	return v;
 }
 
