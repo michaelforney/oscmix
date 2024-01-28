@@ -1404,9 +1404,9 @@ static const struct oscnode tree[] = {
 		{"attack", 0x05, .set=setint, .new=newint},
 		{"hold", 0x06, .set=setint, .new=newint},
 		{"release", 0x07, .set=setint, .new=newint},
-		{"hicut", 0x08, .set=setint, .new=newint},
+		{"highcut", 0x08, .set=setint, .new=newint},
 		{"time", 0x09, .set=setfixed, .new=newfixed, .scale=0.1},
-		{"hidamp", 0x0a, .set=setint, .new=newint},
+		{"highdamp", 0x0a, .set=setint, .new=newint},
 		{"smooth", 0x0b, .set=setint, .new=newint},
 		{"volume", 0x0c, .set=setfixed, .new=newfixed, .scale=0.1},
 		{"width", 0x0d, .set=setfixed, .new=newfixed, .scale=0.01},
@@ -1420,7 +1420,7 @@ static const struct oscnode tree[] = {
 		}, .nameslen=3},
 		{"delay", 0x02, .set=setfixed, .new=newfixed, .scale=0.001, .min=0, .max=2000},
 		{"feedback", 0x03, .set=setint, .new=newint},
-		{"hicut", 0x04, .set=setenum, .new=newenum, .names=(const char *const[]){
+		{"highcut", 0x04, .set=setenum, .new=newenum, .names=(const char *const[]){
 			"Off", "16kHz", "12kHz", "8kHz", "4kHz", "2kHz",
 		}, .nameslen=6},
 		{"volume", 0x05, .set=setfixed, .new=newfixed, .scale=0.1, .min=-650, .max=60},
