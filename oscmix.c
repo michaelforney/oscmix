@@ -644,6 +644,8 @@ setmix(const struct oscnode *path[], int reg, struct oscmsg *msg)
 		in = &inputs[inidx];
 
 	vol = oscgetfloat(msg);
+	if (vol <= -65)
+		vol = -INFINITY;
 	printf("setmix %d %d %f\n", (reg >> 6) & 0x3f, reg & 0x3f, vol);
 
 	pan = 0;
