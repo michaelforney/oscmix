@@ -8,7 +8,8 @@ MIDI.
 ## Current status
 
 Most things work, but still needs a lot more testing, polish,
-cleanup. Some things still need to be hooked up in the UI or implemented in oscmix.
+cleanup. Some things still need to be hooked up in the UI or
+implemented in oscmix.
 
 ## Usage
 
