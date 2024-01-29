@@ -1970,6 +1970,7 @@ openaddr(char *addr, int flags)
 		if (*addr == '\0')
 			addr = NULL;
 	}
+	sock = -1;
 	if (strcmp(type, "udp") == 0) {
 		memset(&hint, 0, sizeof hint);
 		hint.ai_flags = flags;
