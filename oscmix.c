@@ -1115,7 +1115,7 @@ refresh(void)
 	refreshing = true;
 	for (i = 0; i < LEN(playbacks); ++i) {
 		pb = &playbacks[i];
-		snprintf(addr, sizeof addr, "/playback/%d/stereo", i);
+		snprintf(addr, sizeof addr, "/playback/%d/stereo", i + 1);
 		oscsend(addr, ",i", pb->stereo);
 	}
 	oscflush();
