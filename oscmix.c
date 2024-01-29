@@ -2000,6 +2000,9 @@ openaddr(char *addr, int flags)
 int
 main(int argc, char *argv[])
 {
+	static char defrecvaddr[] = "udp!127.0.0.1!7222";
+	static char defsendaddr[] = "udp!127.0.0.1!7222";
+	static char mcastaddr[] = "udp!224.0.0.1!8222";
 	int err, sig, i;
 	char *recvaddr, *sendaddr;
 	pthread_t midireader, oscreader;
@@ -2011,8 +2014,8 @@ main(int argc, char *argv[])
 	if (fcntl(7, F_GETFD) < 0)
 		fatal("fcntl 7:");
 
-	recvaddr = (char []){"udp!127.0.0.1!7222"};
-	sendaddr = (char []){"udp!127.0.0.1!8222"};
+	recvaddr = defrecvaddr;
+	sendaddr = defsendaddr;
 
 	ARGBEGIN {
 	case 'd':
@@ -2028,7 +2031,7 @@ main(int argc, char *argv[])
 		sendaddr = EARGF(usage());
 		break;
 	case 'm':
-		sendaddr = (char []){"udp!224.0.0.1!8222"};
+		sendaddr = mcastaddr;
 		break;
 	default:
 		usage();
