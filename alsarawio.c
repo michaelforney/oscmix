@@ -69,7 +69,7 @@ main(int argc, char *argv[])
 		fprintf(stderr, "open %s: %s\n", path, strerror(errno));
 		return 1;
 	}
-	if (ioctl(fd, SNDRV_RAWMIDI_IOCTL_PVERSION, &ver) != 0) {
+	if (ioctl(fd, (int)SNDRV_RAWMIDI_IOCTL_PVERSION, &ver) != 0) {
 		perror("ioctl SNDRV_RAWMIDI_IOCTL_PVERSION");
 		return 1;
 	}
@@ -78,7 +78,7 @@ main(int argc, char *argv[])
 		return 1;
 	}
 	info.stream = SNDRV_RAWMIDI_STREAM_INPUT;
-	if (ioctl(fd, SNDRV_RAWMIDI_IOCTL_INFO, &info) != 0) {
+	if (ioctl(fd, (int)SNDRV_RAWMIDI_IOCTL_INFO, &info) != 0) {
 		perror("ioctl SNDRV_RAWMIDI_IOCTL_INFO");
 		return 1;
 	}
@@ -92,12 +92,12 @@ main(int argc, char *argv[])
 	params.buffer_size = 8192;
 	params.avail_min = 1;
 	params.no_active_sensing = 1;
-	if (ioctl(fd, SNDRV_RAWMIDI_IOCTL_PARAMS, &params) != 0) {
+	if (ioctl(fd, (int)SNDRV_RAWMIDI_IOCTL_PARAMS, &params) != 0) {
 		perror("ioctl SNDRV_RAWMIDI_IOCTL_PARAMS");
 		return 1;
 	}
 	params.stream = SNDRV_RAWMIDI_STREAM_OUTPUT;
-	if (ioctl(fd, SNDRV_RAWMIDI_IOCTL_PARAMS, &params) != 0) {
+	if (ioctl(fd, (int)SNDRV_RAWMIDI_IOCTL_PARAMS, &params) != 0) {
 		perror("ioctl SNDRV_RAWMIDI_IOCTL_PARAMS");
 		return 1;
 	}
