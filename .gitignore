@@ -2,6 +2,7 @@
 /oscmix
 /alsarawio
 /alsaseqio
+/wsdgram
 /config.mk
 /gtk/oscmix-gtk
 /gtk/resources.c

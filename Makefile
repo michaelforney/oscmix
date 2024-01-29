@@ -11,7 +11,7 @@ ALSA_LDLIBS?=$$(pkg-config --libs-only-l alsa)
 
 GTK?=y
 
-TARGET=oscmix $(TARGET-y)
+TARGET=oscmix wsdgram $(TARGET-y)
 TARGET-$(ALSA)+=alsarawio alsaseqio
 TARGET-$(GTK)+=gtk
 
@@ -29,8 +29,19 @@ OSCMIX_OBJ=\
 	sysex.o\
 	util.o
 
+WSDGRAM_OBJ=\
+	wsdgram.o\
+	base64.o\
+	http.o\
+	sha1.o\
+	socket.o\
+	util.o
+
 oscmix: $(OSCMIX_OBJ)
 	$(CC) $(LDFLAGS) -o $@ $(OSCMIX_OBJ) -l pthread -l m
+
+wsdgram: $(WSDGRAM_OBJ)
+	$(CC) $(LDFLAGS) -o $@ $(WSDGRAM_OBJ) -l pthread
 
 alsarawio: alsarawio.o
 	$(CC) $(LDFLAGS) -o $@ alsarawio.o
@@ -44,6 +55,7 @@ alsaseqio: alsaseqio.o
 .PHONY: clean
 clean:
 	rm -f oscmix $(OSCMIX_OBJ)\
+		wsdgram $(WSDGRAM_OBJ)\
 		alsarawio alsarawio.o\
 		alsaseqio alsaseqio.o
 	$(MAKE) -C gtk clean
