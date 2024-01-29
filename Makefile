@@ -9,10 +9,16 @@ ALSA_CFLAGS?=$$(pkg-config --cflags alsa)
 ALSA_LDFLAGS?=$$(pkg-config --libs-only-L --libs-only-other alsa)
 ALSA_LDLIBS?=$$(pkg-config --libs-only-l alsa)
 
+GTK?=y
+
 TARGET=oscmix $(TARGET-y)
-TARGET-$(ALSA)=alsarawio alsaseqio
+TARGET-$(ALSA)+=alsarawio alsaseqio
+TARGET-$(GTK)+=gtk
 
 all: $(TARGET)
+
+.PHONY: gtk
+gtk:
 	$(MAKE) -C gtk
 
 oscmix: oscmix.o sysex.o osc.o
