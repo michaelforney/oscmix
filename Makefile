@@ -21,8 +21,16 @@ all: $(TARGET)
 gtk:
 	$(MAKE) -C gtk
 
-oscmix: oscmix.o sysex.o osc.o
-	$(CC) $(LDFLAGS) -o $@ oscmix.o sysex.o osc.o -l pthread -l m
+OSCMIX_OBJ=\
+	main.o\
+	osc.o\
+	oscmix.o\
+	socket.o\
+	sysex.o\
+	util.o
+
+oscmix: $(OSCMIX_OBJ)
+	$(CC) $(LDFLAGS) -o $@ $(OSCMIX_OBJ) -l pthread -l m
 
 alsarawio: alsarawio.o
 	$(CC) $(LDFLAGS) -o $@ alsarawio.o
@@ -35,5 +43,7 @@ alsaseqio: alsaseqio.o
 
 .PHONY: clean
 clean:
-	rm -f oscmix oscmix.o osc.o sysex.o alsarawio alsarawio.o alsaseqio alsaseqio.o
+	rm -f oscmix $(OSCMIX_OBJ)\
+		alsarawio alsarawio.o\
+		alsaseqio alsaseqio.o
 	$(MAKE) -C gtk clean

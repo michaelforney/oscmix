@@ -1,7 +1,6 @@
 #define _XOPEN_SOURCE 700
 #include <assert.h>
 #include <errno.h>
-#include <limits.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -9,18 +8,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <fcntl.h>
-#include <netdb.h>
-#include <pthread.h>
-#include <signal.h>
 #include <strings.h>
-#include <sys/socket.h>
-#include <sys/time.h>
 #include <unistd.h>
-#include "arg.h"
 #include "intpack.h"
 #include "osc.h"
 #include "sysex.h"
+#include "util.h"
 
 #define LEN(a) (sizeof (a) / sizeof *(a))
 
@@ -68,9 +61,9 @@ struct durecfile {
 	unsigned length;
 };
 
-static int dflag;
-static int lflag;
-static int rfd, wfd;
+int dflag;
+int lflag;
+static int wfd;
 static struct input inputs[20];
 static struct input playbacks[20];
 static struct output outputs[20];
@@ -182,23 +175,6 @@ enum lockkeys {
 static void oscsend(const char *addr, const char *type, ...);
 static void oscflush(void);
 static void oscsendenum(const char *addr, int val, const char *const names[], size_t nameslen);
-
-static void
-fatal(const char *msg, ...)
-{
-	va_list ap;
-
-	va_start(ap, msg);
-	vfprintf(stderr, msg, ap);
-	va_end(ap);
-	if (!msg)
-		fprintf(stderr, "%s\n", strerror(errno));
-	else if (*msg && msg[strlen(msg) - 1] == ':')
-		fprintf(stderr, " %s\n", strerror(errno));
-	else
-		fputc('\n', stderr);
-	exit(1);
-}
 
 static void
 dump(const char *name, const void *ptr, size_t len)
@@ -1126,7 +1102,7 @@ setdurecdelete(const struct oscnode *path[], int reg, struct oscmsg *msg)
 	return 0;
 }
 
-static void
+void
 refresh(void)
 {
 	struct input *pb;
@@ -1858,13 +1834,14 @@ handlesysex(unsigned char *buf, size_t len, uint_least32_t *payload)
 	oscflush();
 }
 
-static void *
+void *
 midiread(void *arg)
 {
 	unsigned char data[8192], *datapos, *dataend, *nextpos;
 	uint_least32_t payload[sizeof data / 4];
 	ssize_t ret;
 
+	wfd = *(int *)arg;
 	dataend = data;
 	for (;;) {
 		ret = read(6, dataend, (data + sizeof data) - dataend);
@@ -1899,7 +1876,7 @@ midiread(void *arg)
 	return NULL;
 }
 
-static void *
+void *
 oscread(void *arg)
 {
 	int fd;
@@ -1918,7 +1895,7 @@ oscread(void *arg)
 	return NULL;
 }
 
-static void
+void
 timer(void)
 {
 	static int serial;
@@ -1933,139 +1910,11 @@ timer(void)
 	serial = (serial + 1) & 0xf;
 }
 
-static void
-usage(void)
+void
+init(void)
 {
-	fprintf(stderr, "usage: oscmix [-ml]\n");
-	exit(1);
-}
-
-static int
-openaddr(char *addr, int flags)
-{
-	struct addrinfo hint;
-	char *type, *port, *sep, *end;
-	struct addrinfo *ais, *ai;
-	int err, sock;
-	long val;
-
-	val = strtol(addr, &end, 0);
-	if (*addr && !*end && val >= 0 && val < INT_MAX)
-		return val;
-
-	type = addr;
-	addr = NULL;
-	port = NULL;
-	sep = strchr(type, '!');
-	if (sep) {
-		*sep = '\0';
-		addr = sep + 1;
-		sep = strchr(addr, '!');
-		if (sep) {
-			*sep = '\0';
-			port = sep + 1;
-			if (*port == '\0')
-				port = NULL;
-		}
-		if (*addr == '\0')
-			addr = NULL;
-	}
-	sock = -1;
-	if (strcmp(type, "udp") == 0) {
-		memset(&hint, 0, sizeof hint);
-		hint.ai_flags = flags;
-		hint.ai_family = AF_UNSPEC;
-		hint.ai_socktype = SOCK_DGRAM;
-		hint.ai_protocol = IPPROTO_UDP;
-		err = getaddrinfo(addr, port, &hint, &ais);
-		if (err != 0)
-			fatal("getaddrinfo: %s", gai_strerror(err));
-		for (ai = ais; ai; ai = ai->ai_next) {
-			sock = socket(ai->ai_family, ai->ai_socktype, ai->ai_protocol);
-			if (sock >= 0) {
-				if ((flags & AI_PASSIVE ? bind : connect)(sock, ai->ai_addr, ai->ai_addrlen) == 0)
-					break;
-				close(sock);
-				sock = -1;
-			}
-		}
-		freeaddrinfo(ais);
-		if (sock == -1)
-			fatal("connect:");
-	} else {
-		fatal("unsupported address type '%s'", type);
-	}
-	return sock;
-}
-
-int
-main(int argc, char *argv[])
-{
-	static char defrecvaddr[] = "udp!127.0.0.1!7222";
-	static char defsendaddr[] = "udp!127.0.0.1!7222";
-	static char mcastaddr[] = "udp!224.0.0.1!8222";
-	int err, sig, i;
-	char *recvaddr, *sendaddr;
-	pthread_t midireader, oscreader;
-	struct itimerval it;
-	sigset_t set;
-
-	if (fcntl(6, F_GETFD) < 0)
-		fatal("fcntl 6:");
-	if (fcntl(7, F_GETFD) < 0)
-		fatal("fcntl 7:");
-
-	recvaddr = defrecvaddr;
-	sendaddr = defsendaddr;
-
-	ARGBEGIN {
-	case 'd':
-		dflag = 1;
-		break;
-	case 'l':
-		lflag = 1;
-		break;
-	case 'r':
-		recvaddr = EARGF(usage());
-		break;
-	case 's':
-		sendaddr = EARGF(usage());
-		break;
-	case 'm':
-		sendaddr = mcastaddr;
-		break;
-	default:
-		usage();
-		break;
-	} ARGEND
-
-	rfd = openaddr(recvaddr, AI_PASSIVE);
-	wfd = openaddr(sendaddr, 0);
+	int i;
 
 	for (i = 0; i < LEN(playbacks); ++i)
 		playbacks[i].stereo = true;
-
-	sigfillset(&set);
-	pthread_sigmask(SIG_SETMASK, &set, NULL);
-	err = pthread_create(&midireader, NULL, midiread, NULL);
-	if (err)
-		fatal("pthread_create: %s", strerror(err));
-	err = pthread_create(&oscreader, NULL, oscread, &rfd);
-	if (err)
-		fatal("pthread_create: %s", strerror(err));
-
-	sigemptyset(&set);
-	sigaddset(&set, SIGALRM);
-	pthread_sigmask(SIG_SETMASK, &set, NULL);
-	it.it_interval.tv_sec = 0;
-	it.it_interval.tv_usec = 100000;
-	it.it_value = it.it_interval;
-	if (setitimer(ITIMER_REAL, &it, NULL) != 0)
-		fatal("setitimer:");
-
-	refresh();
-	for (;;) {
-		sigwait(&set, &sig);
-		timer();
-	}
 }
