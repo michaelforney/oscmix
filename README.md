@@ -11,6 +11,10 @@ Most things work, but still needs a lot more testing, polish,
 cleanup. Some things still need to be hooked up in the UI or
 implemented in oscmix.
 
+### Supported devices
+
+- RME Fireface UCX II
+
 ## Usage
 
 ```
