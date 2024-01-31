@@ -354,15 +354,39 @@ class Channel {
 
 		const volumeRange = fragment.getElementById('channel-volume-range');
 		const volumeNumber = fragment.getElementById('channel-volume-number');
-		volumeRange.oninput = volumeNumber.oninput = (event) => {
-			iface.send(prefix + '/volume', ',f', [event.target.value]);
-			volumeRange.value = event.target.value;
-			volumeNumber.value = event.target.value;
-		};
-		iface.methods.set(prefix + '/volume', (args) => {
-			volumeRange.value = args[0];
-			volumeNumber.value = args[0];
-		});
+		const output = fragment.getElementById('channel-volume-output');
+		if (type == Channel.OUTPUT) {
+			volumeRange.oninput = volumeNumber.onchange = (event) => {
+				iface.send(prefix + '/volume', ',f', [event.target.value]);
+				volumeRange.value = event.target.value;
+				volumeNumber.value = event.target.value;
+			};
+			iface.methods.set(prefix + '/volume', (args) => {
+				volumeRange.value = args[0];
+				volumeNumber.value = args[0];
+			});
+			output.remove();
+		} else {
+			output.addEventListener('change', (event) => {
+				volumeRange.value = volumeNumber.value = this.volume[event.target.selectedIndex];
+			});
+			volumeRange.oninput = volumeNumber.onchange = (event) => {
+				iface.send(`/mix/${output.selectedIndex+1}${prefix}`, ',f', [event.target.value]);
+				volumeRange.value = volumeNumber.value = event.target.value;
+			};
+			this.volume = [];
+			for (let i = 0; i < 20; ++i) {
+				this.volume[i] = -65;
+				iface.methods.set(`/mix/${i+1}${prefix}`, (args) => {
+					const value = Math.max(args[0], -65);
+					this.volume[i] = value;
+					if (output.selectedIndex == i) {
+						volumeRange.value = value;
+						volumeNumber.value = value;
+					}
+				});
+			}
+		}
 
 		const onPanelButtonChanged = (event) => {
 			for (const label of event.target.parentNode.parentNode.children) {
@@ -404,16 +428,6 @@ class Channel {
 			}
 		}
 
-		const output = fragment.getElementById('channel-volume-output');
-		switch (type) {
-		case Channel.INPUT:
-		case Channel.PLAYBACK:
-			this.output = output;
-			break;
-		case Channel.OUTPUT:
-			output.remove();
-			break;
-		}
 
 		for (const node of fragment.querySelectorAll('*[id]')) {
 			if (Channel.#elements.has(node.id)) {
