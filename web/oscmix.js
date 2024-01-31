@@ -172,8 +172,6 @@ class Interface {
 
 class OSCEvent extends Event {}
 
-const svgNS = 'http://www.w3.org/2000/svg';
-
 class EQBand {
 	static PEAK = 0;
 	static LOW_SHELF = 1;
@@ -398,31 +396,31 @@ class Channel {
 		for (const node of fragment.querySelectorAll('.channel-panel-buttons input[type="checkbox"]'))
 			node.onchange = onPanelButtonChanged;
 
-		const svg = fragment.getElementById('eq-plot');
-		const grid = fragment.getElementById('eq-grid');
-		const curve = fragment.getElementById('eq-curve');
+		this.svg = fragment.getElementById('eq-plot');
+		this.grid = fragment.getElementById('eq-grid');
+		this.curve = fragment.getElementById('eq-curve');
 		this.bands = [new EQBand(), new EQBand(), new EQBand()];
-		const observer = new ResizeObserver(() => {this.drawEQ(svg, grid, curve)});
-		observer.observe(svg);
+		const observer = new ResizeObserver(this.drawEQ.bind(this));
+		observer.observe(this.svg);
 
 		const band1Type = fragment.getElementById('eq-band1type')
 		band1Type.addEventListener('change', (event) => {
 			this.bands[0].type = EQBand[event.target.value];
-			this.drawEQ(svg, grid, curve);
+			this.drawEQ();
 		});
 		const band3Type = fragment.getElementById('eq-band3type')
 		band3Type.addEventListener('change', (event) => {
 			this.bands[2].type = EQBand[event.target.value];
-			this.drawEQ(svg, grid, curve);
+			this.drawEQ();
 		});
 
-		for (const [prop, type] of [['gain', ',f'], ['freq', ',i'], ['q', ',f']]) {
+		for (const prop of ['gain', 'freq', 'q']) {
 			let node = fragment.getElementById('eq-band1' + prop);
 			for (const [i, band] of this.bands.entries()) {
 				const addr = `${prefix}/eq/band${i+1}${prop}`;
 				node.addEventListener('change', (event) => {
 					band[prop] = event.target.value;
-					this.drawEQ(svg, grid, curve);
+					this.drawEQ();
 				});
 				node = node.nextElementSibling;
 			}
@@ -451,9 +449,9 @@ class Channel {
 		this.element = fragment;
 	}
 
-	drawEQ(svg, grid, curve) {
-		const w = svg.clientWidth;
-		const h = svg.clientHeight;
+	drawEQ() {
+		const w = this.svg.clientWidth;
+		const h = this.svg.clientHeight;
 		let d = '';
 		for (let i = 0; i < 5; ++i) {
 			const y = Math.round((4 + 10 * i) * h / 48) + 0.5;
@@ -463,7 +461,7 @@ class Channel {
 			const x = Math.round((7 + 10 * i) * w / 30) + 0.5;
 			d += `M ${x} 0 V ${h} `;
 		}
-		grid.setAttribute('d', d);
+		this.grid.setAttribute('d', d);
 
 		let points = [];
 		for (let x = 0; x <= w; ++x) {
@@ -485,7 +483,7 @@ class Channel {
 			y = Math.round(h / 2) + 0.5 + -10 * h / 48 * Math.log10(y);
 			points.push(x, y);
 		}
-		curve.setAttribute('points', points.join(' '));
+		this.curve.setAttribute('points', points.join(' '));
 	}
 
 };
