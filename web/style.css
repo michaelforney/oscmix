@@ -1,42 +1,30 @@
 * {
 	font-family: sans-serif;
 }
+body {
+	display: flex;
+	margin: 0;
+}
+html, body {
+	height: 100%;
+}
 summary {
 	font-weight: bold;
+	overflow: hidden;
 }
-#channels {
-	display: flex;
-	flex-direction: column;
-	justify-content: stretch;
-	overflow-y: auto;
-	height: 100%;
-	width: calc(100% - 250px);
+summary > input {
+	float: right;
 }
-#channels > details {
+fieldset {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	border: 0;
+	padding: 0;
 }
-#channels details:not([open]) + .channel-strip {
-	display: none;
+fieldset > label {
+	display: contents;
 }
-#channels > hr {
-	margin-left: 0;
-	margin-right: 0;
-}
-.sidebar {
-	background-color: whitesmoke;
-	border-left: 1px solid gray;
-	position: fixed;
-	width: 250px;
-	right: 0;
-	top: 0;
-	bottom: 0;
-	padding: 4px;
-	overflow: auto;
-}
-.sidebar fieldset {
-	row-gap: 4px;
-	padding: 4px;
-}
-.sidebar-section :is(span, output) {
+fieldset span:has(input[type="checkbox"]) {
 	text-align: right;
 }
 output {
@@ -45,75 +33,110 @@ output {
 	font-size: smaller;
 	padding: 2px;
 }
-fieldset > label {
-	display: contents;
+.toggle-button {
+	font-size: small;
+	background-color: #eee;
+	border: 1px solid gray;
+	text-align: center;
+	padding: 2px;
 }
-.sidebar-section input[type="checkbox"] {
-	display: inline-block;
+.toggle-button > input[type="checkbox"] {
+	display: none;
 }
-.channel-strip {
-	display: flex;
-	flex-basis: 400px;
-	min-width: 200px;
-	flex-shrink: 1;
-	/*
-	overflow-x: auto;
+.toggle-button:hover {
+	background-color: #ddd;
+}
+.toggle-button:active {
+	background-color: #f8f8f8;
+}
+.toggle-button:has(> input[type="checkbox"]:checked) {
+	background-color: #ccc;
+}
+
+#sidebar {
+	background-color: whitesmoke;
+	border-left: 1px solid gray;
 	overflow-y: auto;
-	*/
-	row-gap: 8px;
-	column-gap: 3px;
-	margin-top: 0;
-	margin-bottom: 0;
-	box-sizing: border-box;
+	padding: 4px 0 4px 4px;
+	min-width: 250px;
 }
-.channel-outer.channel-left:has(.channel-stereo:checked) + .channel-outer {
+#sidebar > details > :not(:first-child) {
+	padding: 4px;
+}
+#sidebar fieldset {
+	row-gap: 4px;
+	padding: 4px;
+	margin: 0;
+}
+#connection-icon {
+	float: right;
+}
+#connection-icon[data-state="connected"]::after {
+	content: "\1F7E2";
+}
+#connection-icon[data-state="failed"]::after {
+	content: "\274C";
+}
+label:has(#connection-type:not([data-value="MIDI"])) ~ .connection-midi {
+	display: none;
+}
+label:has(#connection-type:not([data-value="WebSocket"])) ~ .connection-websocket {
+	display: none;
+}
+
+#channels {
+	display: flex;
+	flex-direction: column;
+	flex-grow: 1;
+	overflow: auto;
+}
+#channels > details {
+	padding: 4px;
+}
+/* HACK: it seems display: flex doesn't work properly in <details> */
+#channels > details:not([open]) + .channel-strip {
+	display: none;
+}
+#channels > hr {
+	margin: 3px 0;
+}
+
+.channel-strip {
+	flex-basis: 400px;
+	display: flex;
+	flex-shrink: 1;
+	min-height: 200px;
+	overflow-x: auto;
+	column-gap: 3px;
+	padding-inline: 3px;
+}
+.channel-outer {
+	display: flex;
+}
+.channel-outer.channel-right:has(.channel-stereo:checked) {
 	display: none;
 }
 .channel {
-	border-radius: 4px;
 	display: flex;
 	flex-direction: column;
+	width: 100px;
 }
-.channel, .channel-panel {
+.channel > :first-child {
+	border-top-left-radius: 4px;
+}
+.channel:not(:has(.channel-show-settings:checked, .channel-show-eq:checked, .channel-show-dynamics:checked)) > :first-child {
+	border-top-right-radius: 4px;
+}
+.channel > :last-child {
+	border-bottom-left-radius: 4px;
 	border: 1px solid gray;
 }
-.channel-panel {
-	border-top-right-radius: 4px;
+.channel:not(:has(.channel-show-settings:checked, .channel-show-eq:checked, .channel-show-dynamics:checked)) > :last-child {
 	border-bottom-right-radius: 4px;
-	background-color: whitesmoke;
-	border-left: 0;
-	padding: 4px;
-	overflow-y: auto;
 }
-.channel-panel fieldset {
-	font-size: 0.9em;
-}
-.channel-panel svg {
-	border: 1px solid;
-	border-radius: 3px;
-	background-color: white;
-	width: 100%;
-	box-sizing: border-box;
-	height: 75px;
-}
-.channel-panel {
-	width: 200px;
-}
-.channel-panel-settings > div {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-}
-.channel-panel-settings > div span {
-	text-align: right;
-}
-.channel-panel-settings select {
-	width: 100%;
-}
-summary {
-	overflow: hidden;
-}
-summary > input {
-	float: right;
+.channel > * {
+	border: 1px solid gray;
+	border-bottom: 0;
 }
 .channel:has(.channel-show-settings:not(:checked)) ~ .channel-panel-settings {
 	display: none;
@@ -124,20 +147,18 @@ summary > input {
 .channel:has(.channel-show-dynamics:not(:checked)) ~ .channel-panel-dynamics {
 	display: none;
 }
-.channel-outer {
-	display: flex;
-};
-.channel:not(:first-child) {
-	border-left: 0;
-}
 .channel-name {
 	text-align: center;
 	font-weight: bold;
-	border-bottom: 1px solid gray;
 }
 .channel-mute {
 	display: flex;
 	justify-content: center;
+}
+.channel-mute > label {
+	border-left-width: 0;
+	margin-block: 2px;
+	flex-grow: 1;
 }
 .channel-mute > label:first-of-type {
 	border-top-left-radius: 4px;
@@ -150,31 +171,16 @@ summary > input {
 	border-bottom-right-radius: 4px;
 	margin-right: 2px;
 }
-.channel-mute > label {
-	border-left-width: 0;
-	margin-top: 2px;
-	margin-bottom: 2px;
-	flex-grow: 1;
-}
-.channel-mute > label > input {
-	display: none;
-}
 .channel-volume {
 	display: flex;
+	border-top: 0;
 	flex-grow: 1;
 }
 .channel-volume meter {
-	inline-size: auto;
+	height: auto;
 	writing-mode: vertical-lr;
-	margin: 2px 0 2px auto;
-	vertical-align: 0;
-}
-.channel-left:has(.channel-stereo:checked) .channel-volume meter {
-	block-size: 8px;
-}
-.channel-left:has(.channel-stereo:checked) .channel-volume meter + meter {
-	display: block;
-	block-size: 8px;
+	margin-inline: 2px;
+	margin-block: 0;
 }
 .channel-volume meter + meter {
 	margin-left: 0;
@@ -182,111 +188,85 @@ summary > input {
 .channel-volume meter:not(:only-of-type) {
 	block-size: 8px;
 }
-.channel-volume input[type="range"] {
-	/*height: 240px;*/
+.channel-volume > :first-child {
+	margin-left: auto;
+}
+.channel-volume > input[type="range"] {
+	margin-right: auto;
+}
+.channel-volume > :where(meter, input[type="range"]) {
 	writing-mode: vertical-lr;
-	margin: 2px auto 2px 2px;
+	margin: 2px 0;
 }
-.channel input[type="number"] {
-	text-align: center;
-	width: 75px;
-}
-.channel-eq-controls {
-	display: grid;
-	grid-template-columns: 0fr 1fr 1fr 1fr;
-	width: 100%;
-}
-.channel-eq-controls {
-}
-.channel-eq-controls :nth-child(n+2):nth-child(-n+4) {
+.channel-volume-number {
 	text-align: center;
 }
-fieldset {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	border: 0;
-	padding: 0;
+.channel-volume-output {
+	text-align: center;
 }
-fieldset span {
-	text-align: right;
+.channel-volume-output option:disabled {
+	display: none;
 }
-.channel-eq-controls :nth-child(4n+1) {
-	margin-right: 2px;
-}
-.channel-eq-controls select {
-	width: 100%;
-}
-.channel-eq-controls input[type="number"] {
-	box-sizing: border-box;
-	width: 100%;
-}
-.panel-buttons {
+.channel-panel-buttons {
 	margin-top: auto;
 	margin-bottom: 4px;
 }
-.label-button {
+.channel-panel-buttons .toggle-button {
 	display: block;
-	font-size: small;
-	background-color: buttonface;
-	border: 1px solid buttonborder;
-	text-align: center;
-	padding: 1px;
-}
-.label-button:hover {
-	filter: brightness(0.95);
-}
-.label-button:active {
-	filter: brightness(1.02);
-}
-.label-button:has(> input[type="checkbox"]:checked) {
-	filter: brightness(0.85);
-}
-.panel-buttons label {
-	display: block;
-	font-size: small;
-	font-variant-emoji: text;
-	color: buttontext;
-	background-color: buttonface;
-	border-style: solid;
-	border-color: buttonborder;
 	border-width: 1px 0 0 1px;
-	text-align: center;
-	padding: 2px;
 }
-.channel:has(~ .channel-panel-eq :is(.channel-eq-enabled, .channel-lowcut-enabled):checked) .channel-show-eq-label,
-.channel:has(~ .channel-panel-dynamics :is(.channel-dynamics-enabled, .channel-autolevel-enabled):checked) .channel-show-dynamics-label {
-	box-shadow: inset 0 0 0.5em selecteditem;
-}
-.panel-buttons label:first-of-type {
+.channel-panel-buttons .toggle-button:first-child {
 	border-top-left-radius: 4px;
 }
-.panel-buttons label:last-child {
+.channel-panel-buttons .toggle-button:last-child {
 	border-bottom-width: 1px;
 	border-bottom-left-radius: 4px;
 }
-.panel-buttons label:hover {
-	filter: brightness(0.95);
+.channel:has(~ .channel-panel-eq :is(.eq, .lowcut):checked) .channel-show-eq-label,
+.channel:has(~ .channel-panel-dynamics :is(.dynamics, .autolevel):checked) .channel-show-dynamics-label {
+	box-shadow: inset 0 0 0.5em selecteditem;
 }
-.panel-buttons input[type="checkbox"] {
-	display: none;
+
+.channel-panel {
+	border: 1px solid gray;
+	border-left: 0;
+	border-top-right-radius: 4px;
+	border-bottom-right-radius: 4px;
+	background-color: whitesmoke;
+	padding: 4px;
+	width: 200px;
+	overflow-y: auto;
 }
-.panel-buttons label:has(input[type="checkbox"]:checked) {
-	filter: brightness(0.85);
+.channel-panel fieldset {
+	font-size: 0.9em;
 }
-.channel-eq-grid {
+.channel-panel svg {
+	border: 1px solid;
+	border-radius: 3px;
+	background-color: white;
+	box-sizing: border-box;
+	width: 100%;
+	height: 75px;
+}
+.eq-grid {
 	stroke: black;
 }
-.channel-eq-curve {
+.eq-curve {
 	fill: none;
 	stroke: selecteditem;
 	stroke-width: 3;
 }
-#connection-status {
-	color: darkred;
+.eq-controls {
+	display: grid;
+	grid-template-columns: 0fr 1fr 1fr 1fr;
 }
-#connection-status.connected {
-	color: darkgreen;
+.eq-controls :nth-child(4n+1) {
+	margin-right: 2px;
 }
-html, body {
-	height: 100%;
+.eq-controls :not(:nth-child(4n+1)) {
+	text-align: center;
+}
+.eq-controls :is(select, input[type="number"]) {
+	box-sizing: border-box;
+	width: 100%;
 }
