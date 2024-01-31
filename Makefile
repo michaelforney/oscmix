@@ -1,6 +1,6 @@
 .POSIX:
 
-CFLAGS+=-std=c11
+CC=cc -std=c11
 
 -include config.mk
 

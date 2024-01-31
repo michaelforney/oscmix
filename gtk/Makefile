@@ -1,6 +1,6 @@
 .POSIX:
 
-CFLAGS+=-std=c11 -Wno-overlength-string
+CFLAGS+=-Wno-overlength-string
 
 -include ../config.mk
 
