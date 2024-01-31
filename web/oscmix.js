@@ -432,7 +432,7 @@ class Channel {
 		for (const node of fragment.querySelectorAll('*[id]')) {
 			if (Channel.#elements.has(node.id)) {
 				const type = node.step && node.step < 1 ? ',f' : ',i';
-				var prop;
+				let prop;
 				switch (node.constructor) {
 				case HTMLSelectElement:
 					prop = 'selectedIndex';
@@ -551,7 +551,7 @@ class WASI {
 		//if (fd != 6)
 			return WASI.EBADF;
 		iovs = new Uint32Array(this.memory.buffer, iovs, 2 * iovsLen);
-		var len = 0;
+		let len = 0;
 		for (i = 0; i < iovs.length; ++i) {
 		}
 		console.log('fd_read', fd, iovs);
@@ -565,9 +565,9 @@ class WASI {
 	}
 	fd_write(fd, iovs, iovsLen, ret) {
 		iovs = new Uint32Array(this.memory.buffer, iovs, 2 * iovsLen);
-		var stderr = ''
-		var length = 0;
-		for (var i = 0; i < iovs.length; i += 2) {
+		let stderr = ''
+		let length = 0;
+		for (let i = 0; i < iovs.length; i += 2) {
 			length += iovs[i + 1];
 			const iov = new Uint8Array(this.memory.buffer, iovs[i], iovs[i + 1]);
 			switch (fd) {
@@ -633,7 +633,7 @@ WebAssembly.instantiateStreaming(fetch('oscmix.wasm'), wasi).then(async (obj) =>
 	//obj.instance.exports.midiread();
 });
 
-var midiAccess
+let midiAccess
 function midiStateChange(event) {
 	const select = document.getElementById('connection-midi-' + event.port.type);
 	switch (event.port.state) {
@@ -641,7 +641,7 @@ function midiStateChange(event) {
 		select.add(new Option(event.port.name, event.port.id));
 		break;
 	case 'disconnected':
-		var i = 0;
+		let i = 0;
 		for (const option of select.options) {
 			if (option.value == event.port.id) {
 				select.remove(i);
