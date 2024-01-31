@@ -1,6 +1,8 @@
 #ifndef INTPACK_H
 #define INTPACK_H 1
 
+#include <stdint.h>
+
 static inline void *
 putbe8(void *p, uint_least8_t v)
 {
