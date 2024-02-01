@@ -74,7 +74,7 @@ sockopen(char *addr, int passive)
 						mreq.v6.ipv6mr_multiaddr = ((struct sockaddr_in6 *)addr)->sin6_addr;
 						if (mreq.v6.ipv6mr_multiaddr.s6_addr[0] == 0xff) {
 							mreq.v6.ipv6mr_interface = 0;
-							if (setsockopt(sock, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP, &mreq.v6, sizeof mreq.v6) != 0)
+							if (setsockopt(sock, IPPROTO_IPV6, IPV6_JOIN_GROUP, &mreq.v6, sizeof mreq.v6) != 0)
 								fatal("setsockopt IPV6_ADD_MEMBERSHIP:");
 							multicast = true;
 						}
