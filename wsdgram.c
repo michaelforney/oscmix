@@ -43,6 +43,7 @@ handshake(FILE *rd, FILE *wr)
 	struct http_header hdr;
 	bool websocket, upgrade, havekey;
 	long version;
+	char *token;
 	unsigned char sha1[20];
 	char accept[(sizeof sha1 + 2) / 3 * 4], buf[2048];
 
@@ -70,11 +71,19 @@ handshake(FILE *rd, FILE *wr)
 		if (!hdr.name)
 			break;
 		if (strcmp(hdr.name, "Upgrade") == 0) {
-			if (strcmp(hdr.value, "websocket") == 0)
-				websocket = true;
+			for (token = strtok(hdr.value, " \t,"); token; token = strtok(NULL, " \t,")) {
+				if (strcmp(token, "websocket") == 0) {
+					websocket = true;
+					break;
+				}
+			}
 		} else if (strcmp(hdr.name, "Connection") == 0) {
-			if (strcmp(hdr.value, "Upgrade") == 0)
-				upgrade = true;
+			for (token = strtok(hdr.value, " \t,"); token; token = strtok(NULL, " \t,")) {
+				if (strcmp(token, "Upgrade") == 0) {
+					upgrade = true;
+					break;
+				}
+			}
 		} else if (strcmp(hdr.name, "Sec-WebSocket-Key") == 0) {
 			static const char guid[36] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 			sha1_context ctx;
