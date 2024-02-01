@@ -29,7 +29,7 @@ main(int argc, char *argv[])
 {
 	static char defrecvaddr[] = "udp!127.0.0.1!7222";
 	static char defsendaddr[] = "udp!127.0.0.1!8222";
-	static char mcastaddr[] = "udp!127.0.0.1!8222";
+	static char mcastaddr[] = "udp!224.0.0.1!8222";
 	int err, sig, rfd, wfd;
 	char *recvaddr, *sendaddr;
 	pthread_t midireader, oscreader;
