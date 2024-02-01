@@ -1745,7 +1745,7 @@ handleregs(uint_least32_t *payload, size_t len)
 				case 0x3380:
 					break;
 				default:
-					fprintf(stderr, "[%.4x]=%.4hx (%.hx %s)\n", reg, (short)val, off + node->reg, addr);
+					fprintf(stderr, "[%.4x]=%.4hx (%.4x %s)\n", reg, (short)val, off + node->reg, addr);
 					break;
 				}
 			}
