@@ -85,93 +85,6 @@ static struct {
 } durec = {.index = -1};
 static bool refreshing;
 
-enum eqbandtype {
-	EQ_BANDTYPE_PEAK,
-	EQ_BANDTYPE_SHELF,
-	EO_BANDTYPE_HICUT,
-};
-
-enum durecstatus {
-	DUREC_STATUS_NOMEDIA,
-	DUREC_STATUS_FSERROR,
-	DUREC_STATUS_INITIALIZING,
-	DUREC_STATUS_DELETING,
-	/* ? */
-	DUREC_STATUS_STOPPED = 5,
-	DUREC_STATUS_RECORDING,
-	DUREC_STATUS_PLAYING = 10,
-};
-
-enum durecplaymode {
-	DUREC_PLAYMODE_SINGLE,
-	DUREC_PLAYMODE_UFXSINGLE,
-	DUREC_PLAYMODE_CONTINUOUS,
-	DUREC_PLAYMODE_SINGLENEXT,
-	DUREC_PLAYMODE_REPEATSINGLE,
-	DUREC_PLAYMODE_REPEATALL,
-};
-
-enum reverbtype {
-	REVERB_TYPE_SMALLROOM,
-	REVERB_TYPE_MEDIUMROOM,
-	REVERB_TYPE_LARGEROOM,
-	REVERB_TYPE_WALLS,
-	REVERB_TYPE_SHORTY,
-	REVERB_TYPE_ATTACK,
-	REVERB_TYPE_SWAGGER,
-	REVERB_TYPE_OLDSCHOOL,
-	REVERB_TYPE_ECHOISTIC,
-	REVERB_TYPE_8PLUS9,
-	REVERB_TYPE_GRANDWIDE,
-	REVERB_TYPE_THICKER,
-	REVERB_TYPE_ENVELOPE,
-	REVERB_TYPE_GATED,
-	REVERB_TYPE_SPACE,
-};
-
-enum echotype {
-	ECHO_TYPE_STEREOECHO,
-	ECHO_TYPE_STEREOCROSS,
-	ECHO_TYPE_PONGECHO,
-};
-
-enum clocksource {
-	CLOCK_SOURCE_INTERNAL,
-	CLOCK_SOURCE_WCLK,
-	CLOCK_SOURCE_SPDIF,
-	CLOCK_SOURCE_AES,
-	CLOCK_SOURCE_OPTICAL,
-};
-
-enum opticaltype {
-	OPTICAL_ADAT,
-	OPTICAL_SPDIF,
-};
-
-enum spdiftype {
-	SPDIF_CONSUMER,
-	SPDIF_PROFESSIONAL,
-};
-
-enum ccmix {
-	CCMIX_TOTALMIX,
-	CCMIX_6CHPHONES,
-	CCMIX_8CH,
-	CCMIX_20CH,
-};
-
-enum arcmode {
-	ARCMODE_VOLUME,
-	ARCMODE_1SEC,
-	ARCMODE_NORMAL,
-};
-
-enum lockkeys {
-	LOCKKEYS_OFF,
-	LOCKKEYS_KEYS,
-	LOCKKEYS_ALL,
-};
-
 static void oscsend(const char *addr, const char *type, ...);
 static void oscflush(void);
 static void oscsendenum(const char *addr, int val, const char *const names[], size_t nameslen);
@@ -845,13 +758,9 @@ static int
 newdurecstatus(const struct oscnode *path[], const char *addr, int reg, int val)
 {
 	static const char *const names[] = {
-		[DUREC_STATUS_NOMEDIA] = "No Media",
-		[DUREC_STATUS_FSERROR] = "Filesystem Error",
-		[DUREC_STATUS_INITIALIZING] = "Initializing",
-		[DUREC_STATUS_DELETING] = "Deleting",
-		[DUREC_STATUS_STOPPED] = "Stopped",
-		[DUREC_STATUS_RECORDING] = "Recording",
-		[DUREC_STATUS_PLAYING] = "Playing",
+		"No Media", "Filesystem Error", "Initializing", "Reinitializing",
+		[5] = "Stopped", "Recording",
+		[10] = "Playing", "Paused",
 	};
 	int status;
 	int position;
@@ -966,12 +875,7 @@ static int
 newdurecnext(const struct oscnode *path[], const char *addr, int reg, int val)
 {
 	static const char *const names[] = {
-		[DUREC_PLAYMODE_SINGLE] = "Single",
-		[DUREC_PLAYMODE_UFXSINGLE] = "UFX Single",
-		[DUREC_PLAYMODE_CONTINUOUS] = "Continuous",
-		[DUREC_PLAYMODE_SINGLENEXT] = "Single Next",
-		[DUREC_PLAYMODE_REPEATSINGLE] = "Repeat Single",
-		[DUREC_PLAYMODE_REPEATALL] = "Repeat All",
+		"Single", "UFX Single", "Continuous", "Single Next", "Repeat Single", "Repeat All",
 	};
 	int next, playmode;
 
