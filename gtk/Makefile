@@ -43,7 +43,7 @@ gschemas.compiled: oscmix.gschema.xml
 	$(GLIB_COMPILE_SCHEMAS) .
 
 oscmix-gtk: $(OBJ)
-	$(CC) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)
+	$(CC) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS) -l m
 
 .PHONY: clean
 clean:
