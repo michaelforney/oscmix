@@ -333,10 +333,10 @@ class Channel {
 		iface.bind(prefix + '/mute', ',i', fragment.getElementById('channel-mute'), 'checked', 'change');
 		switch (type) {
 		case Channel.INPUT:
-			iface.bind(prefix + '/fxsend', ',i', fragment.getElementById('channel-fx'), 'checked', 'change');
+			iface.bind(prefix + '/fxsend', ',i', fragment.getElementById('channel-fx'), 'valueAsNumber', 'change');
 			break;
 		case Channel.OUTPUT:
-			iface.bind(prefix + '/fxreturn', ',i', fragment.getElementById('channel-fx'), 'checked', 'change');
+			iface.bind(prefix + '/fxreturn', ',i', fragment.getElementById('channel-fx'), 'valueAsNumber', 'change');
 			break;
 		}
 		iface.bind(prefix + '/stereo', ',i', stereo, 'checked', 'change');
