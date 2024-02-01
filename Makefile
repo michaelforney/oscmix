@@ -12,7 +12,7 @@ ALSA_LDLIBS?=$$(pkg-config --libs-only-l alsa)
 GTK?=y
 
 TARGET=oscmix wsdgram $(TARGET-y)
-TARGET-$(ALSA)+=alsarawio alsaseqio
+TARGET-$(ALSA)+=alsarawio
 TARGET-$(GTK)+=gtk
 
 all: $(TARGET)
