@@ -55,7 +55,7 @@ sockopen(char *addr, int passive)
 			if (sock >= 0) {
 				if (passive) {
 					union {
-						struct ip_mreqn v4;
+						struct ip_mreq v4;
 						struct ipv6_mreq v6;
 					} mreq;
 					bool multicast;
@@ -64,8 +64,7 @@ sockopen(char *addr, int passive)
 					case AF_INET:
 						mreq.v4.imr_multiaddr = ((struct sockaddr_in *)ai->ai_addr)->sin_addr;
 						if ((((unsigned char *)&mreq.v4.imr_multiaddr)[0] & 0xf0) == 0xe0) {
-							mreq.v4.imr_address.s_addr = INADDR_ANY;
-							mreq.v4.imr_ifindex = 0;
+							mreq.v4.imr_interface.s_addr = INADDR_ANY;
 							if (setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq.v4, sizeof mreq.v4) != 0)
 								fatal("setsockopt IP_ADD_MEMBERSHIP:");
 							multicast = true;
