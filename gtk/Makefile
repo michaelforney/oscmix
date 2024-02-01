@@ -1,6 +1,6 @@
 .POSIX:
 
-CFLAGS+=-Wno-overlength-string
+CFLAGS+=-Wno-overlength-strings
 
 -include ../config.mk
 
@@ -37,7 +37,7 @@ all: oscmix-gtk gschemas.compiled
 $(OBJ): channel.h scaleentry.h mixer.h eqplot.h
 
 resources.c: resources.xml $(RES)
-	$(GLIB_COMPILE_RESOURCES) --generate-source $<
+	$(GLIB_COMPILE_RESOURCES) --generate-source resources.xml
 
 gschemas.compiled: oscmix.gschema.xml
 	$(GLIB_COMPILE_SCHEMAS) .
