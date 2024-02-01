@@ -1,0 +1,8 @@
+image: netbsd/latest
+packages:
+- gtk3+
+- pkgconf
+sources:
+- https://git.sr.ht/~mcf/oscmix
+tasks:
+- build: make -C oscmix ALSA=n

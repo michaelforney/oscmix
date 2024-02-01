@@ -1,0 +1,7 @@
+image: openbsd/latest
+packages:
+- gtk+3
+sources:
+- https://git.sr.ht/~mcf/oscmix
+tasks:
+- build: make -C oscmix ALSA=n

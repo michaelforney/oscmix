@@ -1,0 +1,7 @@
+image: debian/latest
+packages:
+- libgtk-3-dev
+sources:
+- https://git.sr.ht/~mcf/oscmix
+tasks:
+- build: make -C oscmix
