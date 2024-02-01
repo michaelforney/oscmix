@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <netdb.h>
+#include <netinet/in.h>
 #include <stdbool.h>
 #include <sys/socket.h>
 #include <unistd.h>
