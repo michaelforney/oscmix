@@ -1,4 +1,4 @@
-image: debian/latest
+image: debian/stable
 packages:
 - libgtk-3-dev
 sources:
