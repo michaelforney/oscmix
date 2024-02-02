@@ -11,6 +11,7 @@
 #include <strings.h>
 #include <unistd.h>
 #include "intpack.h"
+#include "oscmix.h"
 #include "osc.h"
 #include "sysex.h"
 #include "util.h"
@@ -62,8 +63,6 @@ struct durecfile {
 };
 
 int dflag;
-int lflag;
-static int wfd;
 static struct input inputs[20];
 static struct input playbacks[20];
 static struct output outputs[20];
@@ -108,23 +107,6 @@ dump(const char *name, const void *ptr, size_t len)
 	putchar('\n');
 }
 
-static int
-midiwrite(const void *buf, size_t len)
-{
-	const unsigned char *pos;
-	ssize_t ret;
-
-	pos = buf;
-	while (len > 0) {
-		ret = write(7, pos, len);
-		if (ret < 0)
-			return -1;
-		pos += ret;
-		len -= ret;
-	}
-	return 0;
-}
-
 static void
 writesysex(int subid, const unsigned char *buf, size_t len, unsigned char *sysexbuf)
 {
@@ -139,7 +121,7 @@ writesysex(int subid, const unsigned char *buf, size_t len, unsigned char *sysex
 	sysexlen = sysexenc(&sysex, sysexbuf, SYSEX_MFRID | SYSEX_DEVID | SYSEX_SUBID);
 	base128enc(sysex.data, buf, len);
 
-	if (midiwrite(sysexbuf, sysexlen) != 0)
+	if (writemidi(sysexbuf, sysexlen) != 0)
 		fatal("write 7:");
 }
 
@@ -1467,8 +1449,8 @@ match(const char *pat, const char *str)
 	}
 }
 
-static int
-dispatch(unsigned char *buf, size_t len)
+int
+handleosc(unsigned char *buf, size_t len)
 {
 	const char *addr, *next;
 	const struct oscnode *path[8], *node;
@@ -1517,8 +1499,7 @@ dispatch(unsigned char *buf, size_t len)
 	return 0;
 }
 
-static inline
-uint_least32_t
+static inline uint_least32_t
 getle32_7bit(const void *p)
 {
 	const unsigned char *b = p;
@@ -1588,19 +1569,8 @@ oscsendenum(const char *addr, int val, const char *const names[], size_t namesle
 static void
 oscflush(void)
 {
-	const unsigned char *buf;
-	size_t len;
-	ssize_t ret;
-
 	if (oscmsg.buf) {
-		buf = oscbuf;
-		len = oscmsg.buf - oscbuf;
-		ret = write(wfd, buf, len);
-		if (ret < 0) {
-			perror("write");
-		} else if (ret != len) {
-			fprintf(stderr, "write: %zd != %zu", ret, len);
-		}
+		writeosc(oscbuf, oscmsg.buf - oscbuf);
 		oscmsg.buf = NULL;
 	}
 }
@@ -1706,7 +1676,7 @@ handlelevels(int subid, uint_least32_t *payload, size_t len)
 	}
 }
 
-static void
+void
 handlesysex(unsigned char *buf, size_t len, uint_least32_t *payload)
 {
 	struct sysex sysex;
@@ -1740,74 +1710,13 @@ handlesysex(unsigned char *buf, size_t len, uint_least32_t *payload)
 	oscflush();
 }
 
-void *
-midiread(void *arg)
-{
-	unsigned char data[8192], *datapos, *dataend, *nextpos;
-	uint_least32_t payload[sizeof data / 4];
-	ssize_t ret;
-
-	wfd = *(int *)arg;
-	dataend = data;
-	for (;;) {
-		ret = read(6, dataend, (data + sizeof data) - dataend);
-		if (ret < 0)
-			fatal("read 6:");
-		dataend += ret;
-		datapos = data;
-		for (;;) {
-			assert(datapos <= dataend);
-			datapos = memchr(datapos, 0xf0, dataend - datapos);
-			if (!datapos) {
-				dataend = data;
-				break;
-			}
-			nextpos = memchr(datapos + 1, 0xf7, dataend - datapos - 1);
-			if (!nextpos) {
-				if (dataend == data + sizeof data) {
-					fprintf(stderr, "sysex packet too large; dropping\n");
-					dataend = data;
-				} else {
-					memmove(data, datapos, dataend - datapos);
-					dataend -= datapos - data;
-				}
-				break;
-				
-			}
-			++nextpos;
-			handlesysex(datapos, nextpos - datapos, payload);
-			datapos = nextpos;
-		}
-	}
-	return NULL;
-}
-
-void *
-oscread(void *arg)
-{
-	int fd;
-	ssize_t ret;
-	unsigned char buf[8192];
-
-	fd = *(int *)arg;
-	for (;;) {
-		ret = read(fd, buf, sizeof buf);
-		if (ret < 0) {
-			perror("recv");
-			break;
-		}
-		dispatch(buf, ret);
-	}
-	return NULL;
-}
-
 void
-timer(void)
+handletimer(bool levels)
 {
 	static int serial;
 	unsigned char buf[7];
 
-	if (lflag && !refreshing) {
+	if (levels && !refreshing) {
 		/* XXX: ~60 times per second levels, ~30 times per second serial */
 		writesysex(2, NULL, 0, buf);
 	}

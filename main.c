@@ -1,27 +1,119 @@
 #define _POSIX_C_SOURCE 200809L
+#include <assert.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <sys/time.h>
+#include <unistd.h>
+#include "oscmix.h"
 #include "arg.h"
 #include "socket.h"
 #include "util.h"
 
-void init(void);
-void *midiread(void *);
-void *oscread(void *);
-void timer(void);
-void refresh(void);
-extern int dflag, lflag;
+extern int dflag;
+static int lflag;
+static int wfd;
 
 static void
 usage(void)
 {
 	fprintf(stderr, "usage: oscmix [-dlm] [-r addr] [-s addr]\n");
 	exit(1);
+}
+
+static void *
+midiread(void *arg)
+{
+	unsigned char data[8192], *datapos, *dataend, *nextpos;
+	uint_least32_t payload[sizeof data / 4];
+	ssize_t ret;
+
+	wfd = *(int *)arg;
+	dataend = data;
+	for (;;) {
+		ret = read(6, dataend, (data + sizeof data) - dataend);
+		if (ret < 0)
+			fatal("read 6:");
+		dataend += ret;
+		datapos = data;
+		for (;;) {
+			assert(datapos <= dataend);
+			datapos = memchr(datapos, 0xf0, dataend - datapos);
+			if (!datapos) {
+				dataend = data;
+				break;
+			}
+			nextpos = memchr(datapos + 1, 0xf7, dataend - datapos - 1);
+			if (!nextpos) {
+				if (dataend == data + sizeof data) {
+					fprintf(stderr, "sysex packet too large; dropping\n");
+					dataend = data;
+				} else {
+					memmove(data, datapos, dataend - datapos);
+					dataend -= datapos - data;
+				}
+				break;
+			}
+			++nextpos;
+			handlesysex(datapos, nextpos - datapos, payload);
+			datapos = nextpos;
+		}
+	}
+	return NULL;
+}
+
+static void *
+oscread(void *arg)
+{
+	int fd;
+	ssize_t ret;
+	unsigned char buf[8192];
+
+	fd = *(int *)arg;
+	for (;;) {
+		ret = read(fd, buf, sizeof buf);
+		if (ret < 0) {
+			perror("recv");
+			break;
+		}
+		handleosc(buf, ret);
+	}
+	return NULL;
+}
+
+int
+writemidi(const void *buf, size_t len)
+{
+	const unsigned char *pos;
+	ssize_t ret;
+
+	pos = buf;
+	while (len > 0) {
+		ret = write(7, pos, len);
+		if (ret < 0)
+			return -1;
+		pos += ret;
+		len -= ret;
+	}
+	return 0;
+}
+
+void
+writeosc(const void *buf, size_t len)
+{
+	ssize_t ret;
+
+	ret = write(wfd, buf, len);
+	if (ret < 0) {
+		perror("write");
+	} else if (ret != len) {
+		fprintf(stderr, "write: %zd != %zu", ret, len);
+	}
 }
 
 int
@@ -68,6 +160,8 @@ main(int argc, char *argv[])
 	rfd = sockopen(recvaddr, 1);
 	wfd = sockopen(sendaddr, 0);
 
+	init();
+
 	sigfillset(&set);
 	pthread_sigmask(SIG_SETMASK, &set, NULL);
 	err = pthread_create(&midireader, NULL, midiread, &wfd);
@@ -89,6 +183,6 @@ main(int argc, char *argv[])
 	refresh();
 	for (;;) {
 		sigwait(&set, &sig);
-		timer();
+		handletimer(lflag);
 	}
 }
