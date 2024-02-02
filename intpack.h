@@ -1,16 +1,8 @@
+/* SPDX-License-Identifier: Unlicense */
 #ifndef INTPACK_H
-#define INTPACK_H 1
+#define INTPACK_H
 
 #include <stdint.h>
-
-static inline void *
-putbe8(void *p, uint_least8_t v)
-{
-	unsigned char *b = p;
-
-	b[0] = v & 0xff;
-	return b + 1;
-}
 
 static inline void *
 putle16(void *p, uint_least16_t v)
@@ -44,6 +36,17 @@ putle24(void *p, uint_least32_t v)
 }
 
 static inline void *
+putle24(void *p, uint_least32_t v)
+{
+	unsigned char *b = p;
+
+	b[0] = v >> 16 & 0xff;
+	b[1] = v >> 8 & 0xff;
+	b[2] = v & 0xff;
+	return b + 4;
+}
+
+static inline void *
 putle32(void *p, uint_least32_t v)
 {
 	unsigned char *b = p;
@@ -68,6 +71,22 @@ putbe32(void *p, uint_least32_t v)
 }
 
 static inline void *
+putle64(void *p, uint_least64_t v)
+{
+	unsigned char *b = p;
+
+	b[0] = v & 0xff;
+	b[1] = v >> 8 & 0xff;
+	b[2] = v >> 16 & 0xff;
+	b[3] = v >> 24 & 0xff;
+	b[4] = v >> 32 & 0xff;
+	b[5] = v >> 40 & 0xff;
+	b[6] = v >> 48 & 0xff;
+	b[7] = v >> 56 & 0xff;
+	return b + 8;
+}
+
+static inline void *
 putbe64(void *p, uint_least64_t v)
 {
 	unsigned char *b = p;
@@ -81,14 +100,6 @@ putbe64(void *p, uint_least64_t v)
 	b[6] = v >> 8 & 0xff;
 	b[7] = v & 0xff;
 	return b + 8;
-}
-
-static inline uint_least8_t
-getbe8(const void *p)
-{
-	const unsigned char *b = p;
-
-	return b[0] & 0xffu;
 }
 
 static inline uint_least16_t
@@ -122,6 +133,18 @@ getle24(const void *p)
 	v = b[0] & 0xfful;
 	v |= (b[1] & 0xfful) << 8;
 	v |= (b[2] & 0xfful) << 16;
+	return v;
+}
+
+static inline uint_least32_t
+getbe24(const void *p)
+{
+	const unsigned char *b = p;
+	uint_least32_t v;
+
+	v = (b[0] & 0xfful) << 16;
+	v |= (b[1] & 0xfful) << 8;
+	v |= b[2] & 0xfful;
 	return v;
 }
 
