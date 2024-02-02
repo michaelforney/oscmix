@@ -36,7 +36,7 @@ putle24(void *p, uint_least32_t v)
 }
 
 static inline void *
-putle24(void *p, uint_least32_t v)
+putbe24(void *p, uint_least32_t v)
 {
 	unsigned char *b = p;
 
