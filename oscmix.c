@@ -1728,8 +1728,15 @@ handletimer(bool levels)
 void
 init(void)
 {
-	int i;
+	int i, j;
 
 	for (i = 0; i < LEN(playbacks); ++i)
 		playbacks[i].stereo = true;
+	for (i = 0; i < LEN(outputs); ++i) {
+		struct output *out;
+
+		out = &outputs[i];
+		for (j = 0; j < LEN(out->mix); ++j)
+			out->mix[j].vol = -650;
+	}
 }
