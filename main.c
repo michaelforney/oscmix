@@ -86,7 +86,7 @@ oscread(void *arg)
 	return NULL;
 }
 
-int
+void
 writemidi(const void *buf, size_t len)
 {
 	const unsigned char *pos;
@@ -96,11 +96,10 @@ writemidi(const void *buf, size_t len)
 	while (len > 0) {
 		ret = write(7, pos, len);
 		if (ret < 0)
-			return -1;
+			fatal("write 7:");
 		pos += ret;
 		len -= ret;
 	}
-	return 0;
 }
 
 void

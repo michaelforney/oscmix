@@ -120,9 +120,7 @@ writesysex(int subid, const unsigned char *buf, size_t len, unsigned char *sysex
 	sysex.subid = subid;
 	sysexlen = sysexenc(&sysex, sysexbuf, SYSEX_MFRID | SYSEX_DEVID | SYSEX_SUBID);
 	base128enc(sysex.data, buf, len);
-
-	if (writemidi(sysexbuf, sysexlen) != 0)
-		fatal("write 7:");
+	writemidi(sysexbuf, sysexlen);
 }
 
 static int
