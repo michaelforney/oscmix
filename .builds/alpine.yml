@@ -2,7 +2,21 @@ image: alpine/latest
 packages:
 - linux-headers
 - gtk+3.0-dev
+- clang
+- lld
+- wasi-sdk
 sources:
 - https://git.sr.ht/~mcf/oscmix
+environment:
+  GIT_SSH_COMMAND: ssh -o StrictHostKeyChecking=no
+secrets:
+- 998c4455-99e3-4d32-b9e8-b6a1b99b5d06
 tasks:
-- build: make -C oscmix
+- build: make -C oscmix WEB=y
+- deploy: |
+    cd oscmix
+    git worktree add --orphan gh-pages
+    cp web/index.html web/oscmix.js web/style.css web/oscmix.wasm gh-pages/
+    git -C gh-pages add .
+    git -C gh-pages commit -m "Built from $(git rev-parse --short HEAD)" .
+    git push git@github.com:michaelforney/oscmix gh-pages
