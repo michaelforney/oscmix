@@ -15,7 +15,9 @@ tasks:
 - build: make -C oscmix WEB=y
 - deploy: |
     cd oscmix
-    git worktree add --orphan gh-pages
+    git remote add github git@github.com:michaelforney/oscmix.git
+    git fetch github gh-pages
+    git worktree add --no-checkout -b gh-pages gh-pages github/gh-pages
     cp web/index.html web/oscmix.js web/style.css web/oscmix.wasm gh-pages/
     git -C gh-pages add .
     git -C gh-pages commit -m "Built from $(git rev-parse --short HEAD)" .
