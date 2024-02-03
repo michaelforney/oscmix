@@ -1638,8 +1638,10 @@ handlelevels(int subid, uint_least32_t *payload, size_t len)
 	char addr[128];
 	size_t i;
 
-	if (len % 3 != 0)
-		fatal("unexpected levels data");
+	if (len % 3 != 0) {
+		fprintf(stderr, "unexpected levels data\n");
+		return;
+	}
 	len /= 3;
 	type = NULL;
 	peakfx = NULL;
