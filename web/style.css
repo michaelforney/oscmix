@@ -58,7 +58,7 @@ output {
 	border-left: 1px solid gray;
 	overflow-y: auto;
 	padding: 4px 0 4px 4px;
-	min-width: 250px;
+	flex: 0 0 17em;
 }
 #sidebar > details > :not(:first-child) {
 	padding: 4px;
