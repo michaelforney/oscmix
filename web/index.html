@@ -136,11 +136,11 @@
 					<fieldset>
 						<label>Type<select id="connection-type">
 							<option id="connection-type-websocket">WebSocket</option>
-							<option>MIDI</option>
+							<option id="connection-type-midi">MIDI</option>
 						</select></label>
 						<label class="connection-websocket">Server<input id="connection-websocket-address" size="1" value="ws://localhost:8222"></label>
-						<label class="connection-midi">MIDI Input<select id="connection-midi-input"></select></label>
-						<label class="connection-midi">MIDI Output<select id="connection-midi-output"></select></label>
+						<label class="connection-midi">MIDI Input<select id="connection-midi-input" disabled></select></label>
+						<label class="connection-midi">MIDI Output<select id="connection-midi-output" disabled></select></label>
 					</fieldset>
 					<button id="connection-connect">Connect</button>
 				</form>

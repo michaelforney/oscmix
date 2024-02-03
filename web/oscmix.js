@@ -70,33 +70,135 @@ class Interface {
 	}
 
 	#socket;
+	#midi;
 	#writeOSC;
 
-	set socket(ws) {
-		if (this.#socket)
+	disconnect() {
+		if (this.#socket) {
 			this.#socket.close();
-		this.#socket = ws;
+			this.#socket = null;
+		}
+		if (this.#midi) {
+			if (this.#midi.input.state == 'open')
+				this.#midi.input.close();
+			if (this.#midi.output.state == 'open')
+				this.#midi.output.close();
+			if (this.#midi.interval)
+				clearInterval(this.#midi.interval);
+			this.#midi = null;
+		}
+		this.#writeOSC = null;
+	}
+
+	connectSocket(socket) {
+		this.disconnect();
 		const icon = document.getElementById('connection-icon');
 		delete icon.dataset.state;
-		ws.onmessage = async (event) => {
+		this.#socket = socket;
+		socket.onmessage = (event) => {
 			//console.log(event);
-			this.handleOSC(await event.data.arrayBuffer());
+			event.data.arrayBuffer().then(this.handleOSC.bind(this));
+			//this.handleOSC(await event.data.arrayBuffer());
 		};
-		ws.onopen = (event) => {
+		socket.onopen = (event) => {
 			console.log(event);
 			icon.dataset.state = 'connected';
 		};
-		ws.onerror = ws.onclose = (event) => {
+		socket.onerror = socket.onclose = (event) => {
 			console.log(event);
 			icon.dataset.state = 'failed';
 			this.#socket = null;
 		};
 		this.#writeOSC = (data) => {
-			ws.send(data);
+			socket.send(data);
 		};
 	}
 
-	set midiPorts({input, output}) {
+	async connectMIDI(module, input, output) {
+		this.disconnect();
+		const icon = document.getElementById('connection-icon');
+		delete icon.dataset.state;
+
+		console.log('connectMIDI', module, input, output);
+
+		try {
+			const iface = this;
+			const imports = {
+				env: {
+					writeosc(buf, len) {
+						iface.handleOSC(iface.#midi.memory.buffer, buf, len);
+					},
+					writemidi(buf, len) {
+						output.send(new Uint8Array(iface.#midi.memory.buffer, buf, len));
+					},
+				},
+				wasi_snapshot_preview1: {
+					fd_close() { return -1 },
+					fd_fdstat_get() { return -1 },
+					fd_seek() { return -1 },
+					fd_write(fd, iovsPtr, iovsLen, ret) {
+						const text = new TextDecoder();
+						const memory = iface.#midi.memory.buffer;
+						const iovs = new Uint32Array(memory, iovsPtr, 2 * iovsLen);
+						let stderr = ''
+						let length = 0;
+						for (let i = 0; i < iovs.length; i += 2) {
+							length += iovs[i + 1];
+							const iov = new Uint8Array(memory, iovs[i], iovs[i + 1]);
+							stderr += text.decode(iov);
+						}
+						console.log(stderr);
+						new Uint32Array(memory, ret)[0] = length;
+						return 0;
+					},
+					proc_exit(status) {
+						throw new Error('oscmix.wasm exited with status ' + status);
+					},
+				},
+			};
+			input.onstatechange = output.onstatechange = (event) => {
+				console.log(event);
+			};
+			const [instance,,] = await Promise.all([
+				WebAssembly.instantiate(module, imports),
+				input.open(),
+				output.open(),
+			]);
+			this.#midi = {input, output, memory: instance.exports.memory};
+			console.log(instance);
+			for (const symbol of ['jsdata', 'jsdatalen']) {
+				if (!(symbol in instance.exports))
+					throw Error(`wasm module does not export '${symbol}'`);
+			}
+			const jsdata = instance.exports.jsdata;
+			const jsdataLen = new Uint32Array(instance.exports.memory.buffer, instance.exports.jsdatalen, 4);
+
+			instance.exports._initialize();
+			instance.exports.init();
+			icon.dataset.state = 'connected';
+			input.onmidimessage = (event) => {
+				if (event.data[0] == 0xf0 && event.data[event.data.length - 1] == 0xf7) {
+					if (event.data.length > jsdataLen) {
+						console.log('dropping long sysex');
+						return;
+					}
+					const sysex = new Uint8Array(instance.exports.memory.buffer, instance.exports.jsdata, event.data.length);
+					sysex.set(event.data);
+					instance.exports.handlesysex(sysex.byteOffset, sysex.byteLength, instance.exports.jsdata);
+				}
+			};
+			this.#midi.interval = setInterval(instance.exports.handletimer.bind(null, true), 100);
+			this.#writeOSC = (data) => {
+				const osc = new Uint8Array(instance.exports.memory.buffer, instance.exports.jsdata, data.length);
+				osc.set(data);
+				instance.exports.handleosc(osc.byteOffset, osc.byteLength);
+			};
+			this.send('/refresh', ',', []);
+		} catch (error) {
+			console.error(error);
+			icon.dataset.state = 'failed';
+			this.disconnect();
+		}
 	}
 
 	handleOSC(buffer, offset, length) {
@@ -530,163 +632,86 @@ class OutputChannel extends Channel {
 	}
 };
 
-
-class WASI {
-	constructor() {
-		this.wasi_snapshot_preview1 = new Proxy(this, this);
-	}
-	static EBADF = 8;
-	get(target, prop, receiver) {
-		return this[prop].bind(this);
-	}
-	fd_close(args) {
-		console.log(args);
-	}
-	fd_fdstat_get(args) {
-		console.log(args);
-	}
-	fd_read(fd, iovs, iovsLen, ret) {
-		//if (fd != 6)
-			return WASI.EBADF;
-		iovs = new Uint32Array(this.memory.buffer, iovs, 2 * iovsLen);
-		let len = 0;
-		for (i = 0; i < iovs.length; ++i) {
-		}
-		console.log('fd_read', fd, iovs);
-		console.log(this.memory);
-		console.log(...arguments);
-		return -1;
-	}
-	fd_seek(args) {
-		console.log(args);
-		return -1;
-	}
-	fd_write(fd, iovs, iovsLen, ret) {
-		iovs = new Uint32Array(this.memory.buffer, iovs, 2 * iovsLen);
-		let stderr = ''
-		let length = 0;
-		for (let i = 0; i < iovs.length; i += 2) {
-			length += iovs[i + 1];
-			const iov = new Uint8Array(this.memory.buffer, iovs[i], iovs[i + 1]);
-			switch (fd) {
-			case 1:
-				console.log(iov);
-				iface.handleOSC(this.memory.buffer, iovs[i], iovs[i + 1]);
-				break;
-			case 2:
-				stderr += new TextDecoder().decode(iov);
-				break;
-			case 7:
-				//console.log(iov);
-				this.midiOut.send(iov);
-				break;
-			}
-		}
-		switch (fd) {
-		case 2:
-			console.log(stderr);
-			break;
-		}
-		new Uint32Array(this.memory.buffer, ret)[0] = length;
-		//console.log('fd_write', fd, iovs);
-		return 0;
-	}
-	proc_exit(args) {
-		console.log(this, args);
-	}
-}
 const iface = new Interface();
 
-const wasi = new WASI()
-//const accessPromise = navigator.requestMIDIAccess({sysex: true});
-WebAssembly.instantiateStreaming(fetch('oscmix.wasm'), wasi).then(async (obj) => {
-	console.log(obj);
-	wasi.memory = obj.instance.exports.memory;
-	//const access = await accessPromise;
-	//const inputs = Array.from(access.inputs.values());
-	//const input = inputs[1];
-	//const output = Array.from(access.outputs.values())[1];
-	//console.log('input', input);
-	//wasi.midiOut = output;
-	obj.instance.exports._initialize();
-	console.log(obj.instance.exports);
-	/*
-	setInterval(() => {
-		obj.instance.exports.timer(0);
-	}, 500);
-	input.onmidimessage = (message) => {
-		if (message.data[0] == 0xf0) {
-			if (message.data.length > 1024) {
-				console.log('dropping long sysex');
-				return;
+function setupMIDI(access) {
+	console.log(access);
+	console.log(Array.from(access.inputs.values()));
+	console.log(Array.from(access.outputs.values()));
+	const ports = {
+		input: document.getElementById('connection-midi-input'),
+		output: document.getElementById('connection-midi-output'),
+	};
+	access.onstatechange = (event) => {
+		const select = ports[event.port.type];
+		switch (event.port.state) {
+		case 'connected':
+			select.add(new Option(event.port.name, event.port.id));
+			break;
+		case 'disconnected':
+			let i = 0;
+			for (const option of select.options) {
+				if (option.value == event.port.id) {
+					select.remove(i);
+					break;
+				}
+				++i;
 			}
-			const sysex = new Uint8Array(obj.instance.exports.memory.buffer, obj.instance.exports.sysexbuf, message.data.length);
-			sysex.set(message.data);
-			obj.instance.exports.wasmsysex(message.data.length);
-			//console.log(message);
+			break;
 		}
 	};
-	*/
-
-	//obj.instance.exports.midiread();
-});
-
-let midiAccess
-function midiStateChange(event) {
-	const select = document.getElementById('connection-midi-' + event.port.type);
-	switch (event.port.state) {
-	case 'connected':
-		select.add(new Option(event.port.name, event.port.id));
-		break;
-	case 'disconnected':
-		let i = 0;
-		for (const option of select.options) {
-			if (option.value == event.port.id) {
-				select.remove(i);
-				break;
-			}
-			++i;
-		}
-		break;
-	}
+	for (const input of access.inputs.values())
+		ports.input.add(new Option(input.name, input.id));
+	ports.input.disabled = false;
+	for (const output of access.outputs.values())
+		ports.output.add(new Option(output.name, output.id));
+	ports.output.disabled = false;
+	return access;
 }
 
-function setupMIDI() {
-	console.log(midiAccess);
-	midiAccess.onstatechange = midiStateChange;
-	const midiInput = document.getElementById('connection-midi-input');
-	for (const input of midiAccess.inputs.values())
-		midiInput.add(new Option(input.name, input.id));
-	const midiOutput = document.getElementById('connection-midi-output');
-	for (const output of midiAccess.outputs.values())
-		midiOutput.add(new Option(output.name, output.id));
+function midiAccessChanged(status) {
+	const denied = status.state == 'denied';
+	document.getElementById('connection-type-midi').disabled = denied;
+	if (denied) {
+		const connectionType = document.getElementById('connection-type');
+		connectionType.selectedIndex = 0;
+		connectionType.dataset.value = connectionType.value
+	}
 }
 
 function setupInterface() {
+	let midiAccess;
+	let wasmModule;
+
 	const connectionType = document.getElementById('connection-type');
 	connectionType.dataset.value = connectionType.value;
-	connectionType.addEventListener('change', async (event) => {
+	connectionType.addEventListener('change', (event) => {
 		event.target.dataset.value = event.target.value
-		switch (event.target.value) {
-		case 'MIDI':
-			if (!midiAccess) {
-				midiAccess = await navigator.requestMIDIAccess({sysex: true});
-				setupMIDI()
-			}
-			break;
+		if (event.target.value == 'MIDI') {
+			if (!midiAccess)
+				midiAccess = navigator.requestMIDIAccess({sysex: true}).then(setupMIDI, () => midiAccess = null);
+			if (!wasmModule)
+				wasmModule = WebAssembly.compileStreaming(fetch('oscmix.wasm'));
 		}
 	});
 
 	const connectionForm = document.getElementById('connection');
-	connectionForm.addEventListener('submit', (event) => {
+	connectionForm.addEventListener('submit', async (event) => {
 		event.preventDefault();
 		delete document.getElementById('connection-icon').dataset.state;
-		switch (event.target.elements['connection-type'].value) {
+		const elements = event.target.elements;
+		switch (elements['connection-type'].value) {
 		case 'WebSocket':
-			iface.socket = new WebSocket(event.target.elements['connection-websocket-address'].value);
+			iface.connectSocket(new WebSocket(elements['connection-websocket-address'].value));
 			break;
 		case 'MIDI':
-			connectMIDI(event.target);
+			const [access, module] = await Promise.all([midiAccess, wasmModule]);
+			const input = access.inputs.get(elements['connection-midi-input'].value);
+			const output = access.outputs.get(elements['connection-midi-output'].value);
+			if (input && output) {
+				console.log(access, module);
+				iface.connectMIDI(module, input, output);
+			}
 			break;
 		}
 	});
@@ -765,6 +790,10 @@ function setupInterface() {
 }
 
 async function main() {
+	navigator.permissions.query({name: 'midi', sysex: true}).then((status) => {
+		midiAccessChanged(status);
+		status.onchange = (event) => midiAccessChanged(event.target);
+	});
 	document.addEventListener('DOMContentLoaded', setupInterface);
 }
 

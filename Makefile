@@ -10,16 +10,22 @@ ALSA_LDFLAGS?=$$(pkg-config --libs-only-L --libs-only-other alsa)
 ALSA_LDLIBS?=$$(pkg-config --libs-only-l alsa)
 
 GTK?=y
+WEB?=n
 
 TARGET=oscmix wsdgram $(TARGET-y)
 TARGET-$(ALSA)+=alsarawio
 TARGET-$(GTK)+=gtk
+TARGET-$(WEB)+=web
 
 all: $(TARGET)
 
 .PHONY: gtk
 gtk:
 	$(MAKE) -C gtk
+
+.PHONY: web
+web:
+	$(MAKE) -C web
 
 OSCMIX_OBJ=\
 	main.o\

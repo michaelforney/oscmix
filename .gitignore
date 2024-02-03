@@ -7,3 +7,4 @@
 /gtk/oscmix-gtk
 /gtk/resources.c
 /gtk/gschemas.compiled
+/web/oscmix.wasm
