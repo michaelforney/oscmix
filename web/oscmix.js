@@ -96,16 +96,12 @@ class Interface {
 		delete icon.dataset.state;
 		this.#socket = socket;
 		socket.onmessage = (event) => {
-			//console.log(event);
 			event.data.arrayBuffer().then(this.handleOSC.bind(this));
-			//this.handleOSC(await event.data.arrayBuffer());
 		};
 		socket.onopen = (event) => {
-			console.log(event);
 			icon.dataset.state = 'connected';
 		};
 		socket.onerror = socket.onclose = (event) => {
-			console.log(event);
 			icon.dataset.state = 'failed';
 			this.#socket = null;
 		};
@@ -118,8 +114,6 @@ class Interface {
 		this.disconnect();
 		const icon = document.getElementById('connection-icon');
 		delete icon.dataset.state;
-
-		console.log('connectMIDI', module, input, output);
 
 		try {
 			const iface = this;
@@ -157,7 +151,8 @@ class Interface {
 				},
 			};
 			input.onstatechange = output.onstatechange = (event) => {
-				console.log(event);
+				console.debug(event);
+				/* TODO */
 			};
 			const [instance,,] = await Promise.all([
 				WebAssembly.instantiate(module, imports),
@@ -165,7 +160,6 @@ class Interface {
 				output.open(),
 			]);
 			this.#midi = {input, output, memory: instance.exports.memory};
-			console.log(instance);
 			for (const symbol of ['jsdata', 'jsdatalen']) {
 				if (!(symbol in instance.exports))
 					throw Error(`wasm module does not export '${symbol}'`);
@@ -179,7 +173,7 @@ class Interface {
 			input.onmidimessage = (event) => {
 				if (event.data[0] == 0xf0 && event.data[event.data.length - 1] == 0xf7) {
 					if (event.data.length > jsdataLen) {
-						console.log('dropping long sysex');
+						console.warn('dropping long sysex');
 						return;
 					}
 					const sysex = new Uint8Array(instance.exports.memory.buffer, instance.exports.jsdata, event.data.length);
@@ -238,7 +232,7 @@ class Interface {
 	send(addr, types, args) {
 		if (types[0] != ',' || types.length != 1 + args.length)
 			throw new Error('invalid OSC type string');
-		console.log(addr, types, args);
+		console.debug(addr, types, args);
 		const encoder = new OSCEncoder();
 		encoder.putString(addr);
 		encoder.putString(types);
@@ -635,9 +629,6 @@ class OutputChannel extends Channel {
 const iface = new Interface();
 
 function setupMIDI(access) {
-	console.log(access);
-	console.log(Array.from(access.inputs.values()));
-	console.log(Array.from(access.outputs.values()));
 	const ports = {
 		input: document.getElementById('connection-midi-input'),
 		output: document.getElementById('connection-midi-output'),
@@ -708,10 +699,8 @@ function setupInterface() {
 			const [access, module] = await Promise.all([midiAccess, wasmModule]);
 			const input = access.inputs.get(elements['connection-midi-input'].value);
 			const output = access.outputs.get(elements['connection-midi-output'].value);
-			if (input && output) {
-				console.log(access, module);
+			if (input && output)
 				iface.connectMIDI(module, input, output);
-			}
 			break;
 		}
 	});
@@ -742,7 +731,6 @@ function setupInterface() {
 	iface.bind('/reverb/type', ',i', reverbType, 'selectedIndex', 'change');
 	reverbType.addEventListener('change', (event) => {
 		const type = reverbType.selectedIndex;
-		console.log(event);
 		reverbRoomScale.disabled = type >= 12;
 		reverbAttack.disabled = type != 12;
 		reverbHold.disabled = type != 12 && type != 13;
