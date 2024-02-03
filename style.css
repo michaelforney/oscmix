@@ -1,0 +1,272 @@
+* {
+	font-family: sans-serif;
+}
+body {
+	display: flex;
+	margin: 0;
+}
+html, body {
+	height: 100%;
+}
+summary {
+	font-weight: bold;
+	overflow: hidden;
+}
+summary > input {
+	float: right;
+}
+fieldset {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	border: 0;
+	padding: 0;
+}
+fieldset > label {
+	display: contents;
+}
+fieldset span:has(input[type="checkbox"]) {
+	text-align: right;
+}
+output {
+	border: 1px solid gray;
+	border-radius: 2px;
+	font-size: smaller;
+	padding: 2px;
+}
+.toggle-button {
+	font-size: small;
+	background-color: #eee;
+	border: 1px solid gray;
+	text-align: center;
+	padding: 2px;
+}
+.toggle-button > input[type="checkbox"] {
+	display: none;
+}
+.toggle-button:hover {
+	background-color: #ddd;
+}
+.toggle-button:active {
+	background-color: #f8f8f8;
+}
+.toggle-button:has(> input[type="checkbox"]:checked) {
+	background-color: #ccc;
+}
+
+#sidebar {
+	background-color: whitesmoke;
+	border-left: 1px solid gray;
+	overflow-y: auto;
+	padding: 4px 0 4px 4px;
+	min-width: 250px;
+}
+#sidebar > details > :not(:first-child) {
+	padding: 4px;
+}
+#sidebar fieldset {
+	row-gap: 4px;
+	padding: 4px;
+	margin: 0;
+}
+#connection-icon {
+	float: right;
+}
+#connection-icon[data-state="connected"]::after {
+	content: "\1F7E2";
+}
+#connection-icon[data-state="failed"]::after {
+	content: "\274C";
+}
+label:has(#connection-type:not([data-value="MIDI"])) ~ .connection-midi {
+	display: none;
+}
+label:has(#connection-type:not([data-value="WebSocket"])) ~ .connection-websocket {
+	display: none;
+}
+
+#channels {
+	display: flex;
+	flex-direction: column;
+	flex-grow: 1;
+	overflow: auto;
+}
+#channels > details {
+	padding: 4px;
+}
+/* HACK: it seems display: flex doesn't work properly in <details> */
+#channels > details:not([open]) + .channel-strip {
+	display: none;
+}
+#channels > hr {
+	margin: 3px 0;
+}
+
+.channel-strip {
+	flex-basis: 400px;
+	display: flex;
+	flex-shrink: 1;
+	min-height: 200px;
+	overflow-x: auto;
+	column-gap: 3px;
+	padding-inline: 3px;
+}
+.channel-outer {
+	display: flex;
+}
+.channel-outer.channel-right:has(.channel-stereo:checked) {
+	display: none;
+}
+.channel {
+	display: flex;
+	flex-direction: column;
+	width: 100px;
+}
+.channel > :first-child {
+	border-top-left-radius: 4px;
+}
+.channel:not(:has(.channel-show-settings:checked, .channel-show-eq:checked, .channel-show-dynamics:checked)) > :first-child {
+	border-top-right-radius: 4px;
+}
+.channel > :last-child {
+	border-bottom-left-radius: 4px;
+	border: 1px solid gray;
+}
+.channel:not(:has(.channel-show-settings:checked, .channel-show-eq:checked, .channel-show-dynamics:checked)) > :last-child {
+	border-bottom-right-radius: 4px;
+}
+.channel > * {
+	border: 1px solid gray;
+	border-bottom: 0;
+}
+.channel:has(.channel-show-settings:not(:checked)) ~ .channel-panel-settings {
+	display: none;
+}
+.channel:has(.channel-show-eq:not(:checked)) ~ .channel-panel-eq {
+	display: none;
+}
+.channel:has(.channel-show-dynamics:not(:checked)) ~ .channel-panel-dynamics {
+	display: none;
+}
+.channel-name {
+	text-align: center;
+	font-weight: bold;
+}
+.channel-mute {
+	display: flex;
+	justify-content: center;
+}
+.channel-mute > label {
+	border-left-width: 0;
+	margin-block: 2px;
+	flex-grow: 1;
+}
+.channel-mute > label:first-of-type {
+	border-top-left-radius: 4px;
+	border-bottom-left-radius: 4px;
+	margin-left: 2px;
+	border-left-width: 1px;
+}
+.channel-mute > label:last-of-type {
+	border-top-right-radius: 4px;
+	border-bottom-right-radius: 4px;
+	margin-right: 2px;
+}
+.channel-volume {
+	display: flex;
+	border-top: 0;
+	flex-grow: 1;
+}
+.channel-volume meter {
+	height: auto;
+	writing-mode: vertical-lr;
+	margin-inline: 2px;
+	margin-block: 0;
+}
+.channel-volume meter + meter {
+	margin-left: 0;
+}
+.channel-volume meter:not(:only-of-type) {
+	block-size: 8px;
+}
+.channel-volume > :first-child {
+	margin-left: auto;
+}
+.channel-volume > input[type="range"] {
+	margin-right: auto;
+}
+.channel-volume > :where(meter, input[type="range"]) {
+	writing-mode: vertical-lr;
+	margin: 2px 0;
+}
+.channel-volume-number {
+	text-align: center;
+}
+.channel-volume-output {
+	text-align: center;
+}
+.channel-volume-output option:disabled {
+	display: none;
+}
+.channel-panel-buttons {
+	margin-top: auto;
+	margin-bottom: 4px;
+}
+.channel-panel-buttons .toggle-button {
+	display: block;
+	border-width: 1px 0 0 1px;
+}
+.channel-panel-buttons .toggle-button:first-child {
+	border-top-left-radius: 4px;
+}
+.channel-panel-buttons .toggle-button:last-child {
+	border-bottom-width: 1px;
+	border-bottom-left-radius: 4px;
+}
+.channel:has(~ .channel-panel-eq :is(.eq, .lowcut):checked) .channel-show-eq-label,
+.channel:has(~ .channel-panel-dynamics :is(.dynamics, .autolevel):checked) .channel-show-dynamics-label {
+	box-shadow: inset 0 0 0.5em selecteditem;
+}
+
+.channel-panel {
+	border: 1px solid gray;
+	border-left: 0;
+	border-top-right-radius: 4px;
+	border-bottom-right-radius: 4px;
+	background-color: whitesmoke;
+	padding: 4px;
+	width: 200px;
+	overflow-y: auto;
+}
+.channel-panel fieldset {
+	font-size: 0.9em;
+}
+.channel-panel svg {
+	border: 1px solid;
+	border-radius: 3px;
+	background-color: white;
+	box-sizing: border-box;
+	width: 100%;
+	height: 75px;
+}
+.eq-grid {
+	stroke: black;
+}
+.eq-curve {
+	fill: none;
+	stroke: selecteditem;
+	stroke-width: 3;
+}
+.eq-controls {
+	display: grid;
+	grid-template-columns: 0fr 1fr 1fr 1fr;
+}
+.eq-controls :nth-child(4n+1) {
+	margin-right: 2px;
+}
+.eq-controls :not(:nth-child(4n+1)) {
+	text-align: center;
+}
+.eq-controls :is(select, input[type="number"]) {
+	box-sizing: border-box;
+	width: 100%;
+}
