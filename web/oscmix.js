@@ -492,12 +492,16 @@ class Channel {
 		for (const node of fragment.querySelectorAll('.channel-panel-buttons input[type="checkbox"]'))
 			node.onchange = onPanelButtonChanged;
 
+		const drawEQ = this.drawEQ.bind(this);
 		this.svg = fragment.getElementById('eq-plot');
 		this.grid = fragment.getElementById('eq-grid');
 		this.curve = fragment.getElementById('eq-curve');
 		this.bands = [new EQBand(), new EQBand(), new EQBand()];
-		const observer = new ResizeObserver(this.drawEQ.bind(this));
+		const observer = new ResizeObserver(drawEQ);
 		observer.observe(this.svg);
+
+		this.eqEnabled = fragment.getElementById('eq');
+		this.eqEnabled.addEventListener('change', drawEQ);
 
 		const band1Type = fragment.getElementById('eq-band1type')
 		band1Type.addEventListener('change', (event) => {
@@ -522,6 +526,12 @@ class Channel {
 			}
 		}
 
+		this.lowCutEnabled = fragment.getElementById('lowcut');
+		this.lowCutEnabled.addEventListener('change', drawEQ);
+		this.lowCutSlope = fragment.getElementById('lowcut-slope');
+		this.lowCutSlope.addEventListener('change', drawEQ);
+		this.lowCutFreq = fragment.getElementById('lowcut-freq');
+		this.lowCutFreq.addEventListener('change', drawEQ);
 
 		for (const node of fragment.querySelectorAll('*[id]')) {
 			if (Channel.#elements.has(node.id)) {
@@ -564,18 +574,18 @@ class Channel {
 			const f2 = Math.pow(10, 2 * ((x - 0.5) * 3 / w + 1.3));
 			const f4 = f2 * f2;
 			let y = 1;
-			for (const band of this.bands)
-				y *= (band.a0 + band.a1 * f2 + band.a2 * f4) / (band.b0 + band.b1 * f2 + f4);
-			/*
-			if (self->lowcut_order) {
-				a0 = f2 / (self->lowcut_freq * self->lowcut_freq);
-				a = 1;
-				for (i = 0; i < self->lowcut_order; ++i) {
-					a = a * a0;
-				}
-				y *= a / (1 + a);
+			if (this.eqEnabled.checked) {
+				for (const band of this.bands)
+					y *= (band.a0 + band.a1 * f2 + band.a2 * f4) / (band.b0 + band.b1 * f2 + f4);
 			}
-			*/
+			if (this.lowCutEnabled.checked) {
+				const order = this.lowCutSlope.selectedIndex;
+				const k = [1, 0.655, 0.528, 0.457];
+				const freq = this.lowCutFreq.valueAsNumber * k[order];
+
+				for (let i = 0; i <= order; ++i)
+					y *= f2 / (f2 + freq * freq);
+			}
 			y = Math.round(h / 2) + 0.5 + -10 * h / 48 * Math.log10(y);
 			points.push(x, y);
 		}
