@@ -64,10 +64,10 @@ void
 http_error(FILE *fp, int code, const char *text, const char *hdr[], size_t hdr_len)
 {
 	assert(code >= 100 && code < 1000);
-	fprintf(fp, "HTTP/1.1 %d %s\r\nContent-Type:text/plain\r\nContent-Length:%zu\r\n", code, text, 4 + strlen(text));
+	fprintf(fp, "HTTP/1.1 %d %s\r\nContent-Type:text/plain\r\nContent-Length:%zu\r\n", code, text, 5 + strlen(text));
 	while (hdr_len > 0) {
 		--hdr_len;
 		fprintf(fp, "%s\r\n", *hdr);
 	}
-	fprintf(fp, "\r\n%d %s", code, text);
+	fprintf(fp, "\r\n%d %s\n", code, text);
 }

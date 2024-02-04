@@ -32,7 +32,7 @@ usage(void)
 	exit(1);
 }
 
-static int
+static void
 handshake(FILE *rd, FILE *wr)
 {
 	static const char response[] =
@@ -110,11 +110,11 @@ handshake(FILE *rd, FILE *wr)
 	fwrite(response, 1, sizeof response - 1, wr);
 	fprintf(wr, "Sec-WebSocket-Accept: %s\r\n\r\n", accept);
 	fflush(wr);
-	fprintf(stderr, "handshake done\n");
-	return 0;
+	return;
 
 fail:
-	return -1;
+	http_error(wr, 400, "Bad Request", NULL, 0);
+	exit(1);
 }
 
 static void
