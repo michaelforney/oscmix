@@ -633,34 +633,67 @@ The pan law is contant power with sin/cos taper and -3 dB center.
 	7	176400
 	8	192000
 
-### EQ Filters
+## EQ Filters
 
-#### Low Pass
+### Low Pass
 
 $$H(s) = \frac{1}{s^2 + \frac{s}{Q} + 1}$$
 
 $$\left|H\left(i\frac{f}{f_0}\right)\right|^2 = \frac{f_0^4}{(f_0^2 - f^2)^2 + \frac{f_0^2}{Q^2} f^2} = \frac{f_0^4}{f^4 + \left(\frac{1}{Q^2} - 2\right) f_0^2 f^2 + f_0^4}$$
 
-#### High Pass
+### High Pass
 
 $$H(s) = \frac{s^2}{s^2 + \frac{s}{Q} + 1}$$
 
 $$\left|H\left(i\frac{f}{f_0}\right)\right|^2 = \frac{f^4}{(f_0^2 - f^2)^2 + \frac{f_0^2}{Q^2} f^2} = \frac{f^4}{f^4 + \left(\frac{1}{Q^2} - 2\right) f_0^2 f^2 + f_0^4}$$
 
-#### Low Shelf
+### Low Shelf
 
 $$H(s) = A \frac{s^2 + \frac{\sqrt{A}}{Q} s + A}{A s^2 + \frac{\sqrt{A}}{Q} s + 1}$$
 
 $$\left|H\left(i\frac{f}{f_0}\right)\right|^2 = A^2 \frac{(A f_0^2 - f^2)^2 + \frac{A}{Q^2} f_0^2 f^2}{(f_0^2 - A f^2)^2 + \frac{A}{Q^2} f_0^2 f^2} = \frac{f^4 + \left(\frac{1}{Q^2} - 2\right) A f_0^2 f^2 + A^2 f_0^4}{f^4 + \left(\frac{1}{Q^2} - 2\right) \frac{f_0^2}{A} + \frac{f_0^4}{A^2}}$$
 
-#### High Shelf
+### High Shelf
 
 $$H(s) = A \frac{A s^2 + \frac{\sqrt{A}}{Q} s + 1}{s^2 + \frac{\sqrt{A}}{Q} s + A}$$
 
 $$\left|H\left(i\frac{f}{f_0}\right)\right|^2 = A^2 \frac{(f_0^2 - A f^2)^2 + \frac{A}{Q^2} f_0^2 f^2}{(A f_0^2 - f^2)^2 + \frac{A}{Q^2} f_0^2 f^2} = \frac{A^4 f^4 + \left(\frac{1}{Q^2} - 2\right) A^3 f_0^2 f^2 + A^2 f_0^4}{f^4 + \left(\frac{1}{Q^2} - 2\right) A f_0^2 f^2 + A^2 f_0^4}$$
 
-#### Peak
+### Peak
 
 $$H(s) = \frac{s^2 + s\frac{A}{Q} + 1}{s^2 + s \frac{1}{AQ} + 1}$$
 
 $$\left|H\left(i\frac{f}{f_0}\right)\right|^2 = \frac{(f_0^2 - f^2)^2 + \frac{A^2 f_0^2}{Q^2} f^2}{(f_0^2 - f^2)^2 + \frac{f_0^2}{A^2 Q^2} f^2} = \frac{f^4 + \left(\frac{A^2}{Q^2} - 2\right) f_0^2 f^2 + f_0^4}{f^4 + \left(\frac{1}{A^2 Q^2} - 2\right) f_0^2 f^2 + f_0^4}$$
+
+### Low Cut (adjustable slope)
+
+> _Thanks to RME for providing information about the low cut filter!_
+
+The low cut filter with adjustable slope is the product of a sequence
+of first-order elements, each with its pole scaled by a correction
+factor $k_n$ so that the filter's gain at the cut-off frequency
+stays at -3 dB. The $n$ th order filter has slope $-6n$ dB/octave.
+
+$$H_n(s) = \left(\frac{s}{s + k_n}\right)^n$$
+
+$$\left|H_n\left(i\frac{f}{f_0}\right)\right|^2 = \left(\frac{f^2}{f^2 + k_n^2 f_0^2}\right)^n$$
+
+To derive the correction factors $k_n$, we want $|H_n(i)^n| = -3
+dB = \frac{1}{\sqrt{2}}$. So
+
+```math
+\begin{align*}
+\frac{1}{\sqrt{2}} &= |H_n(i)^n| = |H_n(i)|^n = \left|\frac{i}{i + k_n}\right|^n = \frac{1}{\sqrt{1 + k_n^2}^n} \\
+2 &= (1 + k_n^2)^n \\
+\sqrt[n]{2} &= 1 + k_n^2 \\
+k_n &= \sqrt{\sqrt[n]{2} - 1}
+\end{align*}
+```
+
+Plugging in $n = 1, 2, 3, 4$, we get $k_1 = 1$, $k_2 \approx 0.6436$,
+$k_3 \approx 0.5098$, $k_4 \approx 0.4350$. However, in practice,
+RME uses constants $k_1 = 1$, $k_2 = 0.655$, $k_3 = 0.528$, $k_4 =
+0.457$, corresponding to gain $0.7069$, $0.6994$, $0.6910$, and
+$0.6836$. I'm not sure how these constants were chosen and why they
+differ from the ones I derived, but for consistency, oscmix uses
+the RME constants.
