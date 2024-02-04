@@ -1447,7 +1447,7 @@ match(const char *pat, const char *str)
 }
 
 int
-handleosc(unsigned char *buf, size_t len)
+handleosc(const unsigned char *buf, size_t len)
 {
 	const char *addr, *next;
 	const struct oscnode *path[8], *node;
@@ -1458,8 +1458,8 @@ handleosc(unsigned char *buf, size_t len)
 	if (len % 4 != 0)
 		return -1;
 	msg.err = NULL;
-	msg.buf = buf;
-	msg.end = buf + len;
+	msg.buf = (unsigned char *)buf;
+	msg.end = (unsigned char *)buf + len;
 	msg.type = "ss";
 
 	addr = oscgetstr(&msg);
@@ -1676,7 +1676,7 @@ handlelevels(int subid, uint_least32_t *payload, size_t len)
 }
 
 void
-handlesysex(unsigned char *buf, size_t len, uint_least32_t *payload)
+handlesysex(const unsigned char *buf, size_t len, uint_least32_t *payload)
 {
 	struct sysex sysex;
 	int ret;
