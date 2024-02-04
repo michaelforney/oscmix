@@ -38,7 +38,6 @@ struct oscnode {
 };
 
 struct mix {
-	bool new;
 	signed char pan;
 	short vol;
 };
