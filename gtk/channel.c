@@ -380,6 +380,21 @@ static void on_eq_band2q_changed(GtkAdjustment *adj, gpointer ptr) { on_eq_bandq
 static void on_eq_band3q_changed(GtkAdjustment *adj, gpointer ptr) { on_eq_bandq_changed(adj, ptr, 2); }
 
 static void
+on_lowcut_changed(GObject *obj, GParamSpec *pspec, gpointer ptr)
+{
+	Channel *self;
+	int order;
+
+	self = OSCMIX_CHANNEL(ptr);
+	if (gtk_switch_get_active(GTK_SWITCH(self->lowcut))) {
+		order = gtk_combo_box_get_active(GTK_COMBO_BOX(self->lowcut_slope)) + 1;
+	} else {
+		order = 0;
+	}
+	eq_plot_set_lowcut_order(self->eq_plot, order);
+}
+
+static void
 on_output_changed(GtkComboBox *combo, gpointer ptr)
 {
 	Channel *self, *output;
@@ -465,6 +480,7 @@ channel_class_init(ChannelClass *class)
 	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_eq_band1q_changed);
 	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_eq_band2q_changed);
 	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_eq_band3q_changed);
+	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_lowcut_changed);
 	gtk_widget_class_bind_template_callback(GTK_WIDGET_CLASS(class), on_output_changed);
 
 	g_object_class_install_property(G_OBJECT_CLASS(class), PROP_TYPE,

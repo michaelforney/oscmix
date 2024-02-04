@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <math.h>
 #include <stdbool.h>
 #include "eqplot.h"
@@ -5,6 +6,8 @@
 struct _EQPlot {
 	GtkDrawingArea base;
 	GArray *bands;
+	int lowcut_freq;
+	int lowcut_order;
 };
 
 typedef struct {
@@ -31,6 +34,7 @@ G_DEFINE_ENUM_TYPE(EQFilterType, eq_filter_type,
 
 enum {
 	PROP_N_BANDS = 1,
+	PROP_LOWCUT_FREQ,
 };
 
 static void
@@ -42,6 +46,9 @@ eq_plot_set_property(GObject *obj, guint id, const GValue *val, GParamSpec *spec
 	switch (id) {
 	case PROP_N_BANDS:
 		eq_plot_set_n_bands(self, g_value_get_uint(val));
+		break;
+	case PROP_LOWCUT_FREQ:
+		eq_plot_set_lowcut_freq(self, g_value_get_uint(val));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, id, spec);
@@ -58,6 +65,9 @@ eq_plot_get_property(GObject *obj, guint id, GValue *val, GParamSpec *spec)
 	switch (id) {
 	case PROP_N_BANDS:
 		g_value_set_uint(val, self->bands->len);
+		break;
+	case PROP_LOWCUT_FREQ:
+		g_value_set_uint(val, self->lowcut_freq);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(obj, id, spec);
@@ -111,9 +121,19 @@ eq_plot_draw(GtkWidget *widget, cairo_t *cr)
 		f2 = pow(10, 2 * (x * 3. / width + 1.3));
 		f4 = f2 * f2;
 		y = 1;
-		for (guint i = 0; i < self->bands->len; ++i) {
+		for (i = 0; i < self->bands->len; ++i) {
 			band = &g_array_index(self->bands, EQBand, i);
 			y *= (band->a0 + band->a1 * f2 + band->a2 * f4) / (band->b0 + band->b1 * f2 + f4);
+		}
+		if (self->lowcut_order) {
+			static const double kn[] = {1, 0.655, 0.528, 0.457};
+			double lc, k;
+
+			k = kn[self->lowcut_order - 1];
+			lc = f2 / (f2 + k * k * self->lowcut_freq * self->lowcut_freq);
+			for (i = 0; i < self->lowcut_order; ++i) {
+				y = y * lc;
+			}
 		}
 		y = -10 * log10(y);
 		cairo_line_to(cr, x, y);
@@ -152,6 +172,8 @@ eq_plot_class_init(EQPlotClass *class)
 	gtk_widget_class_set_css_name(GTK_WIDGET_CLASS(class), "eqplot");
 	g_object_class_install_property(G_OBJECT_CLASS(class), PROP_N_BANDS,
 		g_param_spec_uint("n-bands", NULL, NULL, 0, G_MAXUINT, 0, G_PARAM_READWRITE));
+	g_object_class_install_property(G_OBJECT_CLASS(class), PROP_LOWCUT_FREQ,
+		g_param_spec_uint("lowcut-freq", NULL, NULL, 0, G_MAXUINT, 0, G_PARAM_READWRITE));
 }
 
 static void
@@ -267,4 +289,19 @@ eq_plot_set_band_q(EQPlot *self, int index, double q)
 		update_band_coeff(band);
 		gtk_widget_queue_draw(GTK_WIDGET(self));
 	}
+}
+
+void
+eq_plot_set_lowcut_order(EQPlot *self, int order)
+{
+	assert(order >= 0 && order <= 4);
+	self->lowcut_order = order;
+	gtk_widget_queue_draw(GTK_WIDGET(self));
+}
+
+void
+eq_plot_set_lowcut_freq(EQPlot *self, int freq)
+{
+	self->lowcut_freq = freq;
+	gtk_widget_queue_draw(GTK_WIDGET(self));
 }

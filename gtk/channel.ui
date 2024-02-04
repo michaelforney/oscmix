@@ -332,6 +332,7 @@
 														<property name="visible">true</property>
 														<property name="vexpand">true</property>
 														<property name="n-bands">3</property>
+														<property name="lowcut-freq" bind-source="lowcut_freq" bind-property="value"/>
 													</object>
 													<packing>
 														<property name="left-attach">0</property>
@@ -649,6 +650,7 @@
 														<property name="visible">true</property>
 														<property name="halign">end</property>
 														<property name="hexpand">true</property>
+														<signal name="notify::active" handler="on_lowcut_changed"/>
 													</object>
 													<packing>
 														<property name="top-attach">0</property>
@@ -669,6 +671,7 @@
 												<child>
 													<object class="GtkComboBoxText" id="lowcut_slope">
 														<property name="visible">true</property>
+														<signal name="notify::active" handler="on_lowcut_changed"/>
 														<items>
 															<item>6 dB/o</item>
 															<item>12 dB/o</item>

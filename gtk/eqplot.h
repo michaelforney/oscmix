@@ -18,5 +18,7 @@ void eq_plot_set_band_type(EQPlot *self, int index, EQFilterType type);
 void eq_plot_set_band_freq(EQPlot *self, int index, int freq);
 void eq_plot_set_band_gain(EQPlot *self, int index, double gain);
 void eq_plot_set_band_q(EQPlot *self, int index, double q);
+void eq_plot_set_lowcut_order(EQPlot *self, int order);
+void eq_plot_set_lowcut_freq(EQPlot *self, int freq);
 
 #endif
