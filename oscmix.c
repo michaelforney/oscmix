@@ -987,8 +987,8 @@ setdurecdelete(const struct oscnode *path[], int reg, struct oscmsg *msg)
 	return 0;
 }
 
-void
-refresh(void)
+static int
+setrefresh(const struct oscnode *path[], int reg, struct oscmsg *msg)
 {
 	struct input *pb;
 	char addr[256];
@@ -996,18 +996,13 @@ refresh(void)
 
 	setreg(0x3e04, 0x67cd);
 	refreshing = true;
+	/* FIXME: needs lock */
 	for (i = 0; i < LEN(playbacks); ++i) {
 		pb = &playbacks[i];
 		snprintf(addr, sizeof addr, "/playback/%d/stereo", i + 1);
 		oscsend(addr, ",i", pb->stereo);
 	}
 	oscflush();
-}
-
-static int
-setrefresh(const struct oscnode *path[], int reg, struct oscmsg *msg)
-{
-	refresh();
 	return 0;
 }
 

@@ -121,6 +121,7 @@ main(int argc, char *argv[])
 	static char defrecvaddr[] = "udp!127.0.0.1!7222";
 	static char defsendaddr[] = "udp!127.0.0.1!8222";
 	static char mcastaddr[] = "udp!224.0.0.1!8222";
+	static const unsigned char refreshosc[] = "/refresh\0\0\0\0,\0\0\0";
 	int err, sig, rfd, wfd;
 	char *recvaddr, *sendaddr;
 	pthread_t midireader, oscreader;
@@ -179,7 +180,7 @@ main(int argc, char *argv[])
 	if (setitimer(ITIMER_REAL, &it, NULL) != 0)
 		fatal("setitimer:");
 
-	refresh();
+	handleosc(refreshosc, sizeof refreshosc - 1);
 	for (;;) {
 		sigwait(&set, &sig);
 		handletimer(lflag);
