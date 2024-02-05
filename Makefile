@@ -13,7 +13,7 @@ GTK?=y
 WEB?=n
 
 TARGET=oscmix wsdgram $(TARGET-y)
-TARGET-$(ALSA)+=alsarawio
+TARGET-$(ALSA)+=alsarawio alsaseqio
 TARGET-$(GTK)+=gtk
 TARGET-$(WEB)+=web
 
