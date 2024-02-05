@@ -498,6 +498,7 @@ class Channel {
 			volumeRange.oninput = volumeNumber.onchange = (event) => {
 				iface.send(`/mix/${output.selectedIndex+1}${prefix}`, ',f', [event.target.value]);
 				volumeRange.value = volumeNumber.value = event.target.value;
+				this.volume[output.selectedIndex] = event.target.value;
 			};
 			this.volume = [];
 			for (let i = 0; i < 20; ++i) {
