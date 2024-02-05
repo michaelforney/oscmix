@@ -1,6 +1,7 @@
 image: alpine/latest
 packages:
 - linux-headers
+- alsa-lib-dev
 - gtk+3.0-dev
 - clang
 - lld

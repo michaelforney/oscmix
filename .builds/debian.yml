@@ -1,5 +1,6 @@
 image: debian/stable
 packages:
+- libasound2-dev
 - libgtk-3-dev
 sources:
 - https://git.sr.ht/~mcf/oscmix
