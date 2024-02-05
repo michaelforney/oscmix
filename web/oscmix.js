@@ -354,6 +354,21 @@ class Channel {
 	static OUTPUT = 1;
 	static PLAYBACK = 2;
 
+	static #inputNames = [
+		'Mic/Line 1', 'Mic/Line 2', 'Inst/Line 3', 'Inst/Line 4',
+		'Analog 5', 'Analog 6', 'Analog 7', 'Analog 8',
+		'SPDIF L', 'SPDIF R', 'AES L', 'AES R',
+		'ADAT 1', 'ADAT 2', 'ADAT 3', 'ADAT 4',
+		'ADAT 5', 'ADAT 6', 'ADAT 7', 'ADAT 8',
+	];
+	static #outputNames = [
+		'Analog 1', 'Analog 2', 'Analog 3', 'Analog 4',
+		'Analog 5', 'Analog 6', 'Phones 7', 'Phones 8',
+		'SPDIF L', 'SPDIF R', 'AES L', 'AES R',
+		'ADAT 1', 'ADAT 2', 'ADAT 3', 'ADAT 4',
+		'ADAT 5', 'ADAT 6', 'ADAT 7', 'ADAT 8',
+	];
+
 	static #elements = new Set([
 		'eq',
 		'eq-band1type',
@@ -384,7 +399,23 @@ class Channel {
 		'autolevel-risetime',
 	]);
 
-	constructor(type, iface, name, prefix, left, index) {
+	constructor(type, index, iface, left) {
+		let name, prefix;
+		switch (type) {
+		case Channel.INPUT:
+			name = Channel.#inputNames[index];
+			prefix = `/input/${index + 1}`;
+			break;
+		case Channel.PLAYBACK:
+			name = Channel.#outputNames[index];
+			prefix = `/playback/${index + 1}`;
+			break;
+		case Channel.OUTPUT:
+			name = Channel.#outputNames[index];
+			prefix = `/output/${index + 1}`;
+			break;
+		}
+
 		const template = document.getElementById('channel-template');
 		const fragment = template.content.cloneNode(true);
 
@@ -594,48 +625,6 @@ class Channel {
 
 };
 
-class InputChannel extends Channel {
-	static #defaultNames = [
-		'Mic/Line 1', 'Mic/Line 2', 'Inst/Line 3', 'Inst/Line 4',
-		'Analog 5', 'Analog 6', 'Analog 7', 'Analog 8',
-		'SPDIF L', 'SPDIF R', 'AES L', 'AES R',
-		'ADAT 1', 'ADAT 2', 'ADAT 3', 'ADAT 4',
-		'ADAT 5', 'ADAT 6', 'ADAT 7', 'ADAT 8',
-	];
-
-	constructor(iface, index, left) {
-		super(Channel.INPUT, iface, InputChannel.#defaultNames[index], `/input/${index + 1}`, left, index);
-	}
-};
-
-class PlaybackChannel extends Channel {
-	static #defaultNames = [
-		'Analog 1', 'Analog 2', 'Analog 3', 'Analog 4',
-		'Analog 5', 'Analog 6', 'Phones 7', 'Phones 8',
-		'SPDIF L', 'SPDIF R', 'AES L', 'AES R',
-		'ADAT 1', 'ADAT 2', 'ADAT 3', 'ADAT 4',
-		'ADAT 5', 'ADAT 6', 'ADAT 7', 'ADAT 8',
-	];
-
-	constructor(iface, index, left) {
-		super(Channel.PLAYBACK, iface, PlaybackChannel.#defaultNames[index], `/playback/${index + 1}`, left, index);
-	}
-};
-
-class OutputChannel extends Channel {
-	static #defaultNames = [
-		'Analog 1', 'Analog 2', 'Analog 3', 'Analog 4',
-		'Analog 5', 'Analog 6', 'Phones 7', 'Phones 8',
-		'SPDIF L', 'SPDIF R', 'AES L', 'AES R',
-		'ADAT 1', 'ADAT 2', 'ADAT 3', 'ADAT 4',
-		'ADAT 5', 'ADAT 6', 'ADAT 7', 'ADAT 8',
-	];
-
-	constructor(iface, index, left) {
-		super(Channel.OUTPUT, iface, OutputChannel.#defaultNames[index], `/output/${index + 1}`, left, index);
-	}
-};
-
 const iface = new Interface();
 
 function setupMIDI(access) {
@@ -716,17 +705,13 @@ function setupInterface() {
 	});
 
 	/* make channels */
-	const inputs = []
-	const playbacks = []
-	const outputs = []
-	const inputsDiv = document.getElementById('inputs');
-	const playbacksDiv = document.getElementById('playbacks');
-	const outputsDiv = document.getElementById('outputs');
-	for (const [type, array, div] of [[InputChannel, inputs, inputsDiv], [PlaybackChannel, playbacks, playbacksDiv], [OutputChannel, outputs, outputsDiv]]) {
-		for (i = 0; i < 20; ++i) {
-			const channel = new type(iface, array.length, i % 2 == 1 ? array[i - 1] : null);
-			array.push(channel);
+	for (const [type, id] of [[Channel.INPUT, 'inputs'], [Channel.PLAYBACK, 'playbacks'], [Channel.OUTPUT, 'outputs']]) {
+		const div = document.getElementById(id);
+		let left;
+		for (let i = 0; i < 20; ++i) {
+			const channel = new Channel(type, i, iface, left);
 			div.appendChild(channel.element);
+			left = i % 2 == 0 ? channel : null;
 		}
 	}
 
