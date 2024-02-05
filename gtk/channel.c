@@ -110,6 +110,7 @@ channel_constructed(GObject *obj)
 	//bind_osc(g_strdup_printf("/%s/%d/playchan", type->value_nick, self->id), G_TYPE_INT, self->ui.stereo, "active");
 	mixer_bind(osc, g_strdup_printf("/%s/%d/msproc", type->value_nick, self->id), G_TYPE_BOOLEAN, self->ui.msproc, "active");
 	mixer_bind(osc, g_strdup_printf("/%s/%d/phase", type->value_nick, self->id), G_TYPE_BOOLEAN, self->ui.phase, "active");
+	mixer_bind(osc, g_strdup_printf("/%s/%d/fx", type->value_nick, self->id), G_TYPE_FLOAT, self->ui.fx, "value");
 	switch (self->type) {
 	case CHANNEL_TYPE_INPUT:
 		if (self->flags & CHANNEL_FLAG_ANALOG) {
@@ -129,7 +130,6 @@ channel_constructed(GObject *obj)
 		break;
 	case CHANNEL_TYPE_OUTPUT:
 		mixer_bind(osc, g_strdup_printf("/output/%d/balance", self->id), G_TYPE_INT, self->pan, "value");
-		mixer_bind(osc, g_strdup_printf("/output/%d/fxreturn", self->id), G_TYPE_FLOAT, self->ui.fx, "value");
 		mixer_bind(osc, g_strdup_printf("/output/%d/volume", self->id), G_TYPE_FLOAT, self->ui.volume, "value");
 		gtk_label_set_text(GTK_LABEL(self->ui.fx_label), "FX Return");
 		gtk_widget_destroy(self->ui.output);
@@ -145,8 +145,6 @@ channel_constructed(GObject *obj)
 			mixer_bind(osc, g_strdup_printf("/%s/%d/reflevel", type->value_nick, self->id), G_TYPE_INT, self->ui.reflevel, "active");
 		}
 	}
-	if (self->type != CHANNEL_TYPE_OUTPUT)
-		mixer_bind(osc, g_strdup_printf("/%s/%d/fxsend", type->value_nick, self->id), G_TYPE_FLOAT, self->ui.fx, "value");
 	if (self->type != CHANNEL_TYPE_PLAYBACK) {
 		mixer_bind(osc, g_strdup_printf("/%s/%d/eq", type->value_nick, self->id), G_TYPE_BOOLEAN, self->ui.eq, "active");
 		mixer_bind(osc, g_strdup_printf("%s/eq/band1type", prefix), G_TYPE_INT, self->eq_band1type, "active");

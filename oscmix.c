@@ -1060,7 +1060,7 @@ static const struct oscnode autoleveltree[] = {
 
 static const struct oscnode inputtree[] = {
 	{"mute", 0x00, .set=setinputmute, .new=newbool},
-	{"fxsend", 0x01, .set=setfixed, .new=newfixed, .min=-650, .max=0, .scale=0.1},
+	{"fx", 0x01, .set=setfixed, .new=newfixed, .min=-650, .max=0, .scale=0.1},
 	{"stereo", 0x02, .set=setinputstereo, .new=newinputstereo},
 	{"record", 0x03, .set=setbool, .new=newbool},
 	{"", 0x04},  /* ? */
@@ -1126,7 +1126,7 @@ static const struct oscnode outputtree[] = {
 	{"volume", 0x00, .set=setfixed, .new=newfixed, .scale=0.1, .min=-65.0, .max=6.0},
 	{"balance", 0x01, .set=setint, .new=newint, .min=-100, .max=100},
 	{"mute", 0x02, .set=setbool, .new=newbool},
-	{"fxreturn", 0x03, .set=setfixed, .new=newfixed, .scale=0.1, .min=-65.0, .max=0.0},
+	{"fx", 0x03, .set=setfixed, .new=newfixed, .scale=0.1, .min=-65.0, .max=0.0},
 	{"stereo", 0x04, .set=setbool, .new=newoutputstereo},
 	{"record", 0x05, .set=setbool, .new=newbool},
 	{"", 0x06},  /* ? */
