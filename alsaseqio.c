@@ -20,7 +20,7 @@ static void *
 midiread(void *arg)
 {
 	int fd;
-	unsigned char buf[1024];
+	unsigned char buf[1024], *pos;
 	size_t len;
 	ssize_t ret;
 	snd_seq_event_t evt;
@@ -37,13 +37,15 @@ midiread(void *arg)
 		}
 		if (ret == 0)
 			break;
+		pos = buf;
 		len = ret;
 		while (len > 0) {
-			ret = snd_midi_event_encode(dev, buf, len, &evt);
+			ret = snd_midi_event_encode(dev, pos, len, &evt);
 			if (ret < 0) {
 				fprintf(stderr, "snd_midi_event_encode: %s\n", snd_strerror(ret));
 				exit(1);
 			}
+			pos += ret;
 			len -= ret;
 			if (evt.type != SND_SEQ_EVENT_NONE) {
 				ret = snd_seq_event_output(seq, &evt);

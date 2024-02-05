@@ -61,7 +61,7 @@ alsarawio 2,0,1 oscmix
 ```
 
 There is also a tool `alsaseqio` that requires alsa-lib and uses
-the sequencer API, but it doesn't seem to be as responsive.
+the sequencer API.
 
 To determine the client and port for your device, find it (port 1
 of the Fireface UCX II) in the output of `aconnect -l`.
