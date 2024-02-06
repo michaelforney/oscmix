@@ -237,7 +237,6 @@ setbool(const struct oscnode *path[], int reg, struct oscmsg *msg)
 	val = oscgetint(msg);
 	if (oscend(msg) != 0)
 		return -1;
-	printf("setbool %.4x %d\n", reg, val);
 	setreg(reg, val);
 	return 0;
 }
@@ -254,7 +253,6 @@ setlevel(int reg, float level)
 {
 	long val;
 
-	fprintf(stderr, "setlevel %.4x %f\n", reg, level);
 	val = level * 0x8000l;
 	assert(val >= 0);
 	assert(val <= 0x10000);
@@ -504,7 +502,6 @@ setdb(int reg, float db)
 {
 	int val;
 
-	fprintf(stderr, "setdb %.4x %f\n", reg, db);
 	val = (isinf(db) && db < 0 ? -650 : (int)(db * 10)) & 0x7fff;
 	return setreg(reg, val);
 }
@@ -514,7 +511,6 @@ setpan(int reg, int pan)
 {
 	int val;
 
-	fprintf(stderr, "setpan %.4x %d\n", reg, pan);
 	val = (pan & 0x7fff) | 0x8000;
 	return setreg(reg, val);
 }
@@ -1556,7 +1552,6 @@ oscsendenum(const char *addr, int val, const char *const names[], size_t namesle
 		oscsend(addr, ",is", val, names[val]);
 	} else {
 		fprintf(stderr, "unexpected enum value %d\n", val);
-		printf("%zu %s\n", nameslen, names[0]);
 		oscsend(addr, ",i", val);
 	}
 }
