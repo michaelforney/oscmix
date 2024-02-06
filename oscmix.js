@@ -354,7 +354,34 @@ class Channel {
 	static OUTPUT = 1;
 	static PLAYBACK = 2;
 
+	static #inputNames = [
+		'Mic/Line 1', 'Mic/Line 2', 'Inst/Line 3', 'Inst/Line 4',
+		'Analog 5', 'Analog 6', 'Analog 7', 'Analog 8',
+		'SPDIF L', 'SPDIF R', 'AES L', 'AES R',
+		'ADAT 1', 'ADAT 2', 'ADAT 3', 'ADAT 4',
+		'ADAT 5', 'ADAT 6', 'ADAT 7', 'ADAT 8',
+	];
+	static #outputNames = [
+		'Analog 1', 'Analog 2', 'Analog 3', 'Analog 4',
+		'Analog 5', 'Analog 6', 'Phones 7', 'Phones 8',
+		'SPDIF L', 'SPDIF R', 'AES L', 'AES R',
+		'ADAT 1', 'ADAT 2', 'ADAT 3', 'ADAT 4',
+		'ADAT 5', 'ADAT 6', 'ADAT 7', 'ADAT 8',
+	];
+
 	static #elements = new Set([
+		'mute',
+		'fx',
+		'stereo',
+		'record',
+		'playchan',
+		'msproc',
+		'phase',
+		'gain',
+		'48v',
+		'reflevel',
+		'autoset',
+		'hi-z',
 		'eq',
 		'eq-band1type',
 		'eq-band1gain',
@@ -384,9 +411,53 @@ class Channel {
 		'autolevel-risetime',
 	]);
 
-	constructor(type, iface, name, prefix, left, index) {
+	constructor(type, index, iface, left) {
 		const template = document.getElementById('channel-template');
 		const fragment = template.content.cloneNode(true);
+
+		let name, prefix;
+		const flags = new Set();
+		switch (type) {
+		case Channel.INPUT:
+			flags.add('input');
+			if (index == 0 || index == 1)
+				flags.add('mic');
+			if (index == 2 || index == 3)
+				flags.add('inst');
+			if (index <= 7) {
+				flags.add('analog');
+				flags.add('analog-input');
+			}
+			if (index >= 4 && index <= 7)
+				flags.add('line');
+			name = Channel.#inputNames[index];
+			prefix = `/input/${index + 1}`;
+			break;
+		case Channel.PLAYBACK:
+			flags.add('playback');
+			name = Channel.#outputNames[index];
+			prefix = `/playback/${index + 1}`;
+			break;
+		case Channel.OUTPUT:
+			flags.add('output');
+			if (index <= 7)
+				flags.add('analog');
+			name = Channel.#outputNames[index];
+			prefix = `/output/${index + 1}`;
+			break;
+		}
+
+		for (const node of fragment.querySelectorAll('[data-flags]')) {
+			let found
+			for (const flag of node.dataset.flags.split(' ')) {
+				if (flags.has(flag)) {
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				node.remove();
+		}
 
 		this.volumeDiv = fragment.getElementById('channel-volume');
 
@@ -400,7 +471,7 @@ class Channel {
 				this.level.value = value;
 		});
 
-		const stereo = fragment.getElementById('channel-stereo');
+		const stereo = fragment.getElementById('stereo');
 		if (left) {
 			stereo.addEventListener('change', (event) => {
 				if (stereo.checked) {
@@ -426,29 +497,9 @@ class Channel {
 				});
 			}
 		}
-		iface.bind(prefix + '/mute', ',i', fragment.getElementById('channel-mute'), 'checked', 'change');
-		switch (type) {
-		case Channel.INPUT:
-			iface.bind(prefix + '/fxsend', ',i', fragment.getElementById('channel-fx'), 'valueAsNumber', 'change');
-			break;
-		case Channel.OUTPUT:
-			iface.bind(prefix + '/fxreturn', ',i', fragment.getElementById('channel-fx'), 'valueAsNumber', 'change');
-			break;
-		}
-		iface.bind(prefix + '/stereo', ',i', stereo, 'checked', 'change');
-		// record
-		// play channel
-		// msproc
-		iface.bind(prefix + '/phase', ',i', fragment.getElementById('channel-phase'), 'checked', 'change');
-		iface.bind(prefix + '/reflevel', ',i', fragment.getElementById('channel-reflevel'), 'selectedIndex', 'change');
-		iface.bind(prefix + '/gain', ',i', fragment.getElementById('channel-gain'), 'value', 'change');
-		if (type == Channel.INPUT && (index == 2 || index == 3))
-			iface.bind(prefix + '/hi-z', ',i', fragment.getElementById('channel-hi-z'), 'checked', 'change');
-		iface.bind(prefix + '/autoset', ',i', fragment.getElementById('channel-autoset'), 'value', 'change');
 
-		const volumeRange = fragment.getElementById('channel-volume-range');
-		const volumeNumber = fragment.getElementById('channel-volume-number');
-		const output = fragment.getElementById('channel-volume-output');
+		const volumeRange = fragment.getElementById('volume-range');
+		const volumeNumber = fragment.getElementById('volume-number');
 		if (type == Channel.OUTPUT) {
 			volumeRange.oninput = volumeNumber.onchange = (event) => {
 				iface.send(prefix + '/volume', ',f', [event.target.value]);
@@ -459,14 +510,15 @@ class Channel {
 				volumeRange.value = args[0];
 				volumeNumber.value = args[0];
 			});
-			output.remove();
 		} else {
+			const output = fragment.getElementById('volume-output');
 			output.addEventListener('change', (event) => {
 				volumeRange.value = volumeNumber.value = this.volume[event.target.selectedIndex];
 			});
 			volumeRange.oninput = volumeNumber.onchange = (event) => {
 				iface.send(`/mix/${output.selectedIndex+1}${prefix}`, ',f', [event.target.value]);
 				volumeRange.value = volumeNumber.value = event.target.value;
+				this.volume[output.selectedIndex] = event.target.value;
 			};
 			this.volume = [];
 			for (let i = 0; i < 20; ++i) {
@@ -492,38 +544,50 @@ class Channel {
 		for (const node of fragment.querySelectorAll('.channel-panel-buttons input[type="checkbox"]'))
 			node.onchange = onPanelButtonChanged;
 
-		this.svg = fragment.getElementById('eq-plot');
-		this.grid = fragment.getElementById('eq-grid');
-		this.curve = fragment.getElementById('eq-curve');
-		this.bands = [new EQBand(), new EQBand(), new EQBand()];
-		const observer = new ResizeObserver(this.drawEQ.bind(this));
-		observer.observe(this.svg);
+		if (fragment.getElementById('eq')) {
+			const drawEQ = this.drawEQ.bind(this);
+			this.svg = fragment.getElementById('eq-plot');
+			this.grid = fragment.getElementById('eq-grid');
+			this.curve = fragment.getElementById('eq-curve');
+			this.bands = [new EQBand(), new EQBand(), new EQBand()];
+			const observer = new ResizeObserver(drawEQ);
+			observer.observe(this.svg);
 
-		const band1Type = fragment.getElementById('eq-band1type')
-		band1Type.addEventListener('change', (event) => {
-			this.bands[0].type = EQBand[event.target.value];
-			this.drawEQ();
-		});
-		const band3Type = fragment.getElementById('eq-band3type')
-		band3Type.addEventListener('change', (event) => {
-			this.bands[2].type = EQBand[event.target.value];
-			this.drawEQ();
-		});
+			this.eqEnabled = fragment.getElementById('eq');
+			this.eqEnabled.addEventListener('change', drawEQ);
 
-		for (const prop of ['gain', 'freq', 'q']) {
-			let node = fragment.getElementById('eq-band1' + prop);
-			for (const [i, band] of this.bands.entries()) {
-				const addr = `${prefix}/eq/band${i+1}${prop}`;
-				node.addEventListener('change', (event) => {
-					band[prop] = event.target.value;
-					this.drawEQ();
-				});
-				node = node.nextElementSibling;
+			const band1Type = fragment.getElementById('eq-band1type')
+			band1Type.addEventListener('change', (event) => {
+				this.bands[0].type = EQBand[event.target.value];
+				this.drawEQ();
+			});
+			const band3Type = fragment.getElementById('eq-band3type')
+			band3Type.addEventListener('change', (event) => {
+				this.bands[2].type = EQBand[event.target.value];
+				this.drawEQ();
+			});
+
+			for (const prop of ['gain', 'freq', 'q']) {
+				let node = fragment.getElementById('eq-band1' + prop);
+				for (const [i, band] of this.bands.entries()) {
+					const addr = `${prefix}/eq/band${i+1}${prop}`;
+					node.addEventListener('change', (event) => {
+						band[prop] = event.target.value;
+						this.drawEQ();
+					});
+					node = node.nextElementSibling;
+				}
 			}
+
+			this.lowCutEnabled = fragment.getElementById('lowcut');
+			this.lowCutEnabled.addEventListener('change', drawEQ);
+			this.lowCutSlope = fragment.getElementById('lowcut-slope');
+			this.lowCutSlope.addEventListener('change', drawEQ);
+			this.lowCutFreq = fragment.getElementById('lowcut-freq');
+			this.lowCutFreq.addEventListener('change', drawEQ);
 		}
 
-
-		for (const node of fragment.querySelectorAll('*[id]')) {
+		for (const node of fragment.querySelectorAll('[id]')) {
 			if (Channel.#elements.has(node.id)) {
 				const type = node.step && node.step < 1 ? ',f' : ',i';
 				let prop;
@@ -564,66 +628,24 @@ class Channel {
 			const f2 = Math.pow(10, 2 * ((x - 0.5) * 3 / w + 1.3));
 			const f4 = f2 * f2;
 			let y = 1;
-			for (const band of this.bands)
-				y *= (band.a0 + band.a1 * f2 + band.a2 * f4) / (band.b0 + band.b1 * f2 + f4);
-			/*
-			if (self->lowcut_order) {
-				a0 = f2 / (self->lowcut_freq * self->lowcut_freq);
-				a = 1;
-				for (i = 0; i < self->lowcut_order; ++i) {
-					a = a * a0;
-				}
-				y *= a / (1 + a);
+			if (this.eqEnabled.checked) {
+				for (const band of this.bands)
+					y *= (band.a0 + band.a1 * f2 + band.a2 * f4) / (band.b0 + band.b1 * f2 + f4);
 			}
-			*/
+			if (this.lowCutEnabled.checked) {
+				const order = this.lowCutSlope.selectedIndex;
+				const k = [1, 0.655, 0.528, 0.457];
+				const freq = this.lowCutFreq.valueAsNumber * k[order];
+
+				for (let i = 0; i <= order; ++i)
+					y *= f2 / (f2 + freq * freq);
+			}
 			y = Math.round(h / 2) + 0.5 + -10 * h / 48 * Math.log10(y);
 			points.push(x, y);
 		}
 		this.curve.setAttribute('points', points.join(' '));
 	}
 
-};
-
-class InputChannel extends Channel {
-	static #defaultNames = [
-		'Mic/Line 1', 'Mic/Line 2', 'Inst/Line 3', 'Inst/Line 4',
-		'Analog 5', 'Analog 6', 'Analog 7', 'Analog 8',
-		'SPDIF L', 'SPDIF R', 'AES L', 'AES R',
-		'ADAT 1', 'ADAT 2', 'ADAT 3', 'ADAT 4',
-		'ADAT 5', 'ADAT 6', 'ADAT 7', 'ADAT 8',
-	];
-
-	constructor(iface, index, left) {
-		super(Channel.INPUT, iface, InputChannel.#defaultNames[index], `/input/${index + 1}`, left, index);
-	}
-};
-
-class PlaybackChannel extends Channel {
-	static #defaultNames = [
-		'Analog 1', 'Analog 2', 'Analog 3', 'Analog 4',
-		'Analog 5', 'Analog 6', 'Phones 7', 'Phones 8',
-		'SPDIF L', 'SPDIF R', 'AES L', 'AES R',
-		'ADAT 1', 'ADAT 2', 'ADAT 3', 'ADAT 4',
-		'ADAT 5', 'ADAT 6', 'ADAT 7', 'ADAT 8',
-	];
-
-	constructor(iface, index, left) {
-		super(Channel.PLAYBACK, iface, PlaybackChannel.#defaultNames[index], `/playback/${index + 1}`, left, index);
-	}
-};
-
-class OutputChannel extends Channel {
-	static #defaultNames = [
-		'Analog 1', 'Analog 2', 'Analog 3', 'Analog 4',
-		'Analog 5', 'Analog 6', 'Phones 7', 'Phones 8',
-		'SPDIF L', 'SPDIF R', 'AES L', 'AES R',
-		'ADAT 1', 'ADAT 2', 'ADAT 3', 'ADAT 4',
-		'ADAT 5', 'ADAT 6', 'ADAT 7', 'ADAT 8',
-	];
-
-	constructor(iface, index, left) {
-		super(Channel.OUTPUT, iface, OutputChannel.#defaultNames[index], `/output/${index + 1}`, left, index);
-	}
 };
 
 const iface = new Interface();
@@ -706,17 +728,13 @@ function setupInterface() {
 	});
 
 	/* make channels */
-	const inputs = []
-	const playbacks = []
-	const outputs = []
-	const inputsDiv = document.getElementById('inputs');
-	const playbacksDiv = document.getElementById('playbacks');
-	const outputsDiv = document.getElementById('outputs');
-	for (const [type, array, div] of [[InputChannel, inputs, inputsDiv], [PlaybackChannel, playbacks, playbacksDiv], [OutputChannel, outputs, outputsDiv]]) {
-		for (i = 0; i < 20; ++i) {
-			const channel = new type(iface, array.length, i % 2 == 1 ? array[i - 1] : null);
-			array.push(channel);
+	for (const [type, id] of [[Channel.INPUT, 'inputs'], [Channel.PLAYBACK, 'playbacks'], [Channel.OUTPUT, 'outputs']]) {
+		const div = document.getElementById(id);
+		let left;
+		for (let i = 0; i < 20; ++i) {
+			const channel = new Channel(type, i, iface, left);
 			div.appendChild(channel.element);
+			left = i % 2 == 0 ? channel : null;
 		}
 	}
 
