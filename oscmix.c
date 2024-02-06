@@ -505,7 +505,7 @@ setdb(int reg, float db)
 	int val;
 
 	fprintf(stderr, "setdb %.4x %f\n", reg, db);
-	val = isinf(db) && db < 0 ? -300 : (int)(db * 10) & 0x7fff;
+	val = (isinf(db) && db < 0 ? -650 : (int)(db * 10)) & 0x7fff;
 	return setreg(reg, val);
 }
 
