@@ -81,6 +81,10 @@ static struct {
 	int next;
 	int playmode;
 } durec = {.index = -1};
+static struct {
+	int vers;
+	int load;
+} dsp;
 static bool refreshing;
 
 static void oscsend(const char *addr, const char *type, ...);
@@ -494,6 +498,38 @@ seteqdrecord(const struct oscnode *path[], int reg, struct oscmsg *msg)
 		return -1;
 	putle32(buf, val);
 	writesysex(4, buf, sizeof buf, sysexbuf);
+	return 0;
+}
+
+static int
+newdspload(const struct oscnode *path[], const char *addr, int reg, int val)
+{
+	if (dsp.load != (val & 0xff)) {
+		dsp.load = val & 0xff;
+		oscsend("/hardware/dspload", ",i", dsp.load);
+	}
+	if (dsp.vers != val >> 8) {
+		dsp.vers = val >> 8;
+		oscsend("/hardware/dspvers", ",i", dsp.vers);
+	}
+	return 0;
+}
+
+static int
+newdspavail(const struct oscnode *path[], const char *addr, int reg, int val)
+{
+	return 0;
+}
+
+static int
+newdspactive(const struct oscnode *path[], const char *addr, int reg, int val)
+{
+	return 0;
+}
+
+static int
+newarcencoder(const struct oscnode *path[], const char *addr, int reg, int val)
+{
 	return 0;
 }
 
@@ -993,6 +1029,8 @@ setrefresh(const struct oscnode *path[], int reg, struct oscmsg *msg)
 	char addr[256];
 	int i;
 
+	dsp.vers = -1;
+	dsp.load = -1;
 	setreg(0x3e04, 0x67cd);
 	refreshing = true;
 	/* FIXME: needs lock */
@@ -1346,6 +1384,10 @@ static const struct oscnode tree[] = {
 			"Off", "Keys", "All",
 		}, .nameslen=3},
 		{"remapkeys", 15, .set=setbool, .new=newbool},
+		{"", 16, .new=newdspload},
+		{"", 17, .new=newdspavail},
+		{"", 18, .new=newdspactive},
+		{"", 19, .new=newarcencoder},
 
 		{"eqdrecord", -1, .set=seteqdrecord},
 		{0},
@@ -1601,10 +1643,6 @@ handleregs(uint_least32_t *payload, size_t len)
 				continue;
 			} else if (dflag && reg != off + node->reg) {
 				switch (reg) {
-				case 0x3080:
-				case 0x3081:
-				case 0x3082:
-				case 0x3083:
 				case 0x3180:
 				case 0x3380:
 					break;
