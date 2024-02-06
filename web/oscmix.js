@@ -370,6 +370,18 @@ class Channel {
 	];
 
 	static #elements = new Set([
+		'mute',
+		'fx',
+		'stereo',
+		'record',
+		'playchan',
+		'msproc',
+		'phase',
+		'gain',
+		'48v',
+		'reflevel',
+		'autoset',
+		'hi-z',
 		'eq',
 		'eq-band1type',
 		'eq-band1gain',
@@ -400,24 +412,52 @@ class Channel {
 	]);
 
 	constructor(type, index, iface, left) {
+		const template = document.getElementById('channel-template');
+		const fragment = template.content.cloneNode(true);
+
 		let name, prefix;
+		const flags = new Set();
 		switch (type) {
 		case Channel.INPUT:
+			flags.add('input');
+			if (index == 0 || index == 1)
+				flags.add('mic');
+			if (index == 2 || index == 3)
+				flags.add('inst');
+			if (index <= 7) {
+				flags.add('analog');
+				flags.add('analog-input');
+			}
+			if (index >= 4 && index <= 7)
+				flags.add('line');
 			name = Channel.#inputNames[index];
 			prefix = `/input/${index + 1}`;
 			break;
 		case Channel.PLAYBACK:
+			flags.add('playback');
 			name = Channel.#outputNames[index];
 			prefix = `/playback/${index + 1}`;
 			break;
 		case Channel.OUTPUT:
+			flags.add('output');
+			if (index <= 7)
+				flags.add('analog');
 			name = Channel.#outputNames[index];
 			prefix = `/output/${index + 1}`;
 			break;
 		}
 
-		const template = document.getElementById('channel-template');
-		const fragment = template.content.cloneNode(true);
+		for (const node of fragment.querySelectorAll('[data-flags]')) {
+			let found
+			for (const flag of node.dataset.flags.split(' ')) {
+				if (flags.has(flag)) {
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				node.remove();
+		}
 
 		this.volumeDiv = fragment.getElementById('channel-volume');
 
@@ -431,7 +471,7 @@ class Channel {
 				this.level.value = value;
 		});
 
-		const stereo = fragment.getElementById('channel-stereo');
+		const stereo = fragment.getElementById('stereo');
 		if (left) {
 			stereo.addEventListener('change', (event) => {
 				if (stereo.checked) {
@@ -457,22 +497,9 @@ class Channel {
 				});
 			}
 		}
-		iface.bind(prefix + '/mute', ',i', fragment.getElementById('channel-mute'), 'checked', 'change');
-		iface.bind(prefix + '/fx', ',i', fragment.getElementById('channel-fx'), 'valueAsNumber', 'change');
-		iface.bind(prefix + '/stereo', ',i', stereo, 'checked', 'change');
-		// record
-		// play channel
-		// msproc
-		iface.bind(prefix + '/phase', ',i', fragment.getElementById('channel-phase'), 'checked', 'change');
-		iface.bind(prefix + '/reflevel', ',i', fragment.getElementById('channel-reflevel'), 'selectedIndex', 'change');
-		iface.bind(prefix + '/gain', ',i', fragment.getElementById('channel-gain'), 'value', 'change');
-		if (type == Channel.INPUT && (index == 2 || index == 3))
-			iface.bind(prefix + '/hi-z', ',i', fragment.getElementById('channel-hi-z'), 'checked', 'change');
-		iface.bind(prefix + '/autoset', ',i', fragment.getElementById('channel-autoset'), 'value', 'change');
 
-		const volumeRange = fragment.getElementById('channel-volume-range');
-		const volumeNumber = fragment.getElementById('channel-volume-number');
-		const output = fragment.getElementById('channel-volume-output');
+		const volumeRange = fragment.getElementById('volume-range');
+		const volumeNumber = fragment.getElementById('volume-number');
 		if (type == Channel.OUTPUT) {
 			volumeRange.oninput = volumeNumber.onchange = (event) => {
 				iface.send(prefix + '/volume', ',f', [event.target.value]);
@@ -483,8 +510,8 @@ class Channel {
 				volumeRange.value = args[0];
 				volumeNumber.value = args[0];
 			});
-			output.remove();
 		} else {
+			const output = fragment.getElementById('volume-output');
 			output.addEventListener('change', (event) => {
 				volumeRange.value = volumeNumber.value = this.volume[event.target.selectedIndex];
 			});
@@ -517,48 +544,50 @@ class Channel {
 		for (const node of fragment.querySelectorAll('.channel-panel-buttons input[type="checkbox"]'))
 			node.onchange = onPanelButtonChanged;
 
-		const drawEQ = this.drawEQ.bind(this);
-		this.svg = fragment.getElementById('eq-plot');
-		this.grid = fragment.getElementById('eq-grid');
-		this.curve = fragment.getElementById('eq-curve');
-		this.bands = [new EQBand(), new EQBand(), new EQBand()];
-		const observer = new ResizeObserver(drawEQ);
-		observer.observe(this.svg);
+		if (fragment.getElementById('eq')) {
+			const drawEQ = this.drawEQ.bind(this);
+			this.svg = fragment.getElementById('eq-plot');
+			this.grid = fragment.getElementById('eq-grid');
+			this.curve = fragment.getElementById('eq-curve');
+			this.bands = [new EQBand(), new EQBand(), new EQBand()];
+			const observer = new ResizeObserver(drawEQ);
+			observer.observe(this.svg);
 
-		this.eqEnabled = fragment.getElementById('eq');
-		this.eqEnabled.addEventListener('change', drawEQ);
+			this.eqEnabled = fragment.getElementById('eq');
+			this.eqEnabled.addEventListener('change', drawEQ);
 
-		const band1Type = fragment.getElementById('eq-band1type')
-		band1Type.addEventListener('change', (event) => {
-			this.bands[0].type = EQBand[event.target.value];
-			this.drawEQ();
-		});
-		const band3Type = fragment.getElementById('eq-band3type')
-		band3Type.addEventListener('change', (event) => {
-			this.bands[2].type = EQBand[event.target.value];
-			this.drawEQ();
-		});
+			const band1Type = fragment.getElementById('eq-band1type')
+			band1Type.addEventListener('change', (event) => {
+				this.bands[0].type = EQBand[event.target.value];
+				this.drawEQ();
+			});
+			const band3Type = fragment.getElementById('eq-band3type')
+			band3Type.addEventListener('change', (event) => {
+				this.bands[2].type = EQBand[event.target.value];
+				this.drawEQ();
+			});
 
-		for (const prop of ['gain', 'freq', 'q']) {
-			let node = fragment.getElementById('eq-band1' + prop);
-			for (const [i, band] of this.bands.entries()) {
-				const addr = `${prefix}/eq/band${i+1}${prop}`;
-				node.addEventListener('change', (event) => {
-					band[prop] = event.target.value;
-					this.drawEQ();
-				});
-				node = node.nextElementSibling;
+			for (const prop of ['gain', 'freq', 'q']) {
+				let node = fragment.getElementById('eq-band1' + prop);
+				for (const [i, band] of this.bands.entries()) {
+					const addr = `${prefix}/eq/band${i+1}${prop}`;
+					node.addEventListener('change', (event) => {
+						band[prop] = event.target.value;
+						this.drawEQ();
+					});
+					node = node.nextElementSibling;
+				}
 			}
+
+			this.lowCutEnabled = fragment.getElementById('lowcut');
+			this.lowCutEnabled.addEventListener('change', drawEQ);
+			this.lowCutSlope = fragment.getElementById('lowcut-slope');
+			this.lowCutSlope.addEventListener('change', drawEQ);
+			this.lowCutFreq = fragment.getElementById('lowcut-freq');
+			this.lowCutFreq.addEventListener('change', drawEQ);
 		}
 
-		this.lowCutEnabled = fragment.getElementById('lowcut');
-		this.lowCutEnabled.addEventListener('change', drawEQ);
-		this.lowCutSlope = fragment.getElementById('lowcut-slope');
-		this.lowCutSlope.addEventListener('change', drawEQ);
-		this.lowCutFreq = fragment.getElementById('lowcut-freq');
-		this.lowCutFreq.addEventListener('change', drawEQ);
-
-		for (const node of fragment.querySelectorAll('*[id]')) {
+		for (const node of fragment.querySelectorAll('[id]')) {
 			if (Channel.#elements.has(node.id)) {
 				const type = node.step && node.step < 1 ? ',f' : ',i';
 				let prop;
