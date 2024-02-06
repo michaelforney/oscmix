@@ -1,6 +1,5 @@
-#define _XOPEN_SOURCE 700
+#define _XOPEN_SOURCE 700  /* for memccpy */
 #include <assert.h>
-#include <errno.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -8,8 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
-#include <unistd.h>
+#include <strings.h>  /* for strcasecmp */
 #include "intpack.h"
 #include "oscmix.h"
 #include "osc.h"
@@ -17,6 +15,7 @@
 #include "util.h"
 
 #define LEN(a) (sizeof (a) / sizeof *(a))
+#define PI 3.14159265358979323846
 
 struct oscnode {
 	const char *name;
@@ -274,7 +273,7 @@ setlevels(struct output *out, struct input *in, struct mix *mix)
 	reg = 0x4000 | (out - outputs) << 6 | (in - inputs);
 	level = in->mute ? 0 : mix->vol <= -650 ? 0 : powf(10, mix->vol / 200.f);
 	if (out->stereo) {
-		theta = (mix->pan + 100) / 400.f * M_PI;
+		theta = (mix->pan + 100) / 400.f * PI;
 		setlevel(reg, level * cosf(theta));
 		setlevel(reg + 0x40, level * sinf(theta));
 	} else {
@@ -611,12 +610,12 @@ setmix(const struct oscnode *path[], int reg, struct oscmsg *msg)
 			L1 = level0^2 * (1 - width)^2 + level1^2 * (1 + width)^2
 			*/
 			setdb(reg, 10 * log10(level0));
-			setpan(reg, acos(2 * level00 / level0 - 1) * 200 / M_PI - 100);
+			setpan(reg, acos(2 * level00 / level0 - 1) * 200 / PI - 100);
 
 			level10 = level10 * level10;
 			level1 = level10 + level11 * level11;
 			setdb(reg + 1, 10 * log10(level1));
-			setpan(reg + 1, acos(2 * level10 / level1 - 1) * 200 / M_PI - 100);
+			setpan(reg + 1, acos(2 * level10 / level1 - 1) * 200 / PI - 100);
 		} else {
 			setlevel(reg + 0x2000, level0);
 			setlevel(reg + 0x2001, level1);
@@ -627,7 +626,7 @@ setmix(const struct oscnode *path[], int reg, struct oscmsg *msg)
 		}
 	} else {
 		if (out->stereo) {
-			theta = (pan + 100) * M_PI / 400;
+			theta = (pan + 100) * PI / 400;
 			setlevel(reg + 0x2000, level * cos(theta));
 			setlevel(reg + 0x2040, level * sin(theta));
 		} else {
