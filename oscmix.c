@@ -373,7 +373,7 @@ setinputname(const struct oscnode *path[], int reg, struct oscmsg *msg)
 	char namebuf[12];
 	int i, ch, val;
 
-	ch = reg >> 6;
+	ch = path[-1] - path[-2]->child;
 	if (ch >= 20)
 		return -1;
 	name = oscgetstr(msg);
@@ -398,7 +398,7 @@ setinputgain(const struct oscnode *path[], int reg, struct oscmsg *msg)
 	val = oscgetfloat(msg);
 	if (oscend(msg) != 0)
 		return -1;
-	mic = (reg >> 6) <= 2;
+	mic = (path[-1] - path[-2]->child) <= 1;
 	if (val < 0 || val > 75 || (!mic && val > 24))
 		return -1;
 	setreg(reg, val * 10);
@@ -417,8 +417,8 @@ setinput48v(const struct oscnode *path[], int reg, struct oscmsg *msg)
 {
 	int ch;
 
-	ch = (reg >> 6) + 1;
-	if (ch < 3 || ch > 4)
+	ch = (path[-1] - path[-2]->child) + 1;
+	if (ch < 1 || ch > 2)
 		return -1;
 	return setbool(path, reg, msg);
 }
@@ -429,9 +429,12 @@ newinput48v_reflevel(const struct oscnode *path[], const char *addr, int reg, in
 	int ch;
 	const char *const names[] = {"+7dBu", "+13dBu", "+19dBu"};
 
-	ch = (reg >> 6) + 1;
+	ch = (path[-1] - path[-2]->child) + 1;
 	if (ch >= 1 && ch <= 2) {
-		return newbool(path, addr, reg, val);
+		char addrbuf[256];
+
+		snprintf(addrbuf, sizeof addrbuf, "/input/%d/48v", ch);
+		return newbool(path, addrbuf, reg, val);
 	} else if (ch >= 3 && ch <= 4) {
 		oscsendenum(addr, val & 0xf, names, 2);
 		return 0;
@@ -447,10 +450,10 @@ setinputhiz(const struct oscnode *path[], int reg, struct oscmsg *msg)
 {
 	int ch;
 	
-	ch = (reg >> 6) + 1;
-	if (ch >= 3 && ch <= 4)
-		return setbool(path, reg, msg);
-	return -1;
+	ch = (path[-1] - path[-2]->child) + 1;
+	if (ch < 3 && ch > 4)
+		return -1;
+	return setbool(path, reg, msg);
 }
 
 static int
@@ -458,10 +461,10 @@ newinputhiz(const struct oscnode *path[], const char *addr, int reg, int val)
 {
 	int ch;
 	
-	ch = (reg >> 6) + 1;
-	if (ch >= 3 && ch <= 4)
-		return newbool(path, addr, reg, val);
-	return -1;
+	ch = (path[-1] - path[-2]->child) + 1;
+	if (ch < 3 || ch > 4)
+		return -1;
+	return newbool(path, addr, reg, val);
 }
 
 static int
