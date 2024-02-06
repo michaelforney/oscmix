@@ -145,6 +145,8 @@ requests rather than writing to a bulk endpoint.
 
 ## Registers
 
+> _Thanks to RME for providing information about registers 3081-3083!_
+
 ```
 0000	input settings
 	0000	mic 1
@@ -344,12 +346,34 @@ requests rather than writing to a bulk endpoint.
 	307d	standalone arc		0=volume 1=1s op 2=normal
 	307e	lock keys		0=off 1=keys 2=all
 	307f	remap keys		0=off 1=on
-	3080	fx load	[R]
-		[0:7]	fx load
+	3080	dsp load	[R]
+		[0:7]	dsp load
 		[8:15]	dsp version
-	3081	?
-	3082	set by device many times a second
-	3083	?
+	3081	dsp function available
+		[0]	1 low cut
+		[1]	2 low cut
+		[2]	1 eq
+		[3]	2 eq
+		[4]	1 dynamics
+		[5]	2 dynamics
+		[6]	1 autolevel
+		[7]	2 autolevel
+		[8]	1 record
+		[9]	2 record
+		[10:15]	unused
+	3082	dsp function overload
+		[0]	play		1=ok 0=overload
+		[1]	low cut		1=ok 0=overload
+		[2]	eq		1=ok 0=overload
+		[3]	dynamics	1=ok 0=overload
+		[4]	autolevel	1=ok 0=overload
+		[5]	record		1=ok 0=overload
+		[6]	delay		1=ok 0=overload
+		[7]	room eq		1=ok 0=overload
+		[8:15]	channel number
+	3083	arc encoder delta
+		[0:13]		encoder delta
+		[14:15]
 3180	compression levels	[R]
 	3180	input 1/2
 		[0:7]
