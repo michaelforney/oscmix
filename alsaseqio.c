@@ -1,3 +1,4 @@
+#define _GNU_SOURCE  /* for pipe2 on glibc */
 #include <fcntl.h>
 #include <poll.h>
 #include <pthread.h>
