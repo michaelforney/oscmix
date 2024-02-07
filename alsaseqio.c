@@ -1,6 +1,8 @@
+#include <fcntl.h>
 #include <poll.h>
 #include <pthread.h>
 #include <spawn.h>
+#include <unistd.h>
 #include <alsa/asoundlib.h>
 #include "arg.h"
 
