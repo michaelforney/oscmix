@@ -221,13 +221,11 @@ class Interface {
 				case 'f': args.push(decoder.getFloat()); break;
 				}
 			}
+			if (!addr.match(/\/level$/))
+				console.debug(addr, args);
 			const method = this.methods.get(addr);
 			if (method)
 				method(args);
-			/*
-			else
-				console.log(addr, args);
-			*/
 		}
 	}
 
@@ -252,7 +250,6 @@ class Interface {
 	}
 
 	bind(addr, types, obj, prop, eventType) {
-		//console.log('bind', addr, types, obj, eventType, prop);
 		this.methods.set(addr, (args) => {
 			obj[prop] = args[0]
 			if (eventType)
