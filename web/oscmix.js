@@ -171,7 +171,7 @@ class ConnectionMIDI extends AbortController {
 			await Promise.all([input.open(), output.open()]);
 			this.signal.throwIfAborted();
 			const interval = setInterval(instance.exports.handletimer.bind(null, true), 100);
-			this.signal.addEventListener('abort', (event) => {
+			this.signal.addEventListener('abort', () => {
 				clearInterval(interval)
 				input.close();
 				output.close();
@@ -265,7 +265,7 @@ class Interface {
 			});
 		}
 	}
-};
+}
 
 class OSCEvent extends Event {}
 
@@ -475,7 +475,7 @@ class Channel {
 		const stereo = fragment.getElementById('stereo');
 		if (left) {
 			stereo.addEventListener('change', (event) => {
-				if (stereo.checked) {
+				if (event.target.checked) {
 					left.volumeDiv.insertBefore(this.level, left.level.nextSibling);
 				} else {
 					this.volumeDiv.insertBefore(this.level, this.volumeDiv.firstElementChild);
@@ -570,8 +570,7 @@ class Channel {
 
 			for (const prop of ['gain', 'freq', 'q']) {
 				let node = fragment.getElementById('eq-band1' + prop);
-				for (const [i, band] of this.bands.entries()) {
-					const addr = `${prefix}/eq/band${i+1}${prop}`;
+				for (const band of this.bands) {
 					node.addEventListener('change', (event) => {
 						band[prop] = event.target.value;
 						this.drawEQ();
@@ -646,14 +645,12 @@ class Channel {
 		}
 		this.curve.setAttribute('points', points.join(' '));
 	}
-
-};
+}
 
 const iface = new Interface();
 
 function setupInterface() {
 	const connectionType = document.getElementById('connection-type');
-	const connectButton = document.getElementById('connection-connect');
 
 	const midiPorts = {
 		input: document.getElementById('connection-midi-input'),
@@ -746,7 +743,7 @@ function setupInterface() {
 		default:
 			throw new Error('unknown connection type');
 		}
-		connection.signal.addEventListener('abort', (event) => {
+		connection.signal.addEventListener('abort', () => {
 			icon.dataset.state = 'failed';
 			connection = null;
 		}, {once: true});
@@ -779,7 +776,7 @@ function setupInterface() {
 	const reverbHighDamp = document.getElementById('reverb-highdamp')
 	iface.bind('/reverb/type', ',i', reverbType, 'selectedIndex', 'change');
 	reverbType.addEventListener('change', (event) => {
-		const type = reverbType.selectedIndex;
+		const type = event.target.selectedIndex;
 		reverbRoomScale.disabled = type >= 12;
 		reverbAttack.disabled = type != 12;
 		reverbHold.disabled = type != 12 && type != 13;
