@@ -702,12 +702,18 @@ function setupInterface() {
 			navigator.requestMIDIAccess({sysex: true}).then((access) => {
 				if (event.target.value != 'MIDI')
 					return;
-				for (const input of access.inputs.values())
-					midiPorts.input.add(new Option(input.name, input.id));
-				for (const output of access.outputs.values())
-					midiPorts.output.add(new Option(output.name, output.id));
-				midiPorts.input.disabled = false;
-				midiPorts.output.disabled = false;
+				for (const [select, ports] of [[midiPorts.input, access.inputs], [midiPorts.output, access.outputs]]) {
+					let prev;
+					for (const port of ports.values()) {
+						const option = new Option(port.name, port.id);
+						select.add(option);
+						if (port.name.match(/^Fireface UCX II \(/) && port.name == prev)
+							option.selected = true;
+						else
+							prev = port.name;
+					}
+					select.disabled = false;
+				}
 				midiAccess = access;
 				midiAccess.addEventListener('statechange', midiStateChanged);
 			});
