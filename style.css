@@ -70,6 +70,11 @@ output {
 }
 #connection-icon {
 	float: right;
+	font-weight: normal;
+	font-size: smaller;
+}
+#connection-icon::after {
+	margin-left: 2px;
 }
 #connection-icon[data-state="connected"]::after {
 	content: "\1F7E2";
@@ -156,20 +161,12 @@ label:has(#connection-type:not([data-value="WebSocket"])) ~ .connection-websocke
 	justify-content: center;
 }
 .channel-mute > label {
-	border-left-width: 0;
-	margin-block: 2px;
+	border-width: 0 1px 1px 0;
+	padding-block: 1px;
 	flex-grow: 1;
 }
-.channel-mute > label:first-of-type {
-	border-top-left-radius: 4px;
-	border-bottom-left-radius: 4px;
-	margin-left: 2px;
-	border-left-width: 1px;
-}
 .channel-mute > label:last-of-type {
-	border-top-right-radius: 4px;
-	border-bottom-right-radius: 4px;
-	margin-right: 2px;
+	border-right-width: 0;
 }
 .channel-volume {
 	display: flex;
