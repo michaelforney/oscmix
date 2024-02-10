@@ -251,7 +251,8 @@ class Interface {
 
 	bind(addr, types, obj, prop, eventType) {
 		this.methods.set(addr, (args) => {
-			obj[prop] = args[0]
+			const step = obj.step;
+			obj[prop] = step ? Math.round(args[0] / step) * step : args[0];
 			if (eventType)
 				obj.dispatchEvent(new OSCEvent(eventType))
 		});
