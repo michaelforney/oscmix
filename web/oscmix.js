@@ -729,6 +729,10 @@ function setupInterface() {
 		if (connection)
 			connection.abort();
 		delete icon.dataset.state;
+		if (event.submitter.id == 'connection-disconnect') {
+			icon.textContent = '';
+			return;
+		}
 		const elements = event.target.elements;
 		icon.textContent = elements['connection-type'].value;
 		switch (elements['connection-type'].value) {
