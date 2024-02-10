@@ -1,3 +1,5 @@
+'use strict';
+
 /* OSC */
 class OSCDecoder {
 	constructor(buffer, offset = 0, length = buffer.byteLength) {
