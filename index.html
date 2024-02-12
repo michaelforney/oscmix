@@ -18,8 +18,8 @@
 						<input id="volume-range" type="range" orient="vertical" min="-65" max="6" step="0.5" value="-65" list="volume-values">
 						<div class="channel-panel-buttons">
 							<label class="toggle-button">S<input type="checkbox" class="channel-show-settings"></label>
-							<label class="toggle-button channel-show-eq-label" data-no-playback>EQ<input type="checkbox" class="channel-show-eq"></label>
-							<label class="toggle-button channel-show-dynamics-label" data-no-playback>D<input type="checkbox" class="channel-show-dynamics"></label>
+							<label class="toggle-button channel-show-eq-label" data-flags="input output">EQ<input type="checkbox" class="channel-show-eq"></label>
+							<label class="toggle-button channel-show-dynamics-label" data-flags="input output">D<input type="checkbox" class="channel-show-dynamics"></label>
 						</div>
 					</div>
 					<input class="channel-volume-number" id="volume-number" type="number" min="-65" max="6" step="0.5">
@@ -64,43 +64,43 @@
 							<div>2</div>
 							<div>3</div>
 							<div>Type</div>
-							<select id="eq-band1type">
+							<select id="eq/band1type">
 								<option value="PEAK">Peak</option>
 								<option value="LOW_SHELF">Low Shelf</option>
 								<option value="HIGH_PASS">High Pass</option>
 								<option value="LOW_PASS">Low Pass</option>
 							</select>
 							<output>Peak</output>
-							<select id="eq-band3type">
+							<select id="eq/band3type">
 								<option value="PEAK">Peak</option>
 								<option value="HIGH_SHELF">High Shelf</option>
 								<option value="LOW_PASS">Low Pass</option>
 								<option value="HIGH_PASS">High Pass</option>
 							</select>
 							<div>Gain</div>
-							<input id="eq-band1gain" type="number" min="-20" max="20" step="0.5">
-							<input id="eq-band2gain" type="number" min="-20" max="20" step="0.5">
-							<input id="eq-band3gain" type="number" min="-20" max="20" step="0.5">
+							<input id="eq/band1gain" type="number" min="-20" max="20" step="0.5">
+							<input id="eq/band2gain" type="number" min="-20" max="20" step="0.5">
+							<input id="eq/band3gain" type="number" min="-20" max="20" step="0.5">
 							<div>Freq.</div>
-							<input id="eq-band1freq" type="number" min="20" max="20000">
-							<input id="eq-band2freq" type="number" min="20" max="20000">
-							<input id="eq-band3freq" type="number" min="20" max="20000">
+							<input id="eq/band1freq" type="number" min="20" max="20000">
+							<input id="eq/band2freq" type="number" min="20" max="20000">
+							<input id="eq/band3freq" type="number" min="20" max="20000">
 							<div>Q</div>
-							<input id="eq-band1q" type="number" min="0.4" max="9.9" step="0.1">
-							<input id="eq-band2q" type="number" min="0.4" max="9.9" step="0.1">
-							<input id="eq-band3q" type="number" min="0.4" max="9.9" step="0.1">
+							<input id="eq/band1q" type="number" min="0.4" max="9.9" step="0.1">
+							<input id="eq/band2q" type="number" min="0.4" max="9.9" step="0.1">
+							<input id="eq/band3q" type="number" min="0.4" max="9.9" step="0.1">
 						</div>
 					</details>
 					<details open>
 						<summary>Low Cut<input id="lowcut" class="lowcut" type="checkbox"></summary>
 						<fieldset>
-							<label>Slope<select id="lowcut-slope">
+							<label>Slope<select id="lowcut/slope">
 								<option>6 dB/oct</option>
 								<option>12 dB/oct</option>
 								<option>18 dB/oct</option>
 								<option>24 dB/oct</option>
 							</select></label>
-							<label>Freq.<input id="lowcut-freq" type="number" min="20" max="500"></label>
+							<label>Freq.<input id="lowcut/freq" type="number" min="20" max="500"></label>
 						</fieldset>
 					</details>
 				</div>
@@ -108,21 +108,21 @@
 					<details open>
 						<summary>Dynamics<input id="dynamics" class="dynamics" type="checkbox"></summary>
 						<fieldset>
-							<label>Gain<input id="dynamics-gain" type="number" min="-30" max="30" step="0.5"></label>
-							<label>Attack<input id="dynamics-attack" type="number" min="0" max="200" step="1"></label>
-							<label>Release<input id="dynamics-release" type="number" min="100" max="999" step="1"></label>
-							<label>Comp. Thres.<input id="dynamics-compthres" type="number" min="-60" max="0" step="0.5"></label>
-							<label>Comp. Ratio<input id="dynamics-compratio" type="number" min="-99" max="20" step="0.5"></label>
-							<label>Exp. Thres.<input id="dynamics-expthres" type="number" min="1" max="10" step="0.1"></label>
-							<label>Exp. Ratio<input id="dynamics-expratio" type="number" min="1" max="10" step="0.1"></label>
+							<label>Gain<input id="dynamics/gain" type="number" min="-30" max="30" step="0.5"></label>
+							<label>Attack<input id="dynamics/attack" type="number" min="0" max="200" step="1"></label>
+							<label>Release<input id="dynamics/release" type="number" min="100" max="999" step="1"></label>
+							<label>Comp. Thres.<input id="dynamics/compthres" type="number" min="-60" max="0" step="0.5"></label>
+							<label>Comp. Ratio<input id="dynamics/compratio" type="number" min="-99" max="20" step="0.5"></label>
+							<label>Exp. Thres.<input id="dynamics/expthres" type="number" min="1" max="10" step="0.1"></label>
+							<label>Exp. Ratio<input id="dynamics/expratio" type="number" min="1" max="10" step="0.1"></label>
 						</fieldset>
 					</details>
 					<details open>
 						<summary>Auto Level<input id="autolevel" class="autolevel" type="checkbox"></summary>
 						<fieldset>
-							<label>Max Gain<input id="autolevel-maxgain" type="number" min="0" max="18" step="0.5"></label>
-							<label>Headroom<input id="autolevel-headroom" type="number" min="3" max="12" step="0.5"></label>
-							<label>Rise Time<input id="autolevel-risetime" type="number" min="0.1" max="9.9" step="0.1"></label>
+							<label>Max Gain<input id="autolevel/maxgain" type="number" min="0" max="18" step="0.5"></label>
+							<label>Headroom<input id="autolevel/headroom" type="number" min="3" max="12" step="0.5"></label>
+							<label>Rise Time<input id="autolevel/risetime" type="number" min="0.1" max="9.9" step="0.1"></label>
 						</fieldset>
 					</details>
 				</div>

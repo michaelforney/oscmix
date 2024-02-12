@@ -176,6 +176,9 @@ class ConnectionMIDI extends AbortController {
 				input.close();
 				output.close();
 			}, {once: true});
+		}).catch((error) => {
+			this.abort(error);
+			throw error;
 		});
 		this.send = (data) => {
 			const osc = new Uint8Array(instance.exports.memory.buffer, instance.exports.jsdata, data.length);
@@ -382,32 +385,32 @@ class Channel {
 		'autoset',
 		'hi-z',
 		'eq',
-		'eq-band1type',
-		'eq-band1gain',
-		'eq-band1freq',
-		'eq-band1q',
-		'eq-band2gain',
-		'eq-band2freq',
-		'eq-band2q',
-		'eq-band3type',
-		'eq-band3gain',
-		'eq-band3freq',
-		'eq-band3q',
+		'eq/band1type',
+		'eq/band1gain',
+		'eq/band1freq',
+		'eq/band1q',
+		'eq/band2gain',
+		'eq/band2freq',
+		'eq/band2q',
+		'eq/band3type',
+		'eq/band3gain',
+		'eq/band3freq',
+		'eq/band3q',
 		'lowcut',
-		'lowcut-freq',
-		'lowcut-slope',
+		'lowcut/freq',
+		'lowcut/slope',
 		'dynamics',
-		'dynamics-gain',
-		'dynamics-attack',
-		'dynamics-release',
-		'dynamics-compthres',
-		'dynamics-compratio',
-		'dynamics-expthres',
-		'dynamics-expratio',
+		'dynamics/gain',
+		'dynamics/attack',
+		'dynamics/release',
+		'dynamics/compthres',
+		'dynamics/compratio',
+		'dynamics/expthres',
+		'dynamics/expratio',
 		'autolevel',
-		'autolevel-maxgain',
-		'autolevel-headroom',
-		'autolevel-risetime',
+		'autolevel/maxgain',
+		'autolevel/headroom',
+		'autolevel/risetime',
 	]);
 
 	constructor(type, index, iface, left) {
@@ -555,19 +558,19 @@ class Channel {
 			this.eqEnabled = fragment.getElementById('eq');
 			this.eqEnabled.addEventListener('change', drawEQ);
 
-			const band1Type = fragment.getElementById('eq-band1type')
+			const band1Type = fragment.getElementById('eq/band1type')
 			band1Type.addEventListener('change', (event) => {
 				this.bands[0].type = EQBand[event.target.value];
 				this.drawEQ();
 			});
-			const band3Type = fragment.getElementById('eq-band3type')
+			const band3Type = fragment.getElementById('eq/band3type')
 			band3Type.addEventListener('change', (event) => {
 				this.bands[2].type = EQBand[event.target.value];
 				this.drawEQ();
 			});
 
 			for (const prop of ['gain', 'freq', 'q']) {
-				let node = fragment.getElementById('eq-band1' + prop);
+				let node = fragment.getElementById('eq/band1' + prop);
 				for (const band of this.bands) {
 					node.addEventListener('change', (event) => {
 						band[prop] = event.target.value;
@@ -579,9 +582,9 @@ class Channel {
 
 			this.lowCutEnabled = fragment.getElementById('lowcut');
 			this.lowCutEnabled.addEventListener('change', drawEQ);
-			this.lowCutSlope = fragment.getElementById('lowcut-slope');
+			this.lowCutSlope = fragment.getElementById('lowcut/slope');
 			this.lowCutSlope.addEventListener('change', drawEQ);
-			this.lowCutFreq = fragment.getElementById('lowcut-freq');
+			this.lowCutFreq = fragment.getElementById('lowcut/freq');
 			this.lowCutFreq.addEventListener('change', drawEQ);
 		}
 
@@ -600,7 +603,7 @@ class Channel {
 					}
 					break;
 				}
-				iface.bind(prefix + '/' + node.id.replaceAll('-', '/'), type, node, prop, 'change');
+				iface.bind(prefix + '/' + node.id, type, node, prop, 'change');
 			}
 			node.removeAttribute('id');
 		}
