@@ -176,6 +176,9 @@ class ConnectionMIDI extends AbortController {
 				input.close();
 				output.close();
 			}, {once: true});
+		}).catch((error) => {
+			this.abort(error);
+			throw error;
 		});
 		this.send = (data) => {
 			const osc = new Uint8Array(instance.exports.memory.buffer, instance.exports.jsdata, data.length);
