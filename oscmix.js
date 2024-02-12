@@ -654,6 +654,8 @@ function setupInterface() {
 		input: document.getElementById('connection-midi-input'),
 		output: document.getElementById('connection-midi-output'),
 	};
+	for (const select of [midiPorts.input, midiPorts.output])
+		select.addEventListener('change', (event) => event.target.dataset.id = event.target.value);
 	const midiOption = document.getElementById('connection-type-midi');
 	function midiAccessChanged(status) {
 		const denied = status.state == 'denied';
@@ -703,15 +705,20 @@ function setupInterface() {
 				if (event.target.value != 'MIDI')
 					return;
 				for (const [select, ports] of [[midiPorts.input, access.inputs], [midiPorts.output, access.outputs]]) {
-					let prev;
+					let prev, defaultOption;
 					for (const port of ports.values()) {
 						const option = new Option(port.name, port.id);
 						select.add(option);
-						if (port.name.match(/^Fireface UCX II \(/) && port.name == prev)
+						if (port.id == select.dataset.id)
 							option.selected = true;
+						if (port.name.match(/^Fireface UCX II \(/) && port.name == prev)
+							defaultOption = option;
 						else
 							prev = port.name;
 					}
+					if (select.value != select.dataset.id && defaultOption)
+						defaultOption.selected = true;
+					select.dataset.id = select.value;
 					select.disabled = false;
 				}
 				midiAccess = access;
