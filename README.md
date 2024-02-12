@@ -99,6 +99,34 @@ environment variable.
 GSETTINGS_SCHEMA_DIR=$PWD/gtk ./gtk/oscmix-gtk
 ```
 
+## Web UI
+
+The [web](web) directory contains a web frontend that can communicate
+with oscmix through OSC over a WebSocket, or by directly to an
+instance of oscmix compiled as WebAssembly.
+
+![oscmix-web]
+
+The web UI is automatically deployed at
+[https://michaelforney.github.io/oscmix](https://michaelforney.github.io/oscmix).
+
+Also included is a UDP-to-WebSocket bridge, `wsdgram`. It expects
+file descriptors 0 and 1 to be an open connection to a WebSocket
+client. It forwards incoming messages to a UDP address and writes
+outgoing messages for any UDP packet received. Use it in combination
+with software like [s6-tcpserver] or [s6-tlsserver].
+
+```sh
+s6-tcpserver 127.0.0.1 8222 wsdgram
+```
+
+To build `oscmix.wasm`, you need `clang` supporting wasm32, `wasm-ld`,
+and `wasi-libc`.
+
+[oscmix-web]: https://github.com/michaelforney/oscmix/assets/52851/ef22e75e-9d38-4c82-b016-81bce77be571
+[s6-tcpserver]: https://skarnet.org/software/s6-networking/s6-tcpserver.html
+[s6-tlsserver]: https://skarnet.org/software/s6-networking/s6-tlsserver.html
+
 ## OSC API
 
 The OSC API is not yet final and may change without notice.
