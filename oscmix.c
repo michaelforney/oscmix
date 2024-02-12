@@ -359,12 +359,19 @@ newinputstereo(const struct oscnode *path[], const char *addr, int reg, int val)
 static int
 newoutputstereo(const struct oscnode *path[], const char *addr, int reg, int val)
 {
-	int i;
+	int idx;
+	char addrbuf[256];
 
-	i = (reg - 0x0500) >> 6;
-	assert(i < LEN(outputs));
-	outputs[i].stereo = val;
-	return newbool(path, addr, reg, val);
+	idx = (path[-1] - path[-2]->child) & -2;
+	assert(idx < LEN(outputs));
+	outputs[idx].stereo = val;
+	outputs[idx + 1].stereo = val;
+	addr = addrbuf;
+	snprintf(addrbuf, sizeof addrbuf, "/output/%d/stereo", idx + 1);
+	oscsend(addr, ",i", val != 0);
+	snprintf(addrbuf, sizeof addrbuf, "/output/%d/stereo", idx + 2);
+	oscsend(addr, ",i", val != 0);
+	return 0;
 }
 
 static int
