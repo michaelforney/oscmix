@@ -26,22 +26,12 @@ oscmix [-dl] [-r recvaddr] [-s sendaddr]
 oscmix reads and writes MIDI SysEx messages from/to file descriptors
 6 and 7 respectively, which are expected to be opened.
 
-The `-d` flag enables debug messages.
+By default, oscmix will listen for OSC messages on `udp!127.0.0.1!7222`
+and send to `udp!127.0.0.1!8222`.
 
-The `-l` flag disables level meters.
+See the manual, [oscmix.1], for more full information.
 
-The `-r` flag specifies the address to listen for OSC messages on.
-
-The `-s` flag specifies the address to send OSC messages to.
-
-The `-m` flag is shorthand for `-s udp!224.0.0.1!8222`.
-
-Addresses are specified using the syntax `proto!addr!port`. Currently,
-only `udp` is supported. Alternatively, if the address string is a
-number, oscmix will read or write to that file descriptor.
-
-By default, oscmix will listen on `udp!127.0.0.1!7222` and send to
-`udp!127.0.0.1!8222`.
+[oscmix.1]: https://michaelforney.github.io/oscmix/oscmix.1.html
 
 ## Running
 
