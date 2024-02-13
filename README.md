@@ -20,7 +20,7 @@ implemented in oscmix.
 ## Usage
 
 ```
-oscmix [-dl] [-r recvaddr]... [-s sendaddr]...
+oscmix [-dl] [-r recvaddr] [-s sendaddr]
 ```
 
 oscmix reads and writes MIDI SysEx messages from/to file descriptors
@@ -41,9 +41,7 @@ only `udp` is supported. Alternatively, if the address string is a
 number, oscmix will read or write to that file descriptor.
 
 By default, oscmix will listen on `udp!127.0.0.1!7222` and send to
-`udp!127.0.0.1!8222`. Any addresses specified replace these defaults;
-if you want to send to or listen on multiple addresses, pass them
-all to `oscmix`.
+`udp!127.0.0.1!8222`.
 
 ## Running
 
