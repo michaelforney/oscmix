@@ -28,7 +28,7 @@ oscmix reads and writes MIDI SysEx messages from/to file descriptors
 
 The `-d` flag enables debug messages.
 
-The `-l` flag enables level meters.
+The `-l` flag disables level meters.
 
 The `-r` flag specifies the address to listen for OSC messages on.
 

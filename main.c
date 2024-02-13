@@ -183,6 +183,6 @@ main(int argc, char *argv[])
 	handleosc(refreshosc, sizeof refreshosc - 1);
 	for (;;) {
 		sigwait(&set, &sig);
-		handletimer(lflag);
+		handletimer(lflag == 0);
 	}
 }
