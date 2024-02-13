@@ -6,6 +6,7 @@ packages:
 - clang
 - lld
 - wasi-sdk
+- mandoc
 sources:
 - https://git.sr.ht/~mcf/oscmix
 environment:
@@ -20,6 +21,7 @@ tasks:
     git fetch github gh-pages
     git worktree add --no-checkout -b gh-pages gh-pages github/gh-pages
     cp web/index.html web/oscmix.js web/style.css web/oscmix.wasm gh-pages/
+    mandoc -T html doc/oscmix.1 >gh-pages/oscmix.1
     git -C gh-pages add .
     git -C gh-pages commit -m "Built from $(git rev-parse --short HEAD)" .
     git push git@github.com:michaelforney/oscmix gh-pages
