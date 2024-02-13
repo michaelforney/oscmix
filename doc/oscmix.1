@@ -1,0 +1,58 @@
+.Dd February 12, 2024
+.Dt OSCMIX 1
+.Os
+.Sh NAME
+.Nm oscmix
+.Nd Fireface UCX II mixer
+.Sh SYNOPSIS
+.Nm
+.Op Fl dl
+.Op Fl r Ar recvaddr
+.Op Fl s Ar sendaddr
+.Sh DESCRIPTION
+.Nm
+implements an OSC API for RME's Fireface UCX II running in
+class-compilant mode, allowing full control of the device through
+OSC.
+.Pp
+It expects file descriptors 6 and 7 to be open for reading and
+writing MIDI messages to the device.
+To set these up on Linux, use
+.Xr alsarawio 1
+or
+.Xr alsaseqio 1 .
+.Sh OPTIONS
+.Bl -tag -width Ds
+.It Fl d
+Enable debug messages.
+.It Fl l
+Disable level meters.
+.It Fl r
+The address on which to listen for OSC messages.
+By default,
+.Nm
+listens on
+.Cm udp!127.0.0.1!7222 .
+.It Fl s
+The address on which to send OSC messages.
+By default,
+.Nm
+sends to
+.Cm udp!127.0.0.1!8222 .
+.It Fl m
+Shorthand for
+.Fl s Cm udp!224.0.0.1!8222 .
+.El
+.Sh ADDRESS FORMAT
+Addresses are specified using syntax
+.Ar proto!addr!port .
+.Pp
+Currently, the only supported protocol is
+.Cm udp .
+.Pp
+Alternatively, you can specify an file descriptor number instead.
+Note that OSC relies on write boundaries being preserved, so this
+file descriptor should refer to some open message-oriented socket.
+.Sh SEE ALSO
+.Xr alsarawio 1 ,
+.Xr alsaseqio 1
