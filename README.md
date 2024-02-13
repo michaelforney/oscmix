@@ -29,7 +29,7 @@ oscmix reads and writes MIDI SysEx messages from/to file descriptors
 By default, oscmix will listen for OSC messages on `udp!127.0.0.1!7222`
 and send to `udp!127.0.0.1!8222`.
 
-See the manual, [oscmix.1], for more full information.
+See the manual, [oscmix.1], for more information.
 
 [oscmix.1]: https://michaelforney.github.io/oscmix/oscmix.1.html
 
