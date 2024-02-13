@@ -1,6 +1,9 @@
 .POSIX:
 
 CC=cc -std=c11
+PREFIX=/usr/local
+BINDIR=$(PREFIX)/bin
+MANDIR=$(PREFIX)/share/man
 
 -include config.mk
 
@@ -12,8 +15,11 @@ ALSA_LDLIBS?=$$(pkg-config --libs-only-l alsa)
 GTK?=y
 WEB?=n
 
-TARGET=oscmix wsdgram $(TARGET-y)
-TARGET-$(ALSA)+=alsarawio alsaseqio
+BIN=oscmix $(BIN-y)
+BIN-$(ALSA)+=alsarawio alsaseqio
+BIN-$(WEB)+=wsdgram
+
+TARGET=$(BIN) $(TARGET-y)
 TARGET-$(GTK)+=gtk
 TARGET-$(WEB)+=web
 
@@ -57,6 +63,13 @@ alsaseqio.o: alsaseqio.c
 
 alsaseqio: alsaseqio.o
 	$(CC) $(LDFLAGS) $(ALSA_LDFLAGS) -o $@ alsaseqio.o $(ALSA_LDLIBS)
+
+.PHONY: install
+install: $(BIN)
+	mkdir -p $(DESTDIR)$(BINDIR)
+	cp $(BIN) $(DESTDIR)$(BINDIR)/
+	mkdir -p $(DESTDIR)$(MANDIR)/man1
+	cp doc/oscmix.1 $(DESTDIR)$(MANDIR)/man1/
 
 .PHONY: clean
 clean:
