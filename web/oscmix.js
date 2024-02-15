@@ -557,9 +557,9 @@ class Channel {
 		const volumeNumber = fragment.getElementById('volume-number');
 		if (type == Channel.OUTPUT) {
 			volumeRange.oninput = volumeNumber.onchange = (event) => {
-				iface.send(prefix + '/volume', ',f', [event.target.value]);
 				volumeRange.value = event.target.value;
 				volumeNumber.value = event.target.value;
+				iface.send(prefix + '/volume', ',f', [event.target.value]);
 			};
 			iface.methods.set(prefix + '/volume', (args) => {
 				volumeRange.value = args[0];
@@ -571,9 +571,9 @@ class Channel {
 				volumeRange.value = volumeNumber.value = this.volume[event.target.selectedIndex];
 			});
 			volumeRange.oninput = volumeNumber.onchange = (event) => {
-				iface.send(`/mix/${output.selectedIndex+1}${prefix}`, ',f', [event.target.value]);
 				volumeRange.value = volumeNumber.value = event.target.value;
 				this.volume[output.selectedIndex] = event.target.value;
+				iface.send(`/mix/${output.selectedIndex+1}${prefix}`, ',f', [event.target.value]);
 			};
 			this.volume = [];
 			for (let i = 0; i < 20; ++i) {
@@ -861,6 +861,19 @@ function setupInterface() {
 	iface.bind('/hardware/standalonearc', ',i', document.getElementById('hardware-standalonearc'), 'selectedIndex', 'change');
 	iface.bind('/hardware/lockkeys', ',i', document.getElementById('hardware-lockkeys'), 'selectedIndex', 'change');
 	iface.bind('/hardware/remapkeys', ',i', document.getElementById('hardware-remapkeys'), 'checked', 'change');
+
+	/* allow scrolling on number and range inputs */
+	const wheel = (event) => {
+		event.preventDefault();
+		event.target.valueAsNumber = Math.min(Math.max(event.target.valueAsNumber - event.deltaY * Number(event.target.step) / 180, event.target.min), event.target.max);
+		event.target.dispatchEvent(new Event(event.target.type == 'range' ? 'input' : 'change'));
+	};
+	const focus = (event) => event.target.addEventListener('wheel', wheel, {passive: false});
+	const blur = (event) => event.target.removeEventListener('wheel', wheel);
+	for (const node of document.querySelectorAll('input[type="number"], input[type="range"]')) {
+		node.addEventListener('focus', focus);
+		node.addEventListener('blur', blur);
+	}
 }
 
 document.addEventListener('DOMContentLoaded', setupInterface);
