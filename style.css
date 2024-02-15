@@ -27,9 +27,11 @@ fieldset > label {
 fieldset span:has(input[type="checkbox"]) {
 	text-align: right;
 }
-output {
+fieldset output {
 	border: 1px solid gray;
 	border-radius: 2px;
+}
+output {
 	font-size: smaller;
 	padding: 2px;
 }
@@ -240,7 +242,7 @@ label:has(#connection-type:not([data-value="WebSocket"])) ~ .connection-websocke
 .channel-panel fieldset {
 	font-size: 0.9em;
 }
-.channel-panel svg {
+.eq-plot {
 	border: 1px solid;
 	border-radius: 3px;
 	background-color: white;
@@ -261,15 +263,33 @@ label:has(#connection-type:not([data-value="WebSocket"])) ~ .connection-websocke
 }
 .eq-controls {
 	display: grid;
-	grid-template-columns: 0fr 1fr 1fr 1fr;
+	grid-gap: 1px;
 }
-.eq-controls :nth-child(4n+1) {
-	margin-right: 2px;
-}
-.eq-controls :not(:nth-child(4n+1)) {
-	text-align: center;
+.eq-controls output {
+	border: 0;
+	outline: 1px solid gray;
 }
 .eq-controls :is(select, input[type="number"]) {
+	outline: 1px solid gray;
+	border: 0;
+	background-color: field;
 	box-sizing: border-box;
+	padding: 1px;
 	width: 100%;
+}
+.eq-controls :is(select, input[type="number"]):focus {
+	outline-color: black;
+	border: 1px solid black;
+	padding: 0;
+	z-index: 1;
+}
+.channel-panel-eq .eq-controls {
+	grid-template-columns: 0fr 1fr 1fr 1fr;
+}
+.channel-panel-eq .eq-controls :nth-child(4n+1) {
+	margin-right: 2px;
+}
+.channel-panel-eq .eq-controls :not(:nth-child(4n+1)) {
+	text-align: center;
+}
 }

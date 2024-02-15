@@ -285,7 +285,6 @@ class EQBand {
 	constructor() {
 		this.#updateCoeffs();
 	}
-
 	#updateCoeffs() {
 		const f2 = this.#freq * this.#freq;
 		const f4 = f2 * f2;
@@ -329,25 +328,79 @@ class EQBand {
 			break;
 		}
 	}
-
 	set type(value) {
 		this.#type = value;
 		this.#updateCoeffs();
 	}
-
 	set gain(value) {
 		this.#gain = value;
 		this.#updateCoeffs();
 	}
-
 	set freq(value) {
 		this.#freq = value;
 		this.#updateCoeffs();
 	}
-
 	set q(value) {
 		this.#q = value;
 		this.#updateCoeffs();
+	}
+	eval(f2, f4) {
+		return (this.a0 + this.a1 * f2 + this.a2 * f4) / (this.b0 + this.b1 * f2 + f4);
+	}
+}
+
+class LowCut {
+	static #k = [1, 0.655, 0.528, 0.457];
+	order = 1;
+	freq = 100;
+	eval(f2) {
+		const freq = this.freq * LowCut.#k[this.order];
+		const freq2 = freq * freq;
+		let y = 1;
+		for (let i = 0; i <= this.order; ++i)
+			y *= f2 / (f2 + freq2);
+		return y;
+	}
+}
+
+class EQPlot {
+	#svg;
+	#grid;
+	#curve;
+	bands = [];
+	constructor(svg) {
+		this.#svg = svg;
+		this.#curve = svg.querySelector('.eq-curve');;
+		const grid = svg.querySelector('.eq-grid');
+		const observer = new ResizeObserver(() => {
+			const w = svg.clientWidth;
+			const h = svg.clientHeight;
+			const d = [];
+			for (let i = 0; i < 5; ++i)
+				d.push(`M 0 ${Math.round((4 + 10 * i) * h / 48) + 0.5} H ${w}`);
+			for (let i = 0; i < 3; ++i)
+				d.push(`M ${Math.round((7 + 10 * i) * w / 30) + 0.5} 0 V ${h}`);
+			grid.setAttribute('d', d.join(' '));
+			this.update();
+		});
+		observer.observe(svg);
+	}
+	update() {
+		const w = this.#svg.clientWidth;
+		const h = this.#svg.clientHeight;
+		let points = [];
+		for (let x = 0; x <= w; ++x) {
+			const f2 = Math.pow(10, 2 * ((x - 0.5) * 3 / w + 1.3));
+			const f4 = f2 * f2;
+			let y = 1;
+			for (const band of this.bands) {
+				if (band.enabled)
+					y *= band.eval(f2, f4);
+			}
+			y = Math.round(h / 2) + 0.5 + -10 * h / 48 * Math.log10(y);
+			points.push(x, y);
+		}
+		this.#curve.setAttribute('points', points.join(' '));
 	}
 }
 
@@ -546,46 +599,52 @@ class Channel {
 		for (const node of fragment.querySelectorAll('.channel-panel-buttons input[type="checkbox"]'))
 			node.onchange = onPanelButtonChanged;
 
-		if (fragment.getElementById('eq')) {
-			const drawEQ = this.drawEQ.bind(this);
-			this.svg = fragment.getElementById('eq-plot');
-			this.grid = fragment.getElementById('eq-grid');
-			this.curve = fragment.getElementById('eq-curve');
-			this.bands = [new EQBand(), new EQBand(), new EQBand()];
-			const observer = new ResizeObserver(drawEQ);
-			observer.observe(this.svg);
+		const eqSvg = fragment.getElementById('eq-plot');
+		if (eqSvg) {
+			this.eq = new EQPlot(eqSvg);
 
-			this.eqEnabled = fragment.getElementById('eq');
-			this.eqEnabled.addEventListener('change', drawEQ);
-
+			const eqEnabled = fragment.getElementById('eq');
+			eqEnabled.addEventListener('change', (event) => {
+				for (let i = 0; i < 3; ++i)
+					this.eq.bands[i].enabled = event.target.checked;
+				this.eq.update();
+			});
 			const band1Type = fragment.getElementById('eq/band1type')
 			band1Type.addEventListener('change', (event) => {
-				this.bands[0].type = EQBand[event.target.value];
-				this.drawEQ();
+				this.eq.bands[0].type = EQBand[event.target.value];
+				this.eq.update();
 			});
 			const band3Type = fragment.getElementById('eq/band3type')
 			band3Type.addEventListener('change', (event) => {
-				this.bands[2].type = EQBand[event.target.value];
-				this.drawEQ();
+				this.eq.bands[2].type = EQBand[event.target.value];
+				this.eq.update();
 			});
-
-			for (const prop of ['gain', 'freq', 'q']) {
-				let node = fragment.getElementById('eq/band1' + prop);
-				for (const band of this.bands) {
+			for (let i = 0; i < 3; ++i) {
+				const band = new EQBand();
+				this.eq.bands.push(band);
+				for (const prop of ['gain', 'freq', 'q']) {
+					const node = fragment.getElementById(`eq/band${i+1}${prop}`);
 					node.addEventListener('change', (event) => {
 						band[prop] = event.target.value;
-						this.drawEQ();
+						this.eq.update();
 					});
-					node = node.nextElementSibling;
 				}
 			}
 
-			this.lowCutEnabled = fragment.getElementById('lowcut');
-			this.lowCutEnabled.addEventListener('change', drawEQ);
-			this.lowCutSlope = fragment.getElementById('lowcut/slope');
-			this.lowCutSlope.addEventListener('change', drawEQ);
-			this.lowCutFreq = fragment.getElementById('lowcut/freq');
-			this.lowCutFreq.addEventListener('change', drawEQ);
+			const lowCut = new LowCut();
+			this.eq.bands.push(lowCut);
+			fragment.getElementById('lowcut').addEventListener('change', (event) => {
+				lowCut.enabled = event.target.checked;
+				this.eq.update();
+			});
+			fragment.getElementById('lowcut/slope').addEventListener('change', (event) => {
+				lowCut.order = event.target.selectedIndex;
+				this.eq.update();
+			});
+			fragment.getElementById('lowcut/freq').addEventListener('change', (event) => {
+				lowCut.freq = event.target.value;
+				this.eq.update();
+			});
 		}
 
 		for (const node of fragment.querySelectorAll('[id]')) {
@@ -608,43 +667,6 @@ class Channel {
 			node.removeAttribute('id');
 		}
 		this.element = fragment;
-	}
-
-	drawEQ() {
-		const w = this.svg.clientWidth;
-		const h = this.svg.clientHeight;
-		let d = '';
-		for (let i = 0; i < 5; ++i) {
-			const y = Math.round((4 + 10 * i) * h / 48) + 0.5;
-			d += `M 0 ${y} H ${w} `;
-		}
-		for (let i = 0; i < 3; ++i) {
-			const x = Math.round((7 + 10 * i) * w / 30) + 0.5;
-			d += `M ${x} 0 V ${h} `;
-		}
-		this.grid.setAttribute('d', d);
-
-		let points = [];
-		for (let x = 0; x <= w; ++x) {
-			const f2 = Math.pow(10, 2 * ((x - 0.5) * 3 / w + 1.3));
-			const f4 = f2 * f2;
-			let y = 1;
-			if (this.eqEnabled.checked) {
-				for (const band of this.bands)
-					y *= (band.a0 + band.a1 * f2 + band.a2 * f4) / (band.b0 + band.b1 * f2 + f4);
-			}
-			if (this.lowCutEnabled.checked) {
-				const order = this.lowCutSlope.selectedIndex;
-				const k = [1, 0.655, 0.528, 0.457];
-				const freq = this.lowCutFreq.valueAsNumber * k[order];
-
-				for (let i = 0; i <= order; ++i)
-					y *= f2 / (f2 + freq * freq);
-			}
-			y = Math.round(h / 2) + 0.5 + -10 * h / 48 * Math.log10(y);
-			points.push(x, y);
-		}
-		this.curve.setAttribute('points', points.join(' '));
 	}
 }
 
