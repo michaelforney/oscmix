@@ -49,11 +49,11 @@
 						<label class="stereo-field">M/S Proc<span><input type="checkbox" id="msproc"></span></label>
 						<label>Phase<span><input type="checkbox" id="phase"></span></label>
 						<label data-flags="output">Loopback<span><input type="checkbox" id="loopback"></span></label>
-						<button data-flags="output" class="roomeq">Room EQ</button>
+						<button id="roomeq-show" data-flags="output" class="roomeq">Room EQ</button>
 					</fieldset>
 				</div>
 				<div class="channel-panel channel-panel-eq" data-flags="input output">
-					<svg id="eq-plot">
+					<svg id="eq-plot" class="eq-plot">
 						<path id="eq-grid" class="eq-grid"/>
 						<polyline id="eq-curve" class="eq-curve"/>
 					</svg>
