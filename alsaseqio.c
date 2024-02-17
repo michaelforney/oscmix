@@ -80,7 +80,7 @@ main(int argc, char *argv[])
 	posix_spawn_file_actions_t files;
 	pthread_t thread;
 	char *end;
-	int fd[2], rfd, wfd;
+	int rfd[2], wfd[2];
 	unsigned char *pos, buf[1024];
 	extern char **environ;
 
@@ -152,34 +152,34 @@ main(int argc, char *argv[])
 		fprintf(stderr, "posix_spown_file_actions_init: %s\n", strerror(err));
 		return 1;
 	}
-	if (pipe2(fd, O_CLOEXEC) != 0) {
+	if (pipe2(wfd, O_CLOEXEC) != 0) {
 		perror("pipe2");
 		return 1;
 	}
-	err = posix_spawn_file_actions_adddup2(&files, fd[0], 6);
+	err = posix_spawn_file_actions_adddup2(&files, wfd[0], 6);
 	if (err) {
 		fprintf(stderr, "posix_spawn_file_actions_adddup2 %s: %s\n", argv[1], strerror(err));
 		return 1;
 	}
-	wfd = fd[1];
-	if (pipe2(fd, O_CLOEXEC) != 0) {
+	if (pipe2(rfd, O_CLOEXEC) != 0) {
 		perror("pipe2");
 		return 1;
 	}
-	err = posix_spawn_file_actions_adddup2(&files, fd[1], 7);
+	err = posix_spawn_file_actions_adddup2(&files, rfd[1], 7);
 	if (err) {
 		fprintf(stderr, "posix_spawn_file_actions_adddup2 %s: %s\n", argv[1], strerror(err));
 		return 1;
 	}
-	rfd = fd[0];
 
 	err = posix_spawnp(&pid, argv[1], &files, NULL, argv + 1, environ);
 	if (err) {
 		fprintf(stderr, "posix_spawnp %s: %s\n", argv[1], strerror(err));
 		return 1;
 	}
+	close(rfd[1]);
+	close(wfd[0]);
 
-	err = pthread_create(&thread, NULL, midiread, &rfd);
+	err = pthread_create(&thread, NULL, midiread, &rfd[0]);
 	if (err) {
 		fprintf(stderr, "pthread_create: %s\n", strerror(err));
 		return 1;
@@ -201,7 +201,7 @@ main(int argc, char *argv[])
 		len = ret;
 		pos = buf;
 		while (len > 0) {
-			ret = write(wfd, pos, len);
+			ret = write(wfd[1], pos, len);
 			if (ret < 0) {
 				perror("write");
 				return 1;
