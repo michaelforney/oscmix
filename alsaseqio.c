@@ -23,45 +23,35 @@ static void *
 midiread(void *arg)
 {
 	int fd;
-	unsigned char buf[1024], *pos;
-	size_t len;
 	ssize_t ret;
-	snd_seq_event_t evt;
+	size_t len;
+	snd_seq_event_t *evt;
+	unsigned char *pos, buf[1024];
 
 	fd = *(int *)arg;
-	snd_seq_ev_set_source(&evt, 0);
-	snd_seq_ev_set_subs(&evt);
-	snd_seq_ev_set_direct(&evt);
 	for (;;) {
-		ret = read(fd, buf, sizeof buf);
+		ret = snd_seq_event_input(seq, &evt);
 		if (ret < 0) {
-			perror("read");
+			fprintf(stderr, "snd_seq_event_input: %s\n", snd_strerror(ret));
+			if (ret == -ENOSPC)
+				continue;
 			exit(1);
 		}
-		if (ret == 0)
-			break;
-		pos = buf;
+		ret = snd_midi_event_decode(dev, buf, sizeof buf, evt);
+		if (ret < 0) {
+			fprintf(stderr, "snd_midi_event_decode: %s\n", snd_strerror(ret));
+			exit(1);
+		}
 		len = ret;
+		pos = buf;
 		while (len > 0) {
-			ret = snd_midi_event_encode(dev, pos, len, &evt);
+			ret = write(fd, pos, len);
 			if (ret < 0) {
-				fprintf(stderr, "snd_midi_event_encode: %s\n", snd_strerror(ret));
+				perror("write");
 				exit(1);
 			}
 			pos += ret;
 			len -= ret;
-			if (evt.type != SND_SEQ_EVENT_NONE) {
-				ret = snd_seq_event_output(seq, &evt);
-				if (ret < 0) {
-					fprintf(stderr, "snd_seq_event_output: %s\n", snd_strerror(ret));
-					exit(1);
-				}
-			}
-		}
-		ret = snd_seq_drain_output(seq);
-		if (ret < 0) {
-			fprintf(stderr, "snd_seq_drain_output: %s\n", snd_strerror(ret));
-			exit(1);
 		}
 	}
 	return NULL;
@@ -75,7 +65,7 @@ main(int argc, char *argv[])
 	size_t len;
 	snd_seq_addr_t dest, self;
 	snd_seq_port_subscribe_t *sub;
-	snd_seq_event_t *evt;
+	snd_seq_event_t evt;
 	pid_t pid;
 	posix_spawn_file_actions_t files;
 	pthread_t thread;
@@ -179,35 +169,45 @@ main(int argc, char *argv[])
 	close(rfd[1]);
 	close(wfd[0]);
 
-	err = pthread_create(&thread, NULL, midiread, &rfd[0]);
+	err = pthread_create(&thread, NULL, midiread, &wfd[1]);
 	if (err) {
 		fprintf(stderr, "pthread_create: %s\n", strerror(err));
 		return 1;
 	}
 
+	snd_seq_ev_set_source(&evt, 0);
+	snd_seq_ev_set_subs(&evt);
+	snd_seq_ev_set_direct(&evt);
 	for (;;) {
-		ret = snd_seq_event_input(seq, &evt);
+		ret = read(rfd[0], buf, sizeof buf);
 		if (ret < 0) {
-			fprintf(stderr, "snd_seq_event_input: %s\n", snd_strerror(ret));
-			if (ret == -ENOSPC)
-				continue;
-			return 1;
+			perror("read");
+			exit(1);
 		}
-		ret = snd_midi_event_decode(dev, buf, sizeof buf, evt);
-		if (ret < 0) {
-			fprintf(stderr, "snd_midi_event_decode: %s\n", snd_strerror(ret));
-			return 1;
-		}
-		len = ret;
+		if (ret == 0)
+			break;
 		pos = buf;
+		len = ret;
 		while (len > 0) {
-			ret = write(wfd[1], pos, len);
+			ret = snd_midi_event_encode(dev, pos, len, &evt);
 			if (ret < 0) {
-				perror("write");
+				fprintf(stderr, "snd_midi_event_encode: %s\n", snd_strerror(ret));
 				return 1;
 			}
 			pos += ret;
 			len -= ret;
+			if (evt.type != SND_SEQ_EVENT_NONE) {
+				ret = snd_seq_event_output(seq, &evt);
+				if (ret < 0) {
+					fprintf(stderr, "snd_seq_event_output: %s\n", snd_strerror(ret));
+					return 1;
+				}
+			}
+		}
+		ret = snd_seq_drain_output(seq);
+		if (ret < 0) {
+			fprintf(stderr, "snd_seq_drain_output: %s\n", snd_strerror(ret));
+			return 1;
 		}
 	}
 }
