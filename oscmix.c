@@ -1538,20 +1538,6 @@ handleosc(const unsigned char *buf, size_t len)
 	return 0;
 }
 
-static inline uint_least32_t
-getle32_7bit(const void *p)
-{
-	const unsigned char *b = p;
-	uint_least32_t v;
-
-	v = b[0] & 0x7ful;
-	v |= (b[1] & 0x7ful) << 7;
-	v |= (b[2] & 0x7ful) << 14;
-	v |= (b[3] & 0x7ful) << 21;
-	v |= (b[4] & 0xful) << 28;
-	return v;
-}
-
 static unsigned char oscbuf[8192];
 static struct oscmsg oscmsg;
 
