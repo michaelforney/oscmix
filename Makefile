@@ -62,7 +62,7 @@ alsaseqio.o: alsaseqio.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(ALSA_CFLAGS) -c -o $@ alsaseqio.c
 
 alsaseqio: alsaseqio.o
-	$(CC) $(LDFLAGS) $(ALSA_LDFLAGS) -o $@ alsaseqio.o $(ALSA_LDLIBS)
+	$(CC) $(LDFLAGS) $(ALSA_LDFLAGS) -o $@ alsaseqio.o $(ALSA_LDLIBS) -l pthread
 
 .PHONY: install
 install: $(BIN)
