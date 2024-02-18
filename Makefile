@@ -64,6 +64,12 @@ alsaseqio.o: alsaseqio.c
 alsaseqio: alsaseqio.o
 	$(CC) $(LDFLAGS) $(ALSA_LDFLAGS) -o $@ alsaseqio.o $(ALSA_LDLIBS) -l pthread
 
+tools/regtool.o: tools/regtool.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(ALSA_CFLAGS) -c -o $@ tools/regtool.c
+
+tools/regtool: tools/regtool.o
+	$(CC) $(LDFLAGS) $(ALSA_LDFLAGS) -o $@ tools/regtool.o $(ALSA_LDLIBS)
+
 .PHONY: install
 install: $(BIN)
 	mkdir -p $(DESTDIR)$(BINDIR)

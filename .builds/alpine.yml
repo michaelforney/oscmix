@@ -14,7 +14,7 @@ environment:
 secrets:
 - 998c4455-99e3-4d32-b9e8-b6a1b99b5d06
 tasks:
-- build: make -C oscmix WEB=y
+- build: make -C oscmix WEB=y all tools/regtool
 - deploy: |
     cd oscmix
     git remote add github git@github.com:michaelforney/oscmix.git

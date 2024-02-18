@@ -5,4 +5,4 @@ packages:
 sources:
 - https://git.sr.ht/~mcf/oscmix
 tasks:
-- build: make -C oscmix
+- build: make -C oscmix all tools/regtool
