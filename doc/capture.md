@@ -8,6 +8,7 @@ UDC=fe980000.usb                          # raspberry pi 4 udc (see /sys/class/u
 modprobe usb_f_midi                       # load midi gadget
 cd /sys/kernel/config/usb_gadget
 mkdir g1                                  # create gadget
+cd g1
 
 echo 0x2a39 > idVendor                    # set vendor id (RME)
 echo 0x3fd9 > idProduct                   # set product id (Fireface UCX II)
@@ -37,4 +38,14 @@ between these two ports (one in each direction):
 ```sh
 aconnect f_midi:1 32:1
 aconnect 32:1 f_midi:1
+```
+
+To remove the gadget, you can run the following:
+
+```sh
+echo '' > UDC                             # unbind from udc
+rm configs/c.1/midi.usb0                  # detach midi function from config
+rmdir configs/c.1 functions/midi.usb0     # remove config and midi function
+cd ..
+rmdir g1                                  # remove gadget
 ```
