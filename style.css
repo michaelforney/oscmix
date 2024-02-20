@@ -177,9 +177,6 @@ label:has(#connection-type:not([data-value="WebSocket"])) ~ .connection-websocke
 }
 .channel-volume meter {
 	height: auto;
-	writing-mode: vertical-lr;
-	margin-inline: 2px;
-	margin-block: 0;
 }
 .channel-volume meter + meter {
 	margin-left: 0;
@@ -195,6 +192,7 @@ label:has(#connection-type:not([data-value="WebSocket"])) ~ .connection-websocke
 }
 .channel-volume > :where(meter, input[type="range"]) {
 	writing-mode: vertical-lr;
+	direction: rtl;
 	margin: 2px 0;
 }
 .channel-volume-number {
