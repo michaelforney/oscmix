@@ -12,7 +12,7 @@ mkdir g1                                  # create gadget
 echo 0x2a39 > idVendor                    # set vendor id (RME)
 echo 0x3fd9 > idProduct                   # set product id (Fireface UCX II)
 
-functions/midi.usb0                       # add midi function
+mkdir functions/midi.usb0                 # add midi function
 echo 2 > functions/midi.usb0/in_ports     # with 2 input ports
 echo 2 > functions/midi.usb0/out_ports    # and 2 output ports
 
