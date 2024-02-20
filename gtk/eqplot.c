@@ -25,17 +25,32 @@ typedef struct {
 } EQBand;
 
 G_DEFINE_TYPE(EQPlot, eq_plot, GTK_TYPE_DRAWING_AREA)
-G_DEFINE_ENUM_TYPE(EQFilterType, eq_filter_type,
-	G_DEFINE_ENUM_VALUE(EQ_FILTER_PEAK, "peak"),
-	G_DEFINE_ENUM_VALUE(EQ_FILTER_LOWSHELF, "lowshelf"),
-	G_DEFINE_ENUM_VALUE(EQ_FILTER_HIGHSHELF, "highshelf"),
-	G_DEFINE_ENUM_VALUE(EQ_FILTER_LOWPASS, "lowpass"),
-	G_DEFINE_ENUM_VALUE(EQ_FILTER_HIGHPASS, "highpass"))
 
 enum {
 	PROP_N_BANDS = 1,
 	PROP_LOWCUT_FREQ,
 };
+
+static GType
+eq_filter_type_get_type(void)
+{
+	static gsize once;
+	static const GEnumValue values[] = {
+		{EQ_FILTER_PEAK, "EQ_FILTER_PEAK", "peak"},
+		{EQ_FILTER_LOWSHELF, "EQ_FILTER_LOWSHELF", "lowshelf"},
+		{EQ_FILTER_HIGHSHELF, "EQ_FILTER_HIGHSHELF", "highshelf"},
+		{EQ_FILTER_LOWPASS, "EQ_FILTER_LOWPASS", "lowpass"},
+		{EQ_FILTER_HIGHPASS, "EQ_FILTER_HIGHPASS", "highpass"},
+		{0},
+	};
+	GType type;
+
+	if (g_once_init_enter(&once)) {
+		type = g_enum_register_static("EQFilterType", values);
+		g_once_init_leave(&once, type);
+	}
+	return once;
+}
 
 static void
 eq_plot_set_property(GObject *obj, guint id, const GValue *val, GParamSpec *spec)

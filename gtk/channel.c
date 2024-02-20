@@ -68,16 +68,46 @@ struct _Channel {
 static unsigned output_changed_signal;
 
 G_DEFINE_TYPE(Channel, channel, GTK_TYPE_BOX)
-G_DEFINE_ENUM_TYPE(ChannelType, channel_type,
-	G_DEFINE_ENUM_VALUE(CHANNEL_TYPE_INPUT, "input"),
-	G_DEFINE_ENUM_VALUE(CHANNEL_TYPE_PLAYBACK, "playback"),
-	G_DEFINE_ENUM_VALUE(CHANNEL_TYPE_OUTPUT, "output"))
-G_DEFINE_FLAGS_TYPE(ChannelFlags, channel_flags,
-	G_DEFINE_ENUM_VALUE(CHANNEL_FLAG_ANALOG, "analog"),
-	G_DEFINE_ENUM_VALUE(CHANNEL_FLAG_MIC, "mic"),
-	G_DEFINE_ENUM_VALUE(CHANNEL_FLAG_INSTRUMENT, "instrument"))
 
 void bind_osc(char *addr, GType type, gpointer ptr, const char *prop);
+
+GType
+channel_type_get_type(void)
+{
+	static gsize once;
+	static const GEnumValue values[] = {
+		{CHANNEL_TYPE_INPUT, "CHANNEL_TYPE_INPUT", "input"},
+		{CHANNEL_TYPE_PLAYBACK, "CHANNEL_TYPE_PLAYBACK", "playback"},
+		{CHANNEL_TYPE_OUTPUT, "CHANNEL_TYPE_OUTPUT", "output"},
+		{0},
+	};
+	GType type;
+
+	if (g_once_init_enter(&once)) {
+		type = g_enum_register_static("ChannelType", values);
+		g_once_init_leave(&once, type);
+	}
+	return once;
+}
+
+GType
+channel_flags_get_type(void)
+{
+	static gsize once;
+	static const GFlagsValue values[] = {
+		{CHANNEL_FLAG_ANALOG, "CHANNEL_FLAG_ANALOG", "analog"},
+		{CHANNEL_FLAG_MIC, "CHANNEL_FLAG_MIC", "mic"},
+		{CHANNEL_FLAG_INSTRUMENT, "CHANNEL_FLAG_INSTRUMENT", "instrument"},
+		{0},
+	};
+	GType type;
+
+	if (g_once_init_enter(&once)) {
+		type = g_flags_register_static("ChannelFlags", values);
+		g_once_init_leave(&once, type);
+	}
+	return once;
+}
 
 static void
 osc_levels(GValue *arg, guint len, gpointer ptr)
