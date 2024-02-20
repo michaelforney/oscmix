@@ -451,10 +451,8 @@ function rme_proto.dissector(buffer, pinfo, tree)
 end
 
 local usb_table = DissectorTable.get('usb.product')
-usb_table:add(0x2a393f82, rme_proto)
---print(usb_table:get_dissector(0x2a393f82))
---usb_table = DissectorTable.get('usb.bulk')
---usb_table:add(0xffff, rme_proto)
+usb_table:add(0x2a393f82, rme_proto)  -- UCX II
+usb_table:add(0x2a393fcd, rme_proto)  -- 802
 
 -- RME SysEx dissector
 local sysex_rme_proto = Proto('sysex_rme', 'RME SysEx Protocol')
