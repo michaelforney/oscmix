@@ -1,7 +1,17 @@
--- RME dissector
 local endpoint_field = Field.new('usb.endpoint_address.number')
-local value_field = ProtoField.uint16('rme.value', 'Value', base.HEX)
+local f_subid
+
+-- RME dissector
 local register_field = ProtoField.uint16('rme.register', 'Register', base.HEX)
+local levels_field = ProtoField.uint32('rme.levels', 'Levels', base.HEX)
+local peak_field = ProtoField.uint64('rme.peak', 'Peak', base.HEX)
+local rms_field = ProtoField.uint32('rme.value', 'RMS', base.HEX)
+rme_proto = Proto('rme', 'RME USB Protocol')
+rme_proto.fields.value = ProtoField.uint16('rme.value', 'Value', base.HEX)
+rme_proto.fields.register = register_field
+rme_proto.fields.levels = levels_field
+rme_proto.fields.peak_field = peak_field
+rme_proto.fields.rms = rms_field
 
 local function format_bool(val)
 	val = val:le_uint()
@@ -19,6 +29,12 @@ end
 local function format_int10(val)
 	val = val:le_int()
 	return val / 10
+end
+
+local function format_float(scale)
+	return function(val)
+		return val:le_int() / scale
+	end
 end
 
 local function format_int100(val)
@@ -104,6 +120,18 @@ local function format_controlroom(val)
 	if val:bitfield(2) == 1 then table.insert(bits, 'Speaker B') end
 	if val:bitfield(1) == 1 then table.insert(bits, 'Dim Enabled') end
 	return table.concat(bits, ', ')
+end
+
+local function format_fxload(val)
+	local fxload = val(0, 1):le_int()
+	-- upper 2 bytes?
+	return fxload
+end
+
+local format_samplerate = format_enum{'32000 Hz', '44100 Hz', '48000 Hz', '64000 Hz', '88200 Hz', '96000 Hz', '128000 Hz', '176400 Hz', '192000 Hz'}
+
+local function format_durecinfo(val)
+	return string.format('%s, %s channels', format_samplerate(val(0, 1)), format_int(val(1)))
 end
 
 local bandtypes = {'Peak', 'Shelf', 'High Cut'}
@@ -193,6 +221,17 @@ local global_fields = {
 	[0x3068] = {name='Word Clock Termination', format=format_bool},
 	[0x3078] = {name='Optical Out', format=format_enum{'ADAT', 'SPDIF'}},
 	[0x3079] = {name='SPDIF Format', format=format_enum{'Consumer', 'Professional'}},
+	[0x3080] = {name='FX Load', format=format_fxload},
+	[0x3580] = {name='Durec Status', format=format_enum{[0x20]='No Media', [0x22]='Initializing', [0x25]='Stopped', [0x2a]='Playing', [0x06]='Recording'}},
+	[0x3581] = {name='Durec Time', format=format_int},
+	[0x3582] = {name='Durec USB Errors', format=format_int},
+	[0x3583] = {name='Durec USB Load', format=format_int},
+	[0x3584] = {name='Durec Total Space', format=format_float(16)},
+	[0x3585] = {name='Durec Free Space', format=format_float(16)},
+	[0x3586] = {name='Durec Num Tracks', format=format_int},
+	[0x3587] = {name='Durec Current Track', format=format_int},
+	[0x3589] = {name='Durec Remaining Record Time', format=format_int},
+	[0x358f] = {name='Durec Track Info', format=format_durecinfo},
 	[0x3e00] = {name='Cue', format=format_cue},
 	[0x3e02] = {name='Control Room Status', format=format_controlroom},
 	[0x3e08] = {name='Time', format=format_time},
@@ -203,8 +242,6 @@ local global_fields = {
 	[0x3e9e] = {name='Durec Track Select', format=format_enum{'Previous', 'Next'}},
 	[0x3ea0] = {name='Durec Play Mode', format=format_enum{[0x8000]='Single', [0x8001]='UFX Single', [0x8002]='Continuous', [0x8003]='Single Next', [0x8004]='Repeat Single', [0x8005]='Repeat All'}},
 }
-rme_proto = Proto('rme', 'RME USB Protocol')
-rme_proto.fields = {value_field, register_field}
 
 local function format_input(reg, val)
 	local chan = math.floor(reg / 0x40) + 1
@@ -292,11 +329,84 @@ local function format_channame(reg, val)
 	return regdesc, valdesc
 end
 
+local function format_dynlevel(reg, val)
+	reg = reg - 0x3180
+	local type
+	if reg < 10 then
+		type = 'Input'
+	else
+		type = 'Output'
+		reg = reg - 10
+	end
+	return string.format('Dynamics Level %s %d/%d', type, reg * 2, reg * 2 + 1)
+end
+
+local function format_autolevel(reg, val)
+	reg = reg - 0x3380
+	local type
+	if reg < 10 then
+		type = 'Input'
+	else
+		type = 'Output'
+		reg = reg - 10
+	end
+	return string.format('Auto Level %s %d/%d', type, reg * 2, reg * 2 + 1)
+end
+
+local levels_usb_label = {
+	[0x11111111] = 'Input Levels (Post FX)',
+	[0x55555555] = 'Input Levels (Pre FX)',
+	[0x22222222] = 'Playback Levels',
+	[0x33333333] = 'Output Levels (Pre FX)',
+	[0x66666666] = 'Output Levels (Post FX)',
+}
+
+local function levels_usb(buffer, pinfo, tree)
+	local len = buffer:len()
+	local catbuf = buffer(len - 4)
+	local cat = catbuf:le_uint()
+	tree = tree:add(levels_field, catbuf, cat, nil, levels_usb_label[cat])
+	for i = 0, (len - 4) * 2 / 3 - 8, 8 do
+		tree:add_le(rms_field, buffer(i, 8))
+	end
+	for i = (len - 4) * 2 / 3, len - 8, 4 do
+		tree:add_le(peak_field, buffer(i, 4))
+	end
+end
+
+local function levels_cc(buffer, pinfo, tree)
+	assert(buffer:len() % 12 == 0)
+	for i = 0, buffer:len() - 12, 12 do
+		tree:add_le(peak_field, buffer(i, 8))
+		tree:add_le(rms_field, buffer(i + 8, 4))
+	end
+end
+
 function rme_proto.dissector(buffer, pinfo, tree)
-	--local ep = endpoint_field().value
+	local endpoint = endpoint_field()
+	local subid = f_subid()
+	local subtree = tree:add(rme_proto, buffer(), 'RME Protocol Data')
+	if endpoint then
+		if endpoint.value == 12 or endpoint.value == 13 then
+		elseif endpoint.value == 5 then
+			return levels_usb(buffer, pinfo, subtree)
+		else
+			return
+		end
+	elseif subid then
+		if subid.value == 0 then
+		elseif subid.value >= 1 and subid.value <= 5 then
+			return levels_cc(buffer, pinfo, subtree, subid.value)
+		else
+			return
+		end
+	else
+		return
+	end
+	print('endpoint', endpoint, type(endpoint))
+	print('subid', subid)
 	--if ep ~= 12 then return 0 end
 	pinfo.cols.protocol = rme_proto.name
-	local subtree = tree:add(rme_proto, buffer(), 'RME Protocol Data')
 	local length = buffer:len()
 	local i = 0
 	while i + 4 <= length do
@@ -313,8 +423,12 @@ function rme_proto.dissector(buffer, pinfo, tree)
 			format = format_output
 		elseif reg >= 0x2000 and reg < 0x2500 then
 			format = format_mixlabel
+		elseif reg >= 0x3100 and reg < 0x3200 then
+			format = format_dynlevel
 		elseif reg >= 0x3200 and reg < 0x3340 then
 			format = format_channame
+		elseif reg >= 0x3380 and reg < 0x3400 then
+			format = format_autolevel
 		elseif reg >= 0x4000 and reg < 0x4500 then
 			format = format_mixvolume
 		elseif reg >= 0x4700 and reg < 0x4800 then
@@ -326,10 +440,12 @@ function rme_proto.dissector(buffer, pinfo, tree)
 		if format ~= nil then
 			regdesc, valdesc = format(reg, valbuf)
 		end
-		if regdesc then regdesc = string.format('(%s)', regdesc) end
+		if regdesc then
+			regdesc = string.format('(%s)', regdesc)
+		end
 		if valdesc then valdesc = string.format('(%s)', valdesc) end
-		subsubtree:add_le(register_field, regbuf, reg, nil, regdesc)
-		subsubtree:add_le(value_field, valbuf, val, nil, valdesc)
+		subsubtree:add_le(rme_proto.fields.register, regbuf, reg, nil, regdesc)
+		subsubtree:add_le(rme_proto.fields.value, valbuf, val, nil, valdesc)
 		i = i + 4
 	end
 end
@@ -340,25 +456,13 @@ usb_table:add(0x2a393f82, rme_proto)
 --usb_table = DissectorTable.get('usb.bulk')
 --usb_table:add(0xffff, rme_proto)
 
-local peak_field = ProtoField.uint64('rme.peak', 'Peak', base.HEX)
-local rms_field = ProtoField.uint32('rme.value', 'RMS', base.HEX)
-
-rme_levels_proto = Proto('rme_levels', 'RME Levels')
-rme_levels_proto.fields = {peak_field, rms_field}
-
-function rme_levels_proto.dissector(buffer, pinfo, tree)
-	assert(buffer:len() % 12 == 0)
-	for i = 0, buffer:len() - 12, 12 do
-		tree:add_le(peak_field, buffer(i, 8))
-		tree:add_le(rms_field, buffer(i + 8, 4))
-	end
-end
-
 -- RME SysEx dissector
 local sysex_rme_proto = Proto('sysex_rme', 'RME SysEx Protocol')
 local devid_field = ProtoField.uint8('sysex_rme.devid', 'Device ID', base.HEX)
 local subid_field = ProtoField.uint8('sysex_rme.subid', 'Sub ID', base.HEX)
 sysex_rme_proto.fields = {devid_field, subid_field}
+
+f_subid = Field.new('sysex_rme.subid')
 
 local function sysex_decode(input)
 	local output = ByteArray.new()
@@ -412,4 +516,6 @@ function sysex_rme_proto.dissector(buffer, pinfo, tree)
 end
 
 local sysex_table = DissectorTable.get('sysex.manufacturer')
-sysex_table:add(0x00200d, sysex_rme_proto)
+if sysex_table then
+	sysex_table:add(0x00200d, sysex_rme_proto)
+end
