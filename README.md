@@ -136,3 +136,7 @@ The OSC API is not yet final and may change without notice.
 | `/register` | `ii...` register, value | **W** Set device register explicitly |
 
 **TODO** Document rest of API. For now, see the OSC tree in `oscmix.c`.
+
+## Contact
+
+There is an IRC channel #oscmix on irc.libera.chat.
