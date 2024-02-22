@@ -1,7 +1,6 @@
 # UFX II provided by laex333
 
-Bus 001 Device 013: ID 2a39:3fd1  
-Couldn't open device, some information will be missing
+Bus 001 Device 014: ID 2a39:3fd1  
 Device Descriptor:
   bLength                18
   bDescriptorType         1
@@ -13,9 +12,9 @@ Device Descriptor:
   idVendor           0x2a39 
   idProduct          0x3fd1 
   bcdDevice            3.01
-  iManufacturer           1 
-  iProduct                2 
-  iSerial                 3 
+  iManufacturer           1 RME
+  iProduct                2 Fireface UFX II (XXXXXXXX)
+  iSerial                 3 XXXXXXXXXXXXXX
   bNumConfigurations      1
   Configuration Descriptor:
     bLength                 9
@@ -351,7 +350,7 @@ Device Descriptor:
       bInterfaceClass         1 Audio
       bInterfaceSubClass      3 MIDI Streaming
       bInterfaceProtocol      0 
-      iInterface              2 
+      iInterface              2 Fireface UFX II (XXXXXXXX)
       MIDIStreaming Interface Descriptor:
         bLength                 7
         bDescriptorType        36
@@ -367,14 +366,14 @@ Device Descriptor:
         bNrInputPins            1
         baSourceID( 0)          2
         BaSourcePin( 0)         1
-        iJack                   4 
+        iJack                   4 Port 1
       MIDIStreaming Interface Descriptor:
         bLength                 6
         bDescriptorType        36
         bDescriptorSubtype      2 (MIDI_IN_JACK)
         bJackType               2 External
         bJackID                 2
-        iJack                   4 
+        iJack                   4 Port 1
       MIDIStreaming Interface Descriptor:
         bLength                 9
         bDescriptorType        36
@@ -384,14 +383,14 @@ Device Descriptor:
         bNrInputPins            1
         baSourceID( 0)          6
         BaSourcePin( 0)         1
-        iJack                   5 
+        iJack                   5 Port 2
       MIDIStreaming Interface Descriptor:
         bLength                 6
         bDescriptorType        36
         bDescriptorSubtype      2 (MIDI_IN_JACK)
         bJackType               2 External
         bJackID                 6
-        iJack                   5 
+        iJack                   5 Port 2
       MIDIStreaming Interface Descriptor:
         bLength                 9
         bDescriptorType        36
@@ -401,21 +400,21 @@ Device Descriptor:
         bNrInputPins            1
         baSourceID( 0)         10
         BaSourcePin( 0)         1
-        iJack                   6 
+        iJack                   6 Port 3
       MIDIStreaming Interface Descriptor:
         bLength                 6
         bDescriptorType        36
         bDescriptorSubtype      2 (MIDI_IN_JACK)
         bJackType               2 External
         bJackID                10
-        iJack                   6 
+        iJack                   6 Port 3
       MIDIStreaming Interface Descriptor:
         bLength                 6
         bDescriptorType        36
         bDescriptorSubtype      2 (MIDI_IN_JACK)
         bJackType               1 Embedded
         bJackID                 1
-        iJack                   4 
+        iJack                   4 Port 1
       MIDIStreaming Interface Descriptor:
         bLength                 9
         bDescriptorType        36
@@ -425,14 +424,14 @@ Device Descriptor:
         bNrInputPins            1
         baSourceID( 0)          4
         BaSourcePin( 0)         1
-        iJack                   4 
+        iJack                   4 Port 1
       MIDIStreaming Interface Descriptor:
         bLength                 6
         bDescriptorType        36
         bDescriptorSubtype      2 (MIDI_IN_JACK)
         bJackType               1 Embedded
         bJackID                 5
-        iJack                   5 
+        iJack                   5 Port 2
       MIDIStreaming Interface Descriptor:
         bLength                 9
         bDescriptorType        36
@@ -442,14 +441,14 @@ Device Descriptor:
         bNrInputPins            1
         baSourceID( 0)          8
         BaSourcePin( 0)         1
-        iJack                   5 
+        iJack                   5 Port 2
       MIDIStreaming Interface Descriptor:
         bLength                 6
         bDescriptorType        36
         bDescriptorSubtype      2 (MIDI_IN_JACK)
         bJackType               1 Embedded
         bJackID                 9
-        iJack                   6 
+        iJack                   6 Port 3
       MIDIStreaming Interface Descriptor:
         bLength                 9
         bDescriptorType        36
@@ -459,7 +458,7 @@ Device Descriptor:
         bNrInputPins            1
         baSourceID( 0)         12
         BaSourcePin( 0)         1
-        iJack                   6 
+        iJack                   6 Port 3
       Endpoint Descriptor:
         bLength                 9
         bDescriptorType         5
@@ -530,3 +529,14 @@ Device Descriptor:
           Usage Type               Data
         wMaxPacketSize     0x0200  1x 512 bytes
         bInterval               0
+Device Qualifier (for other device speed):
+  bLength                10
+  bDescriptorType         6
+  bcdUSB               2.00
+  bDeviceClass          239 Miscellaneous Device
+  bDeviceSubClass         2 
+  bDeviceProtocol         1 Interface Association
+  bMaxPacketSize0        64
+  bNumConfigurations      0
+Device Status:     0x0000
+  (Bus Powered)
