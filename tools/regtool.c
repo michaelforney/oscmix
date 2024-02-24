@@ -41,7 +41,12 @@ dumpsysex(const char *prefix, const unsigned char *buf, size_t len)
 		return;
 	}
 	if (pos[5] != 0) {
-		printf("skipping sysex with subid=%d\n", pos[5]);
+		printf("subid=%d", pos[5]);
+		for (pos += sizeof hdr + 1; pos != end; pos += 5) {
+			regval = getle32_7bit(pos);
+			printf("%c%.8X", pos == buf + sizeof hdr + 1 ? '\t' : ' ', regval);
+		}
+		fputc('\n', stdout);
 		return;
 	}
 	for (pos += sizeof hdr + 1; pos != end; pos += 5) {
