@@ -130,6 +130,7 @@ setreg(unsigned reg, unsigned val)
 	regval = par << 31 | reg << 16 | val;
 	putle32_7bit(buf + 6, regval);
 	dumpsysex("->", buf, sizeof buf);
+	snd_seq_ev_clear(&evt);
 	snd_seq_ev_set_source(&evt, 0);
 	snd_seq_ev_set_subs(&evt);
 	snd_seq_ev_set_direct(&evt);
