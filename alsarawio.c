@@ -87,6 +87,7 @@ main(int argc, char *argv[])
 		fprintf(stderr, "could not open subdevice %d\n", subdev);
 		return 1;
 	}
+	setenv("MIDIPORT", (char *)info.subname, 1);
 
 	memset(&params, 0, sizeof params);
 	params.stream = SNDRV_RAWMIDI_STREAM_INPUT;
