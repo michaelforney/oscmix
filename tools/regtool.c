@@ -36,7 +36,7 @@ dumpsysex(const char *prefix, const unsigned char *buf, size_t len)
 	}
 	pos = buf;
 	--end;
-	if (len < sizeof hdr || memcmp(pos, hdr, sizeof hdr) != 0) {
+	if (len < sizeof hdr || memcmp(pos, hdr, sizeof hdr) != 0 || (len - sizeof hdr - 2) % 5 != 0) {
 		printf("skipping unexpected sysex\n");
 		return;
 	}
