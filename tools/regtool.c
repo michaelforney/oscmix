@@ -44,7 +44,7 @@ dumpsysex(const char *prefix, const unsigned char *buf, size_t len)
 		printf("subid=%d", pos[5]);
 		for (pos += sizeof hdr + 1; pos != end; pos += 5) {
 			regval = getle32_7bit(pos);
-			printf("%c%.8X", pos == buf + sizeof hdr + 1 ? '\t' : ' ', regval);
+			printf("%c%.8lX", pos == buf + sizeof hdr + 1 ? '\t' : ' ', regval);
 		}
 		fputc('\n', stdout);
 		return;
