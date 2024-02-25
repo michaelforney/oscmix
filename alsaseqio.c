@@ -1,8 +1,8 @@
-#define _GNU_SOURCE  /* for pipe2 on glibc */
+#define _POSIX_C_SOURCE 200809L
+#include <stdlib.h>
 #include <fcntl.h>
 #include <poll.h>
 #include <pthread.h>
-#include <spawn.h>
 #include <unistd.h>
 #include <alsa/asoundlib.h>
 #include "arg.h"
@@ -68,12 +68,10 @@ main(int argc, char *argv[])
 	snd_seq_port_subscribe_t *sub;
 	snd_seq_event_t evt;
 	pid_t pid;
-	posix_spawn_file_actions_t files;
 	pthread_t thread;
 	char *end;
 	int rfd[2], wfd[2];
 	unsigned char *pos, buf[1024];
-	extern char **environ;
 
 	ARGBEGIN {
 	default:
@@ -147,37 +145,34 @@ main(int argc, char *argv[])
 		return 1;
 	}
 
-	err = posix_spawn_file_actions_init(&files);
-	if (err) {
-		fprintf(stderr, "posix_spown_file_actions_init: %s\n", strerror(err));
-		return 1;
-	}
-	if (pipe2(wfd, O_CLOEXEC) != 0) {
+	if (pipe(wfd) != 0) {
 		perror("pipe2");
 		return 1;
 	}
-	err = posix_spawn_file_actions_adddup2(&files, wfd[0], 6);
-	if (err) {
-		fprintf(stderr, "posix_spawn_file_actions_adddup2 %s: %s\n", argv[1], strerror(err));
-		return 1;
-	}
-	if (pipe2(rfd, O_CLOEXEC) != 0) {
+	if (pipe(rfd) != 0) {
 		perror("pipe2");
 		return 1;
 	}
-	err = posix_spawn_file_actions_adddup2(&files, rfd[1], 7);
-	if (err) {
-		fprintf(stderr, "posix_spawn_file_actions_adddup2 %s: %s\n", argv[1], strerror(err));
+	pid = fork();
+	switch (pid) {
+	case -1:
+		perror("fork");
+		return 1;
+	case 0:
+		close(rfd[1]);
+		close(wfd[0]);
+		break;
+	default:
+		close(wfd[1]);
+		close(rfd[0]);
+		if (dup2(wfd[0], 6) < 0 || dup2(rfd[1], 7) < 0) {
+			perror("dup2");
+			return 1;
+		}
+		execvp(argv[1], argv + 1);
+		fprintf(stderr, "execvp %s: %s\n", argv[1], strerror(errno));
 		return 1;
 	}
-
-	err = posix_spawnp(&pid, argv[1], &files, NULL, argv + 1, environ);
-	if (err) {
-		fprintf(stderr, "posix_spawnp %s: %s\n", argv[1], strerror(err));
-		return 1;
-	}
-	close(rfd[1]);
-	close(wfd[0]);
 
 	err = pthread_create(&thread, NULL, midiread, &wfd[1]);
 	if (err) {
