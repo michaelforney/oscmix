@@ -63,6 +63,7 @@ main(int argc, char *argv[])
 	int err;
 	ssize_t ret;
 	size_t len;
+	snd_seq_port_info_t *info;
 	snd_seq_addr_t dest, self;
 	snd_seq_port_subscribe_t *sub;
 	snd_seq_event_t evt;
@@ -108,6 +109,19 @@ main(int argc, char *argv[])
 		fprintf(stderr, "snd_seq_create_simple_port: %s\n", snd_strerror(err));
 		return 1;
 	}
+
+	err = snd_seq_port_info_malloc(&info);
+	if (err) {
+		fprintf(stderr, "snd_seq_port_info_malloc: %s\n", snd_strerror(err));
+		return 1;
+	}
+	err = snd_seq_get_any_port_info(seq, dest.client, dest.port, info);
+	if (err) {
+		fprintf(stderr, "snd_seq_get_any_port_info: %s\n", snd_strerror(err));
+		return 1;
+	}
+	setenv("MIDIPORT", snd_seq_port_info_get_name(info), 1);
+	snd_seq_port_info_free(info);
 
 	err = snd_seq_port_subscribe_malloc(&sub);
 	if (err) {
