@@ -76,10 +76,6 @@ main(int argc, char *argv[])
 	extern char **environ;
 
 	ARGBEGIN {
-	case 'Q':
-	case 'v':
-	case 'V':
-		break;
 	default:
 		usage();
 	} ARGEND
