@@ -86,3 +86,4 @@ clean:
 		alsarawio alsarawio.o\
 		alsaseqio alsaseqio.o
 	$(MAKE) -C gtk clean
+	$(MAKE) -C web clean
