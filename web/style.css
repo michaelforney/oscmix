@@ -208,6 +208,7 @@ label:has(#connection-type:not([data-value="WebSocket"])) ~ .connection-websocke
 .channel-panel-buttons {
 	margin-top: auto;
 	margin-bottom: 4px;
+	width: 1.5em;
 }
 .channel-panel-buttons .toggle-button {
 	display: block;
