@@ -91,12 +91,16 @@ GSETTINGS_SCHEMA_DIR=$PWD/gtk ./gtk/oscmix-gtk
 
 The [web](web) directory contains a web frontend that can communicate
 with oscmix through OSC over a WebSocket, or by directly to an
-instance of oscmix compiled as WebAssembly.
+instance of oscmix compiled as WebAssembly running directly in the browser.
 
 ![oscmix-web]
 
 The web UI is automatically deployed at
 [https://michaelforney.github.io/oscmix](https://michaelforney.github.io/oscmix).
+
+It is tested primarily against the chromium stable channel, but
+patches to support other/older browsers are welcome (if it doesn't
+complicate things too much).
 
 Also included is a UDP-to-WebSocket bridge, `wsdgram`. It expects
 file descriptors 0 and 1 to be an open connection to a WebSocket
