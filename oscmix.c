@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>  /* for strcasecmp */
+#include "device.h"
 #include "intpack.h"
 #include "oscmix.h"
 #include "osc.h"
@@ -49,7 +50,7 @@ struct input {
 
 struct output {
 	bool stereo;
-	struct mix mix[40];
+	struct mix *mix;
 };
 
 struct durecfile {
@@ -61,9 +62,10 @@ struct durecfile {
 };
 
 int dflag;
-static struct input inputs[20];
-static struct input playbacks[20];
-static struct output outputs[20];
+static const struct device *device;
+static struct input *inputs;
+static struct input *playbacks;
+static struct output *outputs;
 static struct {
 	int status;
 	int position;
@@ -294,7 +296,7 @@ setinputmute(const struct oscnode *path[], int reg, struct oscmsg *msg)
 	if (oscend(msg) != 0)
 		return -1;
 	inidx = path[-1] - path[-2]->child;
-	assert(inidx <= LEN(inputs));
+	assert(inidx < device->inputslen);
 	/* mutex */
 	in = &inputs[inidx];
 	if (inidx % 2 == 1 && in[-1].stereo)
@@ -304,7 +306,7 @@ setinputmute(const struct oscnode *path[], int reg, struct oscmsg *msg)
 		in->mute = val;
 		if (in->stereo)
 			in[1].mute = val;
-		for (outidx = 0; outidx < LEN(outputs); ++outidx) {
+		for (outidx = 0; outidx < device->outputslen; ++outidx) {
 			out = &outputs[outidx];
 			mix = &out->mix[inidx];
 			if (mix->vol > -650)
@@ -330,7 +332,7 @@ setinputstereo(const struct oscnode *path[], int reg, struct oscmsg *msg)
 	if (oscend(msg) != 0)
 		return -1;
 	idx = (path[-1] - path[-2]->child) & -2;
-	assert(idx < LEN(inputs));
+	assert(idx < device->inputslen);
 	inputs[idx].stereo = val;
 	inputs[idx + 1].stereo = val;
 	setreg(idx << 6 | 2, val);
@@ -345,7 +347,7 @@ newinputstereo(const struct oscnode *path[], const char *addr, int reg, int val)
 	char addrbuf[256];
 
 	idx = (path[-1] - path[-2]->child) & -2;
-	assert(idx < LEN(inputs));
+	assert(idx < device->inputslen);
 	inputs[idx].stereo = val;
 	inputs[idx + 1].stereo = val;
 	addr = addrbuf;
@@ -363,7 +365,7 @@ newoutputstereo(const struct oscnode *path[], const char *addr, int reg, int val
 	char addrbuf[256];
 
 	idx = (path[-1] - path[-2]->child) & -2;
-	assert(idx < LEN(outputs));
+	assert(idx < device->outputslen);
 	outputs[idx].stereo = val;
 	outputs[idx + 1].stereo = val;
 	addr = addrbuf;
@@ -423,30 +425,34 @@ newinputgain(const struct oscnode *path[], const char *addr, int reg, int val)
 static int
 setinput48v(const struct oscnode *path[], int reg, struct oscmsg *msg)
 {
-	int ch;
+	int idx;
 
-	ch = (path[-1] - path[-2]->child) + 1;
-	if (ch < 1 || ch > 2)
-		return -1;
-	return setbool(path, reg, msg);
+	idx = path[-1] - path[-2]->child;
+	assert(idx < device->inputslen);
+	if (device->inputs[idx].flags & INPUT_48V)
+		return setbool(path, reg, msg);
+	return -1;
 }
 
 static int
 newinput48v_reflevel(const struct oscnode *path[], const char *addr, int reg, int val)
 {
-	int ch;
-	const char *const names[] = {"+7dBu", "+13dBu", "+19dBu"};
+	static const char *const names[] = {"+7dBu", "+13dBu", "+19dBu"};
+	int idx;
+	const struct inputinfo *info;
 
-	ch = (path[-1] - path[-2]->child) + 1;
-	if (ch >= 1 && ch <= 2) {
+	idx = path[-1] - path[-2]->child;
+	assert(idx < device->inputslen);
+	info = &device->inputs[idx];
+	if (info->flags & INPUT_48V) {
 		char addrbuf[256];
 
-		snprintf(addrbuf, sizeof addrbuf, "/input/%d/48v", ch);
+		snprintf(addrbuf, sizeof addrbuf, "/input/%d/48v", idx + 1);
 		return newbool(path, addrbuf, reg, val);
-	} else if (ch >= 3 && ch <= 4) {
+	} else if (info->flags & INPUT_HIZ) {
 		oscsendenum(addr, val & 0xf, names, 2);
 		return 0;
-	} else if (ch >= 5 && ch <= 8) {
+	} else if (info->flags & INPUT_REFLEVEL) {
 		oscsendenum(addr, val & 0xf, names + 1, 2);
 		return 0;
 	}
@@ -456,23 +462,25 @@ newinput48v_reflevel(const struct oscnode *path[], const char *addr, int reg, in
 static int
 setinputhiz(const struct oscnode *path[], int reg, struct oscmsg *msg)
 {
-	int ch;
+	int idx;
 	
-	ch = (path[-1] - path[-2]->child) + 1;
-	if (ch < 3 && ch > 4)
-		return -1;
-	return setbool(path, reg, msg);
+	idx = path[-1] - path[-2]->child;
+	assert(idx < device->inputslen);
+	if (device->inputs[idx].flags & INPUT_HIZ)
+		return setbool(path, reg, msg);
+	return -1;
 }
 
 static int
 newinputhiz(const struct oscnode *path[], const char *addr, int reg, int val)
 {
-	int ch;
+	int idx;
 	
-	ch = (path[-1] - path[-2]->child) + 1;
-	if (ch < 3 || ch > 4)
-		return -1;
-	return newbool(path, addr, reg, val);
+	idx = path[-1] - path[-2]->child;
+	assert(idx < device->inputslen);
+	if (device->inputs[idx].flags & INPUT_HIZ)
+		return newbool(path, addr, reg, val);
+	return -1;
 }
 
 static int
@@ -566,15 +574,17 @@ setmix(const struct oscnode *path[], int reg, struct oscmsg *msg)
 	struct input *in;
 
 	outidx = path[-2] - path[-3]->child;
-	assert(outidx <= LEN(outputs));
+	assert(outidx < device->outputslen);
 	out = &outputs[outidx];
 
 	inidx = path[0] - path[-1]->child;
-	assert(inidx < LEN(inputs));
-	if (reg & 0x20)
+	if (reg & 0x20) {
+		assert(inidx < device->outputslen);
 		in = &playbacks[inidx];
-	else
+	} else {
+		assert(inidx < device->inputslen);
 		in = &inputs[inidx];
+	}
 
 	vol = oscgetfloat(msg);
 	if (vol <= -65)
@@ -659,7 +669,7 @@ newmix(const struct oscnode *path[], const char *addr, int reg, int val)
 
 	outidx = (reg & 0xfff) >> 6;
 	inidx = reg & 0x3f;
-	if (outidx >= LEN(outputs) || inidx >= LEN(inputs))
+	if (outidx >= device->outputslen || inidx >= device->inputslen)
 		return -1;
 	out = &outputs[outidx];
 	in = &inputs[inidx];
@@ -1040,7 +1050,7 @@ setrefresh(const struct oscnode *path[], int reg, struct oscmsg *msg)
 	setreg(0x3e04, 0x67cd);
 	refreshing = true;
 	/* FIXME: needs lock */
-	for (i = 0; i < LEN(playbacks); ++i) {
+	for (i = 0; i < device->outputslen; ++i) {
 		pb = &playbacks[i];
 		snprintf(addr, sizeof addr, "/playback/%d/stereo", i + 1);
 		oscsend(addr, ",i", pb->stereo);
@@ -1747,18 +1757,50 @@ handletimer(bool levels)
 	serial = (serial + 1) & 0xf;
 }
 
-void
-init(void)
+int
+init(const char *port)
 {
+	extern const struct device ffucxii;
+	static const struct device *devices[] = {
+		&ffucxii,
+	};
 	int i, j;
+	size_t namelen;
 
-	for (i = 0; i < LEN(playbacks); ++i)
-		playbacks[i].stereo = true;
-	for (i = 0; i < LEN(outputs); ++i) {
+	for (i = 0; i < LEN(devices); ++i) {
+		device = devices[i];
+		if (strcmp(port, device->id) == 0)
+			break;
+		namelen = strlen(device->name);
+		if (strncmp(port, device->name, namelen) == 0) {
+			if (!port[namelen] || (port[namelen] == ' ' && port[namelen + 1] == '('))
+				break;
+		}
+	}
+	if (i == LEN(devices)) {
+		fprintf(stderr, "unsupported device '%s'", port);
+		return -1;
+	}
+
+	inputs = calloc(device->inputslen, sizeof *inputs);
+	playbacks = calloc(device->outputslen, sizeof *playbacks);
+	outputs = calloc(device->outputslen, sizeof *outputs);
+	if (!inputs || !playbacks || !outputs) {
+		perror(NULL);
+		return -1;
+	}
+	for (i = 0; i < device->outputslen; ++i) {
 		struct output *out;
 
+		playbacks[i].stereo = true;
 		out = &outputs[i];
-		for (j = 0; j < LEN(out->mix); ++j)
+		out->mix = calloc(device->inputslen + device->outputslen, sizeof *out->mix);
+		if (!out->mix) {
+			perror(NULL);
+			return -1;
+		}
+		for (j = 0; j < device->inputslen + device->outputslen; ++j)
 			out->mix[j].vol = -650;
 	}
+	return 0;
 }

@@ -150,7 +150,12 @@ class ConnectionMIDI extends AbortController {
 			const jsdataLen = new Uint32Array(instance.exports.memory.buffer, instance.exports.jsdatalen, 4)[0];
 
 			instance.exports._initialize();
-			instance.exports.init();
+			const name = new Uint8Array(instance.exports.memory.buffer, jsdata, jsdataLen);
+			const { read } = new TextEncoder().encodeInto(input.name + '\0', name);
+			if (read < input.name.length + 1)
+				throw Error('MIDI port name is too long');
+			if (instance.exports.init(jsdata) != 0)
+				throw Error('oscmix init failed');
 			input.addEventListener('midimessage', (event) => {
 				if (event.data[0] != 0xf0 || event.data[event.data.length - 1] != 0xf7)
 					return;

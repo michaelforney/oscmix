@@ -127,6 +127,7 @@ main(int argc, char *argv[])
 	pthread_t midireader, oscreader;
 	struct itimerval it;
 	sigset_t set;
+	const char *port;
 
 	if (fcntl(6, F_GETFD) < 0)
 		fatal("fcntl 6:");
@@ -135,6 +136,7 @@ main(int argc, char *argv[])
 
 	recvaddr = defrecvaddr;
 	sendaddr = defsendaddr;
+	port = NULL;
 
 	ARGBEGIN {
 	case 'd':
@@ -152,6 +154,9 @@ main(int argc, char *argv[])
 	case 'm':
 		sendaddr = mcastaddr;
 		break;
+	case 'p':
+		port = EARGF(usage());
+		break;
 	default:
 		usage();
 		break;
@@ -160,7 +165,13 @@ main(int argc, char *argv[])
 	rfd = sockopen(recvaddr, 1);
 	wfd = sockopen(sendaddr, 0);
 
-	init();
+	if (!port) {
+		port = getenv("MIDIPORT");
+		if (!port)
+			fatal("device is not specified; pass -p or set MIDIPORT");
+	}
+	if (init(port) != 0)
+		return 1;
 
 	sigfillset(&set);
 	pthread_sigmask(SIG_SETMASK, &set, NULL);

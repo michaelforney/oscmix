@@ -1,7 +1,7 @@
 #ifndef OSCMIX_H
 #define OSCMIX_H
 
-void init(void);
+int init(const char *port);
 
 void handlesysex(const unsigned char *buf, size_t len, uint32_t *payload);
 int handleosc(const unsigned char *buf, size_t len);

@@ -39,7 +39,9 @@ OSCMIX_OBJ=\
 	oscmix.o\
 	socket.o\
 	sysex.o\
-	util.o
+	util.o\
+	\
+	device_ffucxii.o
 
 WSDGRAM_OBJ=\
 	wsdgram.o\
