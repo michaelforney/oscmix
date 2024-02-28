@@ -719,19 +719,6 @@ newmix(const struct oscnode *path[], const char *addr, int reg, int val)
 	return 0;
 }
 
-static int
-setregs(const struct oscnode *path[], int unused, struct oscmsg *msg)
-{
-	int reg, val;
-
-	while (*msg->type) {
-		reg = oscgetint(msg);
-		val = oscgetint(msg);
-		setreg(reg, val);
-	}
-	return oscend(msg);
-}
-
 static long
 getsamplerate(int val)
 {
@@ -1480,7 +1467,6 @@ static const struct oscnode tree[] = {
 		{0},
 	}},
 	/* write-only */
-	{"register", -1, .set=setregs},
 	{"refresh", -1, .set=setrefresh},
 	{0},
 };
