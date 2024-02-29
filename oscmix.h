@@ -1,6 +1,10 @@
 #ifndef OSCMIX_H
 #define OSCMIX_H
 
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+
 int init(const char *port);
 
 void handlesysex(const unsigned char *buf, size_t len, uint32_t *payload);
