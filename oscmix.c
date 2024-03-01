@@ -214,9 +214,7 @@ setenum(const struct oscnode *path[], int reg, struct oscmsg *msg)
 		break;
 	default:
 		val = oscgetint(msg);
-		printf("setenum %s\n", node->name);
-		if (strcmp(node->name, "mainout") == 0)
-			printf("setmainout %d\n", val);
+		break;
 	}
 	if (oscend(msg) != 0)
 		return -1;
@@ -600,8 +598,6 @@ setmix(const struct oscnode *path[], int reg, struct oscmsg *msg)
 	}
 	if (oscend(msg) != 0)
 		return -1;
-	printf("pan=%d\n", pan);
-	printf("instereo=%d outstereo=%d\n", in->stereo, out->stereo);
 
 	level = pow(10, vol / 20);
 	if (in->stereo) {
@@ -609,7 +605,6 @@ setmix(const struct oscnode *path[], int reg, struct oscmsg *msg)
 
 		level0 = (100 - (pan > 0 ? pan : 0)) / 200.f * level;
 		level1 = (100 + (pan < 0 ? pan : 0)) / 200.f * level;
-		printf("level0=%f level1=%f\n", level0 / level, level1 / level);
 		if (out->stereo) {
 			level00 = level0 * (1 + width);
 			level10 = level0 * (1 - width);
