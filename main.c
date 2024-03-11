@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include <assert.h>
+#include <errno.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -108,7 +109,8 @@ writeosc(const void *buf, size_t len)
 
 	ret = write(wfd, buf, len);
 	if (ret < 0) {
-		perror("write");
+		if (errno != ECONNREFUSED)
+			perror("write");
 	} else if (ret != len) {
 		fprintf(stderr, "write: %zd != %zu", ret, len);
 	}
