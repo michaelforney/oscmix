@@ -17,7 +17,7 @@
 
 extern int dflag;
 static int lflag;
-static int wfd;
+static int rfd, wfd;
 
 static void
 usage(void)
@@ -33,7 +33,6 @@ midiread(void *arg)
 	uint_least32_t payload[sizeof data / 4];
 	ssize_t ret;
 
-	wfd = *(int *)arg;
 	dataend = data;
 	for (;;) {
 		ret = read(6, dataend, (data + sizeof data) - dataend);
@@ -122,7 +121,7 @@ main(int argc, char *argv[])
 	static char defsendaddr[] = "udp!127.0.0.1!8222";
 	static char mcastaddr[] = "udp!224.0.0.1!8222";
 	static const unsigned char refreshosc[] = "/refresh\0\0\0\0,\0\0\0";
-	int err, sig, rfd, wfd;
+	int err, sig;
 	char *recvaddr, *sendaddr;
 	pthread_t midireader, oscreader;
 	struct itimerval it;
