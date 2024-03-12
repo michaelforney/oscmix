@@ -2,16 +2,16 @@
 <schemalist>
 	<schema path="/oscmix/" id="oscmix">
 		<key name="send-host" type="s">
-			<default>'localhost'</default>
+			<default>'127.0.0.1'</default>
 		</key>
 		<key name="send-port" type="u">
-			<default>7000</default>
+			<default>7222</default>
 		</key>
 		<key name="recv-host" type="s">
-			<default>'localhost'</default>
+			<default>'127.0.0.1'</default>
 		</key>
 		<key name="recv-port" type="u">
-			<default>8000</default>
+			<default>8222</default>
 		</key>
 	</schema>
 </schemalist>

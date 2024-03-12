@@ -137,7 +137,6 @@
 															<object class="GtkAdjustment" id="send_port">
 																<property name="lower">1</property>
 																<property name="upper">65535</property>
-																<property name="value">7000</property>
 																<property name="step-increment">1</property>
 															</object>
 															<object class="GtkSpinButton">
@@ -176,7 +175,6 @@
 															<object class="GtkAdjustment" id="recv_port">
 																<property name="lower">1</property>
 																<property name="upper">65535</property>
-																<property name="value">8000</property>
 																<property name="step-increment">1</property>
 															</object>
 															<object class="GtkSpinButton">
