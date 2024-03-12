@@ -189,8 +189,8 @@ main(int argc, char *argv[])
 	it.it_interval.tv_sec = 0;
 	it.it_interval.tv_usec = 100000;
 	it.it_value = it.it_interval;
-	if (setitimer(ITIMER_REAL, &it, NULL) != 0)
-		fatal("setitimer:");
+	//if (setitimer(ITIMER_REAL, &it, NULL) != 0)
+	//	fatal("setitimer:");
 
 	handleosc(refreshosc, sizeof refreshosc - 1);
 	for (;;) {

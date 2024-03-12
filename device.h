@@ -53,11 +53,20 @@ struct device {
 
 	//const struct oscnode *tree;
 	int (*ctltoreg)(unsigned long ctl);
+	unsigned long (*regtoctl)(int reg);
 };
 
-#define INPUT (0ul << 24)
-#define OUTPUT (1ul << 24)
-#define PLAYBACK (2ul << 24)
+enum {
+	INPUT,
+	OUTPUT,
+	PLAYBACK,
+	REVERB,
+	ECHO,
+	CTLROOM,
+	CLOCK,
+	HARDWARE,
+	DUREC,
+};
 
 enum {
 	INPUT_MUTE,
@@ -68,10 +77,13 @@ enum {
 	INPUT_MSPROC,
 	INPUT_PHASE,
 	INPUT_GAIN,
-	INPUT_REFLEVEL,
-	INPUT_48V,
+	INPUT_REFLEVEL_48V,
 	INPUT_AUTOSET,
 	INPUT_HIZ,
+	INPUT_LOWCUT,
+	INPUT_EQ,
+	INPUT_DYNAMICS,
+	INPUT_AUTOLEVEL,
 };
 
 enum {
@@ -86,9 +98,13 @@ enum {
 	OUTPUT_REFLEVEL,
 	OUTPUT_CROSSFEED,
 	OUTPUT_VOLUMECAL,
+	OUTPUT_LOWCUT,
+	OUTPUT_EQ,
+	OUTPUT_DYNAMICS,
+	OUTPUT_AUTOLEVEL,
+	OUTPUT_ROOMEQ,
 };
 
-#if 0
 /* controls */
 enum {
 	LOWCUT_FREQ,
@@ -127,6 +143,7 @@ enum {
 
 enum {
 	ROOMEQ_DELAY,
+	ROOMEQ_ENABLED,
 	ROOMEQ_BAND1TYPE,
 	ROOMEQ_BAND1GAIN,
 	ROOMEQ_BAND1FREQ,
@@ -187,12 +204,12 @@ enum {
 };
 
 enum {
-	CONTROLROOM_MAINOUT,
-	CONTROLROOM_MAINMONO,
-	CONTROLROOM_MUTEENABLE,
-	CONTROLROOM_DIMREDUCTION,
-	CONTROLROOM_DIM,
-	CONTROLROOM_RECALLVOLUME,
+	CTLROOM_MAINOUT,
+	CTLROOM_MAINMONO,
+	CTLROOM_MUTEENABLE,
+	CTLROOM_DIMREDUCTION,
+	CTLROOM_DIM,
+	CTLROOM_RECALLVOLUME,
 };
 
 enum {
@@ -212,8 +229,32 @@ enum {
 	HARDWARE_STANDALONEARC,
 	HARDWARE_LOCKKEYS,
 	HARDWARE_REMAPKEYS,
-	HARDWARE_EQDRECORD,
-}
-#endif
+	HARDWARE_DSPVERLOAD,
+	HARDWARE_DSPAVAIL,
+	HARDWARE_DSPSTATUS,
+	HARDWARE_ARCDELTA,
+};
+
+enum {
+	/* read-only */
+	DUREC_STATUS,
+	DUREC_TIME,
+	DUREC_USBLOAD,
+	DUREC_TOTALSPACE,
+	DUREC_FREESPACE,
+	DUREC_NUMFILES,
+	DUREC_FILE,
+	DUREC_NEXT,
+	DUREC_RECORDTIME,
+
+	/* write-only */
+	DUREC_STOP,
+	DUREC_PLAY,
+	DUREC_RECORD,
+	DUREC_DELETE,
+};
+
+#define CTL_(i, j, k, l, ...) ((unsigned long)(i) | (unsigned long)(j) << 8 | (unsigned long)(k) << 16 | (unsigned long)(l) << 24)
+#define CTL(...) CTL_(__VA_ARGS__, -1, -1, -1)
 
 #endif

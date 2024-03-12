@@ -180,3 +180,186 @@ oscputfloat(struct oscmsg *msg, float val)
 	putbe32(pos, u.u32);
 	msg->buf = pos + 4;
 }
+
+#if 0
+struct state {
+	const char *c;
+	unsigned char l, s1, s2;
+};
+
+bool
+oscmatch(const char *pat, const char *str)
+{
+	int i, e;
+	struct state *s, states[256];
+	struct {
+		int n;
+		unsigned char s[256];
+	} *l1, *l2, *t, list[2];
+
+	assert(*pat == '/');
+	i = 0;
+	s = states;
+	s->c = NULL;
+	for (;;) {
+		p = *++pat;
+		switch (p) {
+		case '\0':
+		case '/':
+			if (s->c)
+				s = &states[i];
+			goto run;
+		case '*':
+			if (s->c)
+				s = &states[i];
+			s->c = p;
+			s->l = -1;
+			s->s1 = i;
+			s->s2 = ++i;
+			s = &states[i];
+			s->c = NULL;
+			break;
+		case '{':
+			if (s->c)
+				s = &states[i];
+			e = ++i;
+			for (;;) {
+				s->c = ++pat;
+				pat = strpbrk(opt, "},/");
+				if (!pat || *pat == '/' || pat - s->c > UCHAR_MAX)
+					return false;
+				s->l = pat - s->c;
+				s->s1 = e;
+				if (*pat == '}') {
+					s->s2 = -1;
+					break;
+				}
+				s->s2 = ++i;
+				s = &states[i];
+			}
+			s = &states[e];
+			s->c = NULL;
+			break;
+		case '[':
+			pat = strpbrk(pat + 1, "]/");
+			if (!pat || *pat == '/')
+				return false;
+			/* fallthrough */
+		case '?':
+			if (s->c)
+				s = &states[i];
+			s->c = p;
+			s->l = -1;
+			s->s1 = ++i;
+			s->s2 = -1;
+			s = &states[i];
+			s->c = NULL;
+			break;
+		default:
+			if (!s->c) {
+				s->c = p;
+				s->l = 0;
+				s->s1 = ++i;
+				s->s2 = -1;
+			}
+			++s->l;
+			break;
+		}
+	}
+run:
+	e = i;
+	l1 = list;
+	l1->n = 1;
+	l1->s[0] = 0;
+	while (*str) {
+		for (i = 0; i < l1->n; ++i) {
+			s = &states[l1->s[i]];
+			if (s->l == -1) {
+				if (s->c == '[') {
+				}
+				
+			} else if (strncmp(str, s->c, s->l) != 0) {
+				str += s->l;
+				continue;
+			}
+		}
+	}
+}
+
+bool
+oscmatch(const char *pat, const char *str)
+{
+	int c, p;
+	const char *s, *tail, *star;
+
+	assert(*pat == '/');
+	++pat;
+	for (;;) {
+		c = *str;
+		switch (*pat) {
+		case '/':
+		case '\0':
+			return c ? NULL : pat;
+		case '?':
+			if (!c)
+				return NULL;
+			break;
+		case '*':
+			if (!tail) {
+				star = pat;
+				for (;;) {
+					tail = star + 1;
+					star = strpbrk(tail, "*/");
+					if (!star || *star == '/')
+						break;
+				}
+			}
+			break;
+		case '[':
+			for (;;) {
+				p = *++pat;
+				if (p == c)
+					break;
+				if (!p || p ==  '/' || p == ']')
+					return NULL;
+				if (pat[1] == '-' && pat[2] != ']') {
+					for (p = pat[0] + 1; p < pat[2]; ++p) {
+						if (p == c)
+							goto matchbrack;
+					}
+				}
+			}
+		matchbrack:
+			pat = strchr(pat, ']');
+			if (!pat)
+				return NULL;
+			break;
+		case '{':
+			/* XXX: prefix of other choice? */
+			s = str;
+			for (;;) {
+				p = *++pat;
+				if (p == ',' || p == '}')
+					break;
+				if (!p || p == '/')
+					return NULL;
+				if (p != *s) {
+					p = strchr(pat, ',');
+					if (!p)
+						return NULL;
+					s = str;
+				}
+			}
+			pat = strchr(pat, '}');
+			if (!pat)
+				return NULL;
+			break;
+		default:
+			if (*pat != *str)
+				return NULL;
+		}
+		++pat;
+		++str;
+	}
+}
+#endif
