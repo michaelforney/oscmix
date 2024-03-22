@@ -126,60 +126,6 @@ static const unsigned char outputctls[] = {
 	[10]=OUTPUT_CROSSFEED,
 	[11]=OUTPUT_VOLUMECAL,
 };
-static const unsigned char roomeqregs[] = {
-	[ROOMEQ_DELAY]=0,
-	[ROOMEQ_ENABLED]=1,
-	[ROOMEQ_BAND1TYPE]=2,
-	[ROOMEQ_BAND1GAIN]=3,
-	[ROOMEQ_BAND1FREQ]=4,
-	[ROOMEQ_BAND1Q]=5,
-	[ROOMEQ_BAND2GAIN]=6,
-	[ROOMEQ_BAND2FREQ]=7,
-	[ROOMEQ_BAND2Q]=8,
-	[ROOMEQ_BAND3GAIN]=9,
-	[ROOMEQ_BAND3FREQ]=10,
-	[ROOMEQ_BAND3Q]=11,
-	[ROOMEQ_BAND4GAIN]=12,
-	[ROOMEQ_BAND4FREQ]=13,
-	[ROOMEQ_BAND4Q]=14,
-	[ROOMEQ_BAND5GAIN]=15,
-	[ROOMEQ_BAND5FREQ]=16,
-	[ROOMEQ_BAND5Q]=17,
-	[ROOMEQ_BAND6GAIN]=18,
-	[ROOMEQ_BAND6FREQ]=19,
-	[ROOMEQ_BAND6Q]=20,
-	[ROOMEQ_BAND7GAIN]=21,
-	[ROOMEQ_BAND7FREQ]=22,
-	[ROOMEQ_BAND7Q]=23,
-	[ROOMEQ_BAND8TYPE]=24,
-	[ROOMEQ_BAND8GAIN]=25,
-	[ROOMEQ_BAND8FREQ]=26,
-	[ROOMEQ_BAND8Q]=27,
-	[ROOMEQ_BAND9TYPE]=28,
-	[ROOMEQ_BAND9GAIN]=29,
-	[ROOMEQ_BAND9FREQ]=30,
-	[ROOMEQ_BAND9Q]=31,
-};
-
-/*
-struct segment {
-	short base;
-	unsigned char step;
-	const unsigned char *regs;
-	size_t regslen;
-};
-
-static const struct segment segments[] = {
-	[INPUT]   ={0x0000, 0x40, inputregs,   LEN(inputregs)},
-	[OUTPUT]  ={0x0500, 0x40, outputregs,  LEN(outputregs)},
-	[REVERB]  ={0x3000, 0x00, reverbregs,  LEN(reverbregs)},
-	[ECHO]    ={0x3014, 0x00, echoregs,    LEN(echoregs)},
-	[CTLROOM] ={0x3050, 0x00, ctlroomregs, LEN(ctlroomregs)},
-	[CLOCK]   ={0x3060, 0x00, clockregs,   LEN(clockregs)},
-	[HARDWARE]={0x3070, 0x00, hwregs,      LEN(hwregs)},
-	[ROOMEQ]  ={0x35d0, 0x20, roomeqregs,  LEN(roomeqregs)},
-};
-*/
 
 static unsigned long
 regtoctl(int reg)
@@ -416,71 +362,6 @@ ctltoreg(unsigned long ctl)
 	reg |= idx << 6;
 	return reg;
 }
-
-#if 0
-static int
-ctltoreg(int segidx, int idx, int ctl)
-{
-	const struct segment *seg;
-
-	fprintf(stderr, "ctltoreg %d %d %d\n", segidx, idx, ctl);
-	if (segidx > LEN(segments))
-		return -1;
-	seg = &segments[segidx];
-	if (!seg->regs)
-		return -1;
-	return seg->base + seg->step * idx + seg->regs[ctl];
-	switch (ctl & 0xff000000) {
-	case INPUT:
-		assert(idx < 20);
-		assert(ctl & 0xff < LEN(inputregs));
-		return idx << 6 | inputregs[ctl & 0xff];
-	case OUTPUT:
-		assert(ctl >> 16 < 20);
-		assert(ctl & 0xff < LEN(outputregs));
-		reg = ((ctl >> 16 & 0xff) + 20) << 6 | outputregs[ctl & 0xff];
-		switch (ctl & 0xff) {
-		case OUTPUT_VOLUME:    reg |= 0; break;
-		case OUTPUT_BALANCE:   reg |= 1; break;
-		case OUTPUT_MUTE:      reg |= 2; break;
-		case OUTPUT_FXRETURN:  reg |= 3; break;
-		case OUTPUT_STEREO:    reg |= 4; break;
-		case OUTPUT_RECORD:    reg |= 5; break;
-		case OUTPUT_PLAYCHAN:  reg |= 7; break;
-		case OUTPUT_PHASE:     reg |= 8; break;
-		case OUTPUT_REFLEVEL:  reg |= 9; break;
-		case OUTPUT_CROSSFEED: reg |= 10; break;
-		case OUTPUT_VOLUMECAL: reg |= 11; break;
-		default: return -1;
-		}
-		break;
-	case PLAYBACK:
-		break;
-	case REVERB | REVERB_ENABLED:   reg = 0x3000; break;
-	case REVERB | REVERB_TYPE:      reg = 0x3001; break;
-	case REVERB | REVERB_PREDELAY:  reg = 0x3002; break;
-	case REVERB | REVERB_LOWCUT:    reg = 0x3003; break;
-	case REVERB | REVERB_ROOMSCALE: reg = 0x3004; break;
-	case REVERB | REVERB_ATTACK:    reg = 0x3005; break;
-	case REVERB | REVERB_HOLD:      reg = 0x3006; break;
-	case REVERB | REVERB_RELEASE:   reg = 0x3007; break;
-	case REVERB | REVERB_HIGHCUT:   reg = 0x3008; break;
-	case REVERB | REVERB_TIME:      reg = 0x3009; break;
-	case REVERB | REVERB_HIGHDAMP:  reg = 0x300A; break;
-	case REVERB | REVERB_SMOOTH:    reg = 0x300B; break;
-	case REVERB | REVERB_VOLUME:    reg = 0x300C; break;
-	case REVERB | REVERB_WIDTH:     reg = 0x300D; break;
-	case ECHO | ECHO_ENABLED:       reg = 0x3014; break;
-	case ECHO | ECHO_TYPE:          reg = 0x3016; break;
-	case ECHO | ECHO_DELAY:         reg = 0x3017; break;
-	case ECHO | ECHO_FEEDBACK:      reg = 0x3018; break;
-	case ECHO | ECHO_HIGHCUT:       reg = 0x3019; break;
-	case ECHO | ECHO_VOLUME:        reg = 0x3020; break;
-	case ECHO | ECHO_WIDTH:         reg = 0x3021; break;
-	}
-	return reg;
-}
-#endif
 
 const struct device ffucxii = {
 	.id = "ffucxii",
