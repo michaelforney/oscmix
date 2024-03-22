@@ -3,7 +3,7 @@
 -include ../config.mk
 
 WASM_CC?=clang --target=wasm32-unknown-wasi
-WASM_CFLAGS?=-O2
+WASM_CFLAGS?=-O2 -Wall -Wpedantic
 WASM_LDFLAGS?=-mexec-model=reactor
 
 CC=$(WASM_CC)

@@ -27,7 +27,7 @@ enum outputflags {
 };
 
 struct outputinfo {
-	const char *name;
+	char name[12];
 	int flags;
 	struct {
 		const char *const*names;
@@ -246,6 +246,13 @@ enum {
 	DUREC_FILE,
 	DUREC_NEXT,
 	DUREC_RECORDTIME,
+	DUREC_INDEX,
+	DUREC_NAME0,
+	DUREC_NAME1,
+	DUREC_NAME2,
+	DUREC_NAME3,
+	DUREC_INFO,
+	DUREC_LENGTH,
 
 	/* write-only */
 	DUREC_STOP,
