@@ -372,6 +372,7 @@ const struct device ffucxii = {
 	.inputslen = LEN(inputs),
 	.outputs = outputs,
 	.outputslen = LEN(outputs),
+	.refresh = 0x67CD,
 	.regtoctl = regtoctl,
 	.ctltoreg = ctltoreg,
 	//.tree = tree,

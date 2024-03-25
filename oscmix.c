@@ -1052,8 +1052,8 @@ setdurecdelete(struct oscctx *ctx, struct oscmsg *msg)
 	setval(ctx, 0x8000 | val);
 }
 
-static int
-setrefresh(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+setrefresh(struct oscctx *ctx, struct oscmsg *msg)
 {
 	struct input *pb;
 	char addr[256];
@@ -1061,7 +1061,7 @@ setrefresh(const struct oscnode *path[], int reg, struct oscmsg *msg)
 
 	dsp.vers = -1;
 	dsp.load = -1;
-	setreg(0x3e04, 0x67cd);
+	setval(ctx, device->refresh);
 	refreshing = true;
 	/* FIXME: needs lock */
 	for (i = 0; i < device->outputslen; ++i) {
@@ -1070,7 +1070,6 @@ setrefresh(const struct oscnode *path[], int reg, struct oscmsg *msg)
 		oscsend(addr, ",i", pb->stereo);
 	}
 	oscflush();
-	return 0;
 }
 
 static int
@@ -1325,6 +1324,7 @@ static const struct oscnode tree[] = {
 		[DUREC_DELETE]={"delete", .set=setdurecdelete},
 		{0},
 	}},
+	[REFRESH]={"refresh", .set=setrefresh},
 	{0},
 };
 

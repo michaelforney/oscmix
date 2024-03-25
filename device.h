@@ -51,7 +51,8 @@ struct device {
 	const struct outputinfo *outputs;
 	int outputslen;
 
-	//const struct oscnode *tree;
+	int refresh;
+
 	int (*ctltoreg)(unsigned long ctl);
 	unsigned long (*regtoctl)(int reg);
 };
@@ -66,6 +67,7 @@ enum {
 	CLOCK,
 	HARDWARE,
 	DUREC,
+	REFRESH,
 };
 
 enum {
