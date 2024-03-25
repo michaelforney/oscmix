@@ -113,11 +113,15 @@ static void
 osc_levels(GValue *arg, guint len, gpointer ptr)
 {
 	Channel *channel;
+	GtkLevelBar *bar;
+	float value;
 
 	if (len == 0)
 		return;
 	channel = OSCMIX_CHANNEL(ptr);
-	gtk_level_bar_set_value(GTK_LEVEL_BAR(channel->ui.level), g_value_get_float(&arg[0]) + 65);
+	bar = GTK_LEVEL_BAR(channel->ui.level);
+	value = CLAMP(g_value_get_float(&arg[0]) + 65, gtk_level_bar_get_min_value(bar), gtk_level_bar_get_max_value(bar));
+	gtk_level_bar_set_value(bar, value);
 }
 
 static void
