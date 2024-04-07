@@ -19,9 +19,10 @@ int wflag = 0;
 
 void usage() {
 	std::cerr << "Usage:\n"
-			  << "	regtool_osx -l (lists MIDI port numbers and names)\n"
-			  << "	regtool_osx [-s] <MIDI port number or name>\n"
-			  << "	regtool_osx [-s] -w <MIDI port number or name> [reg val]...\n";
+			  << "	regtool_osx -l	List available MIDI I/O port numbers and names\n"
+			  << "	regtool_osx [-s] <MIDI IN port number or name>\n"
+			  << "	regtool_osx [-s] -w <MIDI OUT port number or name> [reg val]...\n";
+			  
 	exit(1);
 }
 
@@ -73,19 +74,41 @@ dumpsysex(const char *prefix, const unsigned char *buf, size_t len)
 	fflush(stdout);
 }
 
-void midiread() {
+static void 
+midiread(void) {
 	std::vector<unsigned char> message;
-	double stamp;
+	size_t len = 0;
+	static unsigned char buf[8192];
 
-	std::cout << "Waiting for MIDI message..." << std::endl;
 	while (true) {
-		stamp = midiin->getMessage(&message);
+		message.clear();
+		midiin->getMessage(&message);
 		size_t nBytes = message.size();
-		if (nBytes > 0) {
-			for (size_t i = 0; i < nBytes; i++)
-				if (message[0] == 0xf0) {
-					dumpsysex("<-", message.data(), message.size());
-				}
+
+		if (nBytes == 0) continue;
+		
+		const unsigned char* evtbuf = message.data();
+		size_t evtlen = nBytes;
+
+		if (evtbuf[0] == 0xF0) {
+			if (len > 0) {
+				std::cerr << "dropping incomplete sysex\n";
+				len = 0;
+			}
+		}
+
+		if (evtlen > sizeof(buf) - len) {
+			std::cerr << "dropping sysex that is too long\n";
+			len = (evtbuf[evtlen - 1] == 0xF7) ? 0 : sizeof(buf); 
+			continue;
+		}
+
+		memcpy(buf + len, evtbuf, evtlen);
+		len += evtlen;
+
+		if (buf[len - 1] == 0xF7) {
+			dumpsysex("<-", buf, len);
+			len = 0; 
 		}
 	}
 }
@@ -140,7 +163,7 @@ int main(int argc, char* argv[]) {
 			RtMidiOut* tempMidiOut = new RtMidiOut();
 		// Check inputs.
 		unsigned int nPorts = tempMidiIn->getPortCount();
-		std::cout << "\nThere are " << nPorts << " MIDI input sources available.\n";
+		std::cout << "\n" << nPorts << " MIDI input source(s) available:\n";
 		std::string portName;
 		for ( unsigned int i=0; i<nPorts; i++ ) {
 			try {
@@ -150,7 +173,7 @@ int main(int argc, char* argv[]) {
 			error.printMessage();
 			goto cleanup;
 			}
-		std::cout << "	Input Port " << i << ": " << portName << '\n';
+		std::cout << "	" << i << ": " << portName << '\n';
 		}
 		// RtMidiOut constructor
 		try {
@@ -162,7 +185,7 @@ int main(int argc, char* argv[]) {
 		}
 		// Check outputs.
 		nPorts = tempMidiOut->getPortCount();
-		std::cout << "\nThere are " << nPorts << " MIDI output ports available.\n";
+		std::cout << "\n" << nPorts << " MIDI output destination(s) available:\n";
 		for ( unsigned int i=0; i<nPorts; i++ ) {
 			try {
 				portName = tempMidiOut->getPortName(i);
@@ -171,7 +194,7 @@ int main(int argc, char* argv[]) {
 				error.printMessage();
 				goto cleanup;
 			}
-		std::cout << "	Output Port " << i << ": " << portName << '\n';
+		std::cout << "	" << i << ": " << portName << '\n';
 		}
 		std::cout << '\n' << "Re-run this tool again with the port number or port name of your device.\n\n";
 		cleanup:
@@ -261,7 +284,8 @@ int main(int argc, char* argv[]) {
 		}
 	} else if (!wflag) {
 		midiread();
-	} else {
+	} 
+	else {
 		midiwrite();
 	}
 	delete midiin;
