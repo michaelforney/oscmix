@@ -141,7 +141,7 @@ setreg(unsigned reg, unsigned val)
 	unsigned char buf[4], sysexbuf[7 + 5];
 	unsigned par;
 
-	if (dflag && reg != 0x3f00)
+	if (dflag/* && reg != 0x3f00*/)
 		fprintf(stderr, "setreg %.4X %.4hX\n", reg, (unsigned short)val);
 	regval = (reg & 0x7fff) << 16 | (val & 0xffff);
 	par = regval >> 16 ^ regval;
@@ -162,8 +162,11 @@ setval(struct oscctx *ctx, int val)
 	int reg;
 
 	reg = device->ctltoreg(getle32(ctx->ctl));
-	if (reg != -1)
-		setreg(reg, val);
+	if (reg == -1) {
+		fprintf(stderr, "no reg for %d %d %d %d\n", ctx->ctl[0], ctx->ctl[1], ctx->ctl[2], ctx->ctl[3]);
+		return;
+	}
+	setreg(reg, val);
 }
 
 static void
@@ -1205,6 +1208,10 @@ static const struct oscnode tree[] = {
 		[OUTPUT_DYNAMICS]={"dynamics", .set=setbool, .new=newbool, .child=dynamicstree},
 		[OUTPUT_AUTOLEVEL]={"autolevel", .set=setbool, .new=newbool, .child=autoleveltree},
 		[OUTPUT_ROOMEQ]  ={"roomeq", .set=setbool, .new=newbool, .child=roomeqtree},
+		{0},
+	}},
+	[PLAYBACK]={"playback", .child=(const struct oscnode[]){
+		{0},
 	}},
 	[REVERB]={"reverb", .set=setbool, .child=(const struct oscnode[]){
 		[REVERB_TYPE]={"type", .set=setenum, .new=newenum, .names=(const char *const[]){
@@ -1615,24 +1622,28 @@ handleregs(uint_least32_t *payload, size_t len)
 		val = (long)((payload[i] & 0xffff) ^ 0x8000) - 0x8000;
 		addrend = addr;
 
+		fprintf(stderr, "[%.4X]=%.4hX\n", reg, (unsigned short)val);
 		ctl = device->regtoctl(reg);
 		if (ctl == -1) {
 			if (dflag)
 				fprintf(stderr, "[%.4X]=%.4hX\n", reg, (unsigned short)val);
 			continue;
 		}
+		fprintf(stderr, "\tctl=%.8lX\n", ctl);
 		putle32(ctx.ctl, ctl);
 		child = tree;
-		for (j = 0; j < sizeof ctx.ctl && ctx.ctl[j] != (unsigned char)-1; ++j) {
+		for (j = 0; j < sizeof ctx.ctl && ctx.ctl[j] != 0xff; ++j) {
 			assert(child);
 			node = &child[ctx.ctl[j]];
+			fprintf(stderr, " %s (child=%p)", node->name, node->child);
 			*addrend++ = '/';
 			addrend = memccpy(addrend, node->name, '\0', addr + sizeof addr - addrend);
 			assert(addrend);
 			--addrend;
+			if (node->new)
+				node->new(&ctx, val);
 			child = node->child;
 		}
-		node->new(&ctx, val);
 
 		/*
 		off = 0;

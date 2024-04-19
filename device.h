@@ -264,6 +264,6 @@ enum {
 };
 
 #define CTL_(i, j, k, l, ...) ((unsigned long)(i) | (unsigned long)(j) << 8 | (unsigned long)(k) << 16 | (unsigned long)(l) << 24)
-#define CTL(...) CTL_(__VA_ARGS__, -1, -1, -1)
+#define CTL(...) CTL_(__VA_ARGS__, 0xff, 0xff, 0xff)
 
 #endif

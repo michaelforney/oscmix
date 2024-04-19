@@ -358,6 +358,10 @@ ctltoreg(unsigned long ctl)
 	case CTL(DUREC,  DUREC_PLAY):
 	case CTL(DUREC,  DUREC_RECORD): return 0x3E9A;
 	case CTL(DUREC,  DUREC_DELETE): return 0x3E9B;
+
+	case CTL(REFRESH): return 0x3E04;
+
+	default: return -1;
 	}
 	reg |= idx << 6;
 	return reg;
@@ -377,3 +381,5 @@ const struct device ffucxii = {
 	.ctltoreg = ctltoreg,
 	//.tree = tree,
 };
+
+_Static_assert(CTL(REFRESH) == 0xffffff09);
