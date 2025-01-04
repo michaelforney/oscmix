@@ -16,6 +16,7 @@ secrets:
 tasks:
 - build: make -C oscmix WEB=y all tools/regtool
 - deploy: |
+    [ "$GIT_REF" == refs/heads/main ] || exit 0
     cd oscmix
     git remote add github git@github.com:michaelforney/oscmix.git
     git fetch github gh-pages
