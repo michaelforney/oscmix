@@ -134,9 +134,10 @@ setreg(unsigned reg, unsigned val)
 	unsigned char buf[4], sysexbuf[7 + 5];
 	unsigned par;
 
+	val &= 0xffff;
 	if (dflag && reg != 0x3f00)
 		fprintf(stderr, "setreg %#.4x %#.4x\n", reg, val);
-	regval = (reg & 0x7fff) << 16 | (val & 0xffff);
+	regval = (reg & 0x7fff) << 16 | val;
 	par = regval >> 16 ^ regval;
 	par ^= par >> 8;
 	par ^= par >> 4;
