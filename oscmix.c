@@ -179,7 +179,7 @@ setfixed(const struct oscnode *path[], int reg, struct oscmsg *msg)
 	val = oscgetfloat(msg);
 	if (oscend(msg) != 0)
 		return -1;
-	setreg(reg, val / node->scale);
+	setreg(reg, (int)(val / node->scale));
 	return 0;
 }
 
