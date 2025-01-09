@@ -1,3 +1,14 @@
+if not bit32 then
+	-- lua >= 5.3 compatibility
+	bit32={
+		lshift=function(a, b) return a << b end,
+		rshift=function(a, b) return a >> b end,
+		bor=function(a, b) return a | b end,
+		band=function(a, b) return a & b end,
+		bxor=function(a, b) return a ~ b end,
+	}
+end
+
 local endpoint_field = Field.new('usb.endpoint_address.number')
 local f_subid
 
