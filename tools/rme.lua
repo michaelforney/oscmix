@@ -12,10 +12,74 @@ if not math.log10 then
 	function math.log10(a) return math.log(a, 10) end
 end
 
-local endpoint_field = Field.new('usb.endpoint_address.number')
-local f_subid
+local rme_proto
+
+-- RME SysEx dissector
+local sysex_rme_proto = Proto('sysex_rme', 'RME SysEx Protocol')
+local devid_field = ProtoField.uint8('sysex_rme.devid', 'Device ID', base.HEX)
+local subid_field = ProtoField.uint8('sysex_rme.subid', 'Sub ID', base.HEX)
+sysex_rme_proto.fields = {devid_field, subid_field}
+
+local function sysex_decode(input)
+	local output = ByteArray.new()
+	output:set_size(math.floor((input:len() * 7) / 8))
+	local byte = 0
+	local j = 0
+	for i = 0, input:len() - 1 do
+		byte = bit32.bor(bit32.lshift(input:get_index(i), -i % 8), byte)
+		if i % 8 ~= 0 then
+			output:set_index(j, bit32.band(byte, 0xff))
+			byte = bit32.rshift(byte, 8)
+			j = j + 1
+		end
+	end
+	return output
+end
+
+function sysex_rme_proto.dissector(buffer, pinfo, tree)
+	pinfo.cols.protocol = sysex_rme_proto.name
+	local subtree = tree:add(sysex_rme_proto, buffer(), 'RME SysEx Protocol')
+	local subid = buffer(1, 1)
+	subtree:add(devid_field, buffer(0, 1))
+	subtree:add(subid_field, subid)
+	buffer = buffer(2)
+
+	local decoded_body = ByteArray.new()
+	for i = 0, buffer:len() - 5, 5 do
+		decoded_body = decoded_body..sysex_decode(buffer(i, 5):bytes())
+	end
+
+	buffer = decoded_body:tvb()
+	if subid:le_uint() == 0 then
+		rme_proto.dissector(buffer, pinfo, tree)
+	else
+		rme_levels_proto.dissector(buffer, pinfo, tree)
+	end
+	--[[
+	buffer = decoded_body:tvb()
+	for i = 0, buffer:len() - 1, 4 do
+		local valbuf = buffer(i, 2)
+		local regbuf = buffer(i + 2, 2)
+		local reg = bit32.band(regbuf:le_uint(), 0x7fff)
+		local subtree = tree:add(sysex_rme_proto, buffer(i, 4), 'Set Register')
+		subtree:add_le(register_field, regbuf, reg)
+		subtree:add_le(value_field, valbuf)
+	end
+	--tree:add(body_field, buffer(2))
+	tree:add(body_field, buffer())
+	--tree:add(tvb, 'Body')
+	--]]
+end
+
+local sysex_table = DissectorTable.get('sysex.manufacturer')
+if sysex_table then
+	sysex_table:add(0x00200d, sysex_rme_proto)
+end
 
 -- RME dissector
+local endpoint_field = Field.new('usb.endpoint_address.number')
+local f_subid = Field.new('sysex_rme.subid')
+
 local register_field = ProtoField.uint16('rme.register', 'Register', base.HEX)
 local levels_field = ProtoField.uint32('rme.levels', 'Levels', base.HEX)
 local peak_field = ProtoField.uint64('rme.peak', 'Peak', base.HEX)
@@ -468,67 +532,3 @@ local usb_table = DissectorTable.get('usb.product')
 usb_table:add(0x2a393f82, rme_proto)  -- UCX II
 usb_table:add(0x2a393fcd, rme_proto)  -- 802
 usb_table:add(0x2a393fc9, rme_proto)  -- UCX
-
--- RME SysEx dissector
-local sysex_rme_proto = Proto('sysex_rme', 'RME SysEx Protocol')
-local devid_field = ProtoField.uint8('sysex_rme.devid', 'Device ID', base.HEX)
-local subid_field = ProtoField.uint8('sysex_rme.subid', 'Sub ID', base.HEX)
-sysex_rme_proto.fields = {devid_field, subid_field}
-
-f_subid = Field.new('sysex_rme.subid')
-
-local function sysex_decode(input)
-	local output = ByteArray.new()
-	output:set_size(math.floor((input:len() * 7) / 8))
-	local byte = 0
-	local j = 0
-	for i = 0, input:len() - 1 do
-		byte = bit32.bor(bit32.lshift(input:get_index(i), -i % 8), byte)
-		if i % 8 ~= 0 then
-			output:set_index(j, bit32.band(byte, 0xff))
-			byte = bit32.rshift(byte, 8)
-			j = j + 1
-		end
-	end
-	return output
-end
-
-function sysex_rme_proto.dissector(buffer, pinfo, tree)
-	pinfo.cols.protocol = sysex_rme_proto.name
-	local subtree = tree:add(sysex_rme_proto, buffer(), 'RME SysEx Protocol')
-	local subid = buffer(1, 1)
-	subtree:add(devid_field, buffer(0, 1))
-	subtree:add(subid_field, subid)
-	buffer = buffer(2)
-
-	local decoded_body = ByteArray.new()
-	for i = 0, buffer:len() - 5, 5 do
-		decoded_body = decoded_body..sysex_decode(buffer(i, 5):bytes())
-	end
-
-	buffer = decoded_body:tvb()
-	if subid:le_uint() == 0 then
-		rme_proto.dissector(buffer, pinfo, tree)
-	else
-		rme_levels_proto.dissector(buffer, pinfo, tree)
-	end
-	--[[
-	buffer = decoded_body:tvb()
-	for i = 0, buffer:len() - 1, 4 do
-		local valbuf = buffer(i, 2)
-		local regbuf = buffer(i + 2, 2)
-		local reg = bit32.band(regbuf:le_uint(), 0x7fff)
-		local subtree = tree:add(sysex_rme_proto, buffer(i, 4), 'Set Register')
-		subtree:add_le(register_field, regbuf, reg)
-		subtree:add_le(value_field, valbuf)
-	end
-	--tree:add(body_field, buffer(2))
-	tree:add(body_field, buffer())
-	--tree:add(tvb, 'Body')
-	--]]
-end
-
-local sysex_table = DissectorTable.get('sysex.manufacturer')
-if sysex_table then
-	sysex_table:add(0x00200d, sysex_rme_proto)
-end
