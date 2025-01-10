@@ -464,17 +464,17 @@ function rme_proto.dissector(buffer, pinfo, tree)
 	local endpoint = endpoint_field()
 	local subid = f_subid()
 	local subtree = tree:add(rme_proto, buffer(), 'RME Protocol Data')
-	if endpoint then
-		if endpoint.value == 12 or endpoint.value == 13 then
-		elseif endpoint.value == 5 then
-			return levels_usb(buffer, pinfo, subtree)
-		else
-			return
-		end
-	elseif subid then
+	if subid then
 		if subid.value == 0 then
 		elseif subid.value >= 1 and subid.value <= 5 then
 			return levels_cc(buffer, pinfo, subtree, subid.value)
+		else
+			return
+		end
+	elseif endpoint then
+		if endpoint.value == 12 or endpoint.value == 13 then
+		elseif endpoint.value == 5 then
+			return levels_usb(buffer, pinfo, subtree)
 		else
 			return
 		end
