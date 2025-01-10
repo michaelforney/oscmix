@@ -8,6 +8,9 @@ if not bit32 then
 		bxor=function(a, b) return a ~ b end,
 	}
 end
+if not math.log10 then
+	function math.log10(a) return math.log(a, 10) end
+end
 
 local endpoint_field = Field.new('usb.endpoint_address.number')
 local f_subid
