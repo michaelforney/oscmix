@@ -16,9 +16,9 @@ local rme_proto
 
 -- RME SysEx dissector
 local sysex_rme_proto = Proto('sysex_rme', 'RME SysEx Protocol')
-local devid_field = ProtoField.uint8('sysex_rme.devid', 'Device ID', base.HEX)
-local subid_field = ProtoField.uint8('sysex_rme.subid', 'Sub ID', base.HEX)
-sysex_rme_proto.fields = {devid_field, subid_field}
+local pf_devid = ProtoField.uint8('sysex_rme.devid', 'Device ID', base.HEX)
+local pf_subid = ProtoField.uint8('sysex_rme.subid', 'Sub ID', base.HEX)
+sysex_rme_proto.fields = {pf_devid, pf_subid}
 
 local function sysex_decode(input)
 	local output = ByteArray.new()
@@ -40,8 +40,8 @@ function sysex_rme_proto.dissector(buffer, pinfo, tree)
 	pinfo.cols.protocol = sysex_rme_proto.name
 	local subtree = tree:add(sysex_rme_proto, buffer(), 'RME SysEx Protocol')
 	local subid = buffer(1, 1)
-	subtree:add(devid_field, buffer(0, 1))
-	subtree:add(subid_field, subid)
+	subtree:add(pf_devid, buffer(0, 1))
+	subtree:add(pf_subid, subid)
 	buffer = buffer(2)
 
 	local decoded_body = ByteArray.new()
@@ -50,25 +50,7 @@ function sysex_rme_proto.dissector(buffer, pinfo, tree)
 	end
 
 	buffer = decoded_body:tvb()
-	if subid:le_uint() == 0 then
-		rme_proto.dissector(buffer, pinfo, tree)
-	else
-		rme_levels_proto.dissector(buffer, pinfo, tree)
-	end
-	--[[
-	buffer = decoded_body:tvb()
-	for i = 0, buffer:len() - 1, 4 do
-		local valbuf = buffer(i, 2)
-		local regbuf = buffer(i + 2, 2)
-		local reg = bit32.band(regbuf:le_uint(), 0x7fff)
-		local subtree = tree:add(sysex_rme_proto, buffer(i, 4), 'Set Register')
-		subtree:add_le(register_field, regbuf, reg)
-		subtree:add_le(value_field, valbuf)
-	end
-	--tree:add(body_field, buffer(2))
-	tree:add(body_field, buffer())
-	--tree:add(tvb, 'Body')
-	--]]
+	rme_proto.dissector(buffer, pinfo, tree)
 end
 
 local sysex_table = DissectorTable.get('sysex.manufacturer')
@@ -77,19 +59,15 @@ if sysex_table then
 end
 
 -- RME dissector
-local endpoint_field = Field.new('usb.endpoint_address.number')
-local f_subid = Field.new('sysex_rme.subid')
-
-local register_field = ProtoField.uint16('rme.register', 'Register', base.HEX)
-local levels_field = ProtoField.uint32('rme.levels', 'Levels', base.HEX)
-local peak_field = ProtoField.uint64('rme.peak', 'Peak', base.HEX)
-local rms_field = ProtoField.uint32('rme.value', 'RMS', base.HEX)
 rme_proto = Proto('rme', 'RME USB Protocol')
-rme_proto.fields.value = ProtoField.uint16('rme.value', 'Value', base.HEX)
-rme_proto.fields.register = register_field
-rme_proto.fields.levels = levels_field
-rme_proto.fields.peak_field = peak_field
-rme_proto.fields.rms = rms_field
+local f_endpoint = Field.new('usb.endpoint_address.number')
+local f_subid = Field.new('sysex_rme.subid')
+local pf_value = ProtoField.uint16('rme.value', 'Value', base.HEX)
+local pf_register = ProtoField.uint16('rme.register', 'Register', base.HEX)
+local pf_levels = ProtoField.uint32('rme.levels', 'Levels', base.HEX)
+local pf_peak = ProtoField.uint64('rme.peak', 'Peak', base.HEX)
+local pf_rms = ProtoField.uint32('rme.value', 'RMS', base.HEX)
+rme_proto.fields = {pf_value, pf_register, pf_levels, pf_peak, pf_rms}
 
 local function format_bool(val)
 	val = val:le_uint()
@@ -443,26 +421,26 @@ local function levels_usb(buffer, pinfo, tree)
 	local len = buffer:len()
 	local catbuf = buffer(len - 4)
 	local cat = catbuf:le_uint()
-	tree = tree:add(levels_field, catbuf, cat, nil, levels_usb_label[cat])
+	tree = tree:add(pf_levels, catbuf, cat, nil, levels_usb_label[cat])
 	for i = 0, (len - 4) * 2 / 3 - 8, 8 do
-		tree:add_le(rms_field, buffer(i, 8))
+		tree:add_le(pf_rms, buffer(i, 8))
 	end
 	for i = (len - 4) * 2 / 3, len - 8, 4 do
-		tree:add_le(peak_field, buffer(i, 4))
+		tree:add_le(pf_peak, buffer(i, 4))
 	end
 end
 
 local function levels_cc(buffer, pinfo, tree)
 	assert(buffer:len() % 12 == 0)
 	for i = 0, buffer:len() - 12, 12 do
-		tree:add_le(peak_field, buffer(i, 8))
-		tree:add_le(rms_field, buffer(i + 8, 4))
+		tree:add_le(pf_peak, buffer(i, 8))
+		tree:add_le(pf_rms, buffer(i + 8, 4))
 	end
 end
 
 function rme_proto.dissector(buffer, pinfo, tree)
-	local endpoint = endpoint_field()
 	local subid = f_subid()
+	local endpoint = f_endpoint()
 	local subtree = tree:add(rme_proto, buffer(), 'RME Protocol Data')
 	if subid then
 		if subid.value == 0 then
@@ -481,9 +459,6 @@ function rme_proto.dissector(buffer, pinfo, tree)
 	else
 		return
 	end
-	print('endpoint', endpoint, type(endpoint))
-	print('subid', subid)
-	--if ep ~= 12 then return 0 end
 	pinfo.cols.protocol = rme_proto.name
 	local length = buffer:len()
 	local i = 0
@@ -522,8 +497,8 @@ function rme_proto.dissector(buffer, pinfo, tree)
 			regdesc = string.format('(%s)', regdesc)
 		end
 		if valdesc then valdesc = string.format('(%s)', valdesc) end
-		subsubtree:add_le(rme_proto.fields.register, regbuf, reg, nil, regdesc)
-		subsubtree:add_le(rme_proto.fields.value, valbuf, val, nil, valdesc)
+		subsubtree:add_le(pf_register, regbuf, reg, nil, regdesc)
+		subsubtree:add_le(pf_value, valbuf, val, nil, valdesc)
 		i = i + 4
 	end
 end
