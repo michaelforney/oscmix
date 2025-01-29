@@ -64,7 +64,6 @@ struct durecfile {
 int dflag;
 static const struct device *device;
 static struct input *inputs;
-static struct input *playbacks;
 static struct output *outputs;
 static struct {
 	int status;
@@ -579,7 +578,7 @@ setmix(const struct oscnode *path[], int reg, struct oscmsg *msg)
 	inidx = path[0] - path[-1]->child;
 	if (reg & 0x20) {
 		assert(inidx < device->outputslen);
-		in = &playbacks[inidx];
+		in = &inputs[device->inputslen + inidx];
 	} else {
 		assert(inidx < device->inputslen);
 		in = &inputs[inidx];
@@ -1034,7 +1033,7 @@ setrefresh(const struct oscnode *path[], int reg, struct oscmsg *msg)
 	refreshing = true;
 	/* FIXME: needs lock */
 	for (i = 0; i < device->outputslen; ++i) {
-		pb = &playbacks[i];
+		pb = &inputs[device->inputslen + i];
 		snprintf(addr, sizeof addr, "/playback/%d/stereo", i + 1);
 		oscsend(addr, ",i", pb->stereo);
 	}
@@ -1764,17 +1763,16 @@ init(const char *port)
 		return -1;
 	}
 
-	inputs = calloc(device->inputslen, sizeof *inputs);
-	playbacks = calloc(device->outputslen, sizeof *playbacks);
+	inputs = calloc(device->inputslen + device->outputslen, sizeof *inputs);
 	outputs = calloc(device->outputslen, sizeof *outputs);
-	if (!inputs || !playbacks || !outputs) {
+	if (!inputs || !outputs) {
 		perror(NULL);
 		return -1;
 	}
 	for (i = 0; i < device->outputslen; ++i) {
 		struct output *out;
 
-		playbacks[i].stereo = true;
+		inputs[device->inputslen + i].stereo = true;
 		out = &outputs[i];
 		out->mix = calloc(device->inputslen + device->outputslen, sizeof *out->mix);
 		if (!out->mix) {
