@@ -256,7 +256,7 @@ setlevel(int reg, float level)
 {
 	long val;
 
-	val = level * 0x8000l;
+	val = lroundf(level * 0x8000);
 	assert(val >= 0);
 	assert(val <= 0x10000);
 	if (val > 0x4000)
@@ -550,7 +550,7 @@ setdb(int reg, float db)
 {
 	int val;
 
-	val = (isinf(db) && db < 0 ? -650 : (int)(db * 10)) & 0x7fff;
+	val = (isinf(db) && db < 0 ? -650 : lroundf(db * 10.f)) & 0x7fff;
 	return setreg(reg, val);
 }
 
@@ -622,12 +622,12 @@ setmix(const struct oscnode *path[], int reg, struct oscmsg *msg)
 			L1 = level0^2 * (1 - width)^2 + level1^2 * (1 + width)^2
 			*/
 			setdb(reg, 10 * log10(level0));
-			setpan(reg, acos(2 * level00 / level0 - 1) * 200 / PI - 100);
+			setpan(reg, lroundf(acos(2 * level00 / level0 - 1) * 200.f / PI - 100.f));
 
 			level10 = level10 * level10;
 			level1 = level10 + level11 * level11;
 			setdb(reg + 1, 10 * log10(level1));
-			setpan(reg + 1, acos(2 * level10 / level1 - 1) * 200 / PI - 100);
+			setpan(reg + 1, lroundf(acos(2 * level10 / level1 - 1) * 200.f / PI - 100.f));
 		} else {
 			setlevel(reg + 0x2000, level0);
 			setlevel(reg + 0x2001, level1);
