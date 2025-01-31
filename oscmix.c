@@ -37,11 +37,6 @@ struct oscnode {
 	const struct oscnode *child;
 };
 
-struct mix {
-	signed char pan;
-	short vol;
-};
-
 struct input {
 	bool stereo;
 	bool mute;
@@ -50,7 +45,7 @@ struct input {
 
 struct output {
 	bool stereo;
-	struct mix *mix;
+	float *mix;
 };
 
 struct durecfile {
@@ -252,7 +247,7 @@ newbool(const struct oscnode *path[], const char *addr, int reg, int val)
 }
 
 static int
-setlevel(int reg, float level)
+setmonolevel(int reg, float level)
 {
 	long val;
 
@@ -265,19 +260,25 @@ setlevel(int reg, float level)
 }
 
 static void
-setlevels(struct output *out, struct input *in, struct mix *mix)
+muteinput(struct input *in, bool mute)
 {
-	int reg;
-	float level, theta;
+	const struct output *out;
+	int och, ich;
 
-	reg = 0x4000 | (out - outputs) << 6 | (in - inputs);
-	level = in->mute ? 0 : mix->vol <= -650 ? 0 : powf(10, mix->vol / 200.f);
-	if (out->stereo) {
-		theta = (mix->pan + 100) / 400.f * PI;
-		setlevel(reg, level * cosf(theta));
-		setlevel(reg + 0x40, level * sinf(theta));
-	} else {
-		setlevel(reg, level);
+	if (in->mute == mute)
+		return;
+	ich = in - inputs;
+	if (ich & 1)
+		--in, --ich;
+	in[0].mute = mute;
+	if (in->stereo)
+		in[1].mute = mute;
+	for (och = 0; och < device->outputslen; ++och) {
+		out = &outputs[och];
+		if (out->mix[ich] > 0)
+			setmonolevel(0x4000 | och << 6 | ich, mute ? 0 : out->mix[ich]);
+		if (out->mix[ich + 1] > 0)
+			setmonolevel(0x4000 | och << 6 | (ich + 1), mute ? 0 : out->mix[ich + 1]);
 	}
 }
 
@@ -285,9 +286,7 @@ static int
 setinputmute(const struct oscnode *path[], int reg, struct oscmsg *msg)
 {
 	struct input *in;
-	struct output *out;
-	struct mix *mix;
-	int inidx, outidx;
+	int inidx;
 	bool val;
 
 	val = oscgetint(msg);
@@ -297,26 +296,8 @@ setinputmute(const struct oscnode *path[], int reg, struct oscmsg *msg)
 	assert(inidx < device->inputslen);
 	/* mutex */
 	in = &inputs[inidx];
-	if (inidx % 2 == 1 && in[-1].stereo)
-		--in, --inidx;
 	setreg(reg, val);
-	if (in->mute != val) {
-		in->mute = val;
-		if (in->stereo)
-			in[1].mute = val;
-		for (outidx = 0; outidx < device->outputslen; ++outidx) {
-			out = &outputs[outidx];
-			mix = &out->mix[inidx];
-			if (mix->vol > -650)
-				setlevels(out, in, mix);
-			if (in->stereo && (++mix)->vol > -650)
-				setlevels(out, in + 1, mix);
-			if (out->stereo) {
-				assert(outidx % 2 == 0);
-				++outidx;
-			}
-		}
-	}
+	muteinput(in, val);
 	return 0;
 }
 
@@ -563,17 +544,143 @@ setpan(int reg, int pan)
 	return setreg(reg, val);
 }
 
+struct level {
+	float vol;  /* 0 (mute) to 1 (0dB) */
+	short pan;  /* -100 (left) to 100 (right) */
+	short width;  /* -100 (reversed) to 100 (full stereo) */
+};
+
+static void
+calclevel(const struct output *out, const struct input *in, bool instereo, struct level *l)
+{
+	int ich;
+	float ll, lr, rl, rr, w;
+
+	if (instereo)
+		instereo = in->stereo;
+	if (instereo && (in - inputs) & 1)
+		--in;
+	if (out->stereo && (out - outputs) & 1)
+		--out;
+	ich = in - inputs;
+	if (out->stereo) {
+		ll = out[0].mix[ich];
+		lr = out[1].mix[ich];
+		if (instereo) {
+			rl = out[0].mix[ich + 1];
+			rr = out[1].mix[ich + 1];
+			w = 2 * ll / (ll + rl) - 1;
+			if (ll < rr) {  /* p > 0 */
+				l->vol = 2 * rr / (1 + w);
+				l->pan = lroundf(100 * (1 - ll / rr));
+			} else {
+				l->vol = 2 * ll / (1 + w);
+				l->pan = lroundf(100 * (rr / ll - 1));
+			}
+			l->width = lroundf(100 * w);
+		} else {
+			l->vol = sqrtf(ll * ll + lr * lr);
+			l->pan = lroundf(acosf(ll / l->vol) * 400.f / PI - 100.f);
+		}
+	} else {
+		ll = out[0].mix[ich];
+		if (instereo) {
+			rl = out[0].mix[ich + 1];
+			if (ll < rl) {  /* p > 0 */
+				l->vol = 2 * rl;
+				l->pan = lroundf(100 * (1 - ll / rl));
+			} else {
+				l->vol = 2 * ll;
+				l->pan = lroundf(100 * (rl / ll - 1));
+			}
+		} else {
+			l->vol = ll;
+			l->pan = 0;
+		}
+	}
+}
+
+static void
+setlevel(struct output *out, const struct input *in, bool instereo, const struct level *l)
+{
+	int och, ich;
+	float w, theta;
+	float ll, lr, rl, rr;
+
+	if (instereo)
+		instereo = in->stereo;
+	if (instereo && (in - inputs) & 1)
+		--in;
+	if (out->stereo && (out - outputs) & 1)
+		--out;
+	och = out - outputs;
+	ich = in - inputs;
+	if (out->stereo) {
+		if (instereo) {
+			w = l->width / 100.f;
+			if (l->pan > 0) {
+				ll = (100 - l->pan) * (1 + w) / 200.f * l->vol;
+				lr = (1 - w) / 2.f * l->vol;
+				rl = (100 - l->pan) * (1 - w) / 200.f * l->vol;
+				rr = (1 + w) / 2.f * l->vol;
+			} else {
+				ll = (1 + w) / 2.f * l->vol;
+				lr = (100 + l->pan) * (1 - w) / 200.f * l->vol;
+				rl = (1 - w) / 2.f * l->vol;
+				rr = (100 + l->pan) * (1 + w) / 200.f * l->vol;
+			}
+			out[0].mix[ich + 1] = rl;
+			out[1].mix[ich + 1] = rr;
+			if (!in->mute) {
+				setmonolevel(0x4000 | och << 6 | (ich + 1), rl);
+				setmonolevel(0x4000 | (och + 1) << 6 | (ich + 1), rr);
+			}
+		} else {
+			theta = (l->pan + 100) * PI / 400.f;
+			ll = cosf(theta) * l->vol;
+			lr = sinf(theta) * l->vol;
+		}
+		out[0].mix[ich] = ll;
+		out[1].mix[ich] = lr;
+		if (!in->mute) {
+			setmonolevel(0x4000 | och << 6 | ich, ll);
+			setmonolevel(0x4000 | (och + 1) << 6 | ich, lr);
+		}
+	} else {
+		if (instereo) {
+			if (l->pan > 0) {
+				ll = (100 - l->pan) / 200.f * l->vol;
+				rl = l->vol / 2;
+			} else {
+				ll = l->vol / 2;
+				rl = (100 + l->pan) / 200.f * l->vol;
+			}
+			out[0].mix[ich + 1] = rl;
+			if (!in->mute)
+				setmonolevel(0x4000 | och << 6 | (ich + 1), rl);
+		} else {
+			ll = l->vol;
+		}
+		out[0].mix[ich] = ll;
+		if (!in->mute)
+			setmonolevel(0x4000 | och << 6 | ich, ll);
+	}
+}
+
 static int
 setmix(const struct oscnode *path[], int reg, struct oscmsg *msg)
 {
-	int outidx, inidx, pan;
-	float vol, level, theta, width;
+	int outidx, inidx;
+	float vol;
+	struct level level;
 	struct output *out;
 	struct input *in;
 
 	outidx = path[-2] - path[-3]->child;
 	assert(outidx < device->outputslen);
 	out = &outputs[outidx];
+	if (out->stereo && outidx & 1)
+		--out, --outidx;
 
 	inidx = path[0] - path[-1]->child;
 	if (reg & 0x20) {
@@ -583,69 +690,28 @@ setmix(const struct oscnode *path[], int reg, struct oscmsg *msg)
 		assert(inidx < device->inputslen);
 		in = &inputs[inidx];
 	}
+	if (in->stereo && inidx & 1)
+		--in, --inidx;
 
+	calclevel(out, in, 1, &level);
 	vol = oscgetfloat(msg);
-	if (vol <= -65)
-		vol = -INFINITY;
-	printf("setmix %d %d %f\n", (reg >> 6) & 0x3f, reg & 0x3f, vol);
+	level.vol = vol <= -65.f ? 0 : powf(10.f, vol / 20.f);
 
-	pan = 0;
-	width = 1;
 	if (*msg->type) {
-		pan = oscgetint(msg);
+		level.pan = oscgetint(msg);
 		if (*msg->type && in->stereo && out->stereo)
-			width = oscgetfloat(msg);
+			level.width = oscgetfloat(msg);
 	}
 	if (oscend(msg) != 0)
 		return -1;
-
-	level = pow(10, vol / 20);
+	setlevel(out, in, 1, &level);
+	calclevel(out, in, 0, &level);
+	setdb(reg, 20.f * log10f(level.vol));
+	setpan(reg, level.pan);
 	if (in->stereo) {
-		float level0, level1, level00, level10, level01, level11;
-
-		level0 = (100 - (pan > 0 ? pan : 0)) / 200.f * level;
-		level1 = (100 + (pan < 0 ? pan : 0)) / 200.f * level;
-		if (out->stereo) {
-			level00 = level0 * (1 + width);
-			level10 = level0 * (1 - width);
-			level01 = level1 * (1 - width);
-			level11 = level1 * (1 + width);
-			setlevel(reg + 0x2000, level00);
-			setlevel(reg + 0x2001, level10);
-			setlevel(reg + 0x2040, level01);
-			setlevel(reg + 0x2041, level11);
-
-			level00 = level00 * level00;
-			level0 = level00 + level01 * level01;
-			/*
-			L0 = level0^2 * (1 + width)^2 + level1^2 * (1 - width)^2
-			L1 = level0^2 * (1 - width)^2 + level1^2 * (1 + width)^2
-			*/
-			setdb(reg, 10 * log10(level0));
-			setpan(reg, lroundf(acos(2 * level00 / level0 - 1) * 200.f / PI - 100.f));
-
-			level10 = level10 * level10;
-			level1 = level10 + level11 * level11;
-			setdb(reg + 1, 10 * log10(level1));
-			setpan(reg + 1, lroundf(acos(2 * level10 / level1 - 1) * 200.f / PI - 100.f));
-		} else {
-			setlevel(reg + 0x2000, level0);
-			setlevel(reg + 0x2001, level1);
-			setdb(reg, 20 * log10(level0));
-			setpan(reg, 0);
-			setdb(reg + 1, 20 * log10(level1));
-			setpan(reg + 1, 0);
-		}
-	} else {
-		if (out->stereo) {
-			theta = (pan + 100) * PI / 400;
-			setlevel(reg + 0x2000, level * cos(theta));
-			setlevel(reg + 0x2040, level * sin(theta));
-		} else {
-			setlevel(reg + 0x2000, level);
-		}
-		setdb(reg, vol);
-		setpan(reg, pan);
+		calclevel(out, in + 1, 0, &level);
+		setdb(reg + 1, 20.f * log10f(level.vol));
+		setpan(reg + 1, level.pan);
 	}
 	return 0;
 }
@@ -655,12 +721,10 @@ newmix(const struct oscnode *path[], const char *addr, int reg, int val)
 {
 	struct output *out;
 	struct input *in;
-	struct mix *mix;
 	int outidx, inidx;
-	bool newpan;
+	bool ispan;
 	char addrbuf[256];
-	float vol;
-	int pan;
+	struct level level;
 
 	outidx = (reg & 0xfff) >> 6;
 	inidx = reg & 0x3f;
@@ -668,49 +732,25 @@ newmix(const struct oscnode *path[], const char *addr, int reg, int val)
 		return -1;
 	out = &outputs[outidx];
 	in = &inputs[inidx];
-	mix = &out->mix[inidx];
-	newpan = val & 0x8000;
-	val = ((val & 0x7fff) ^ 0x4000) - 0x4000;
-	if (newpan)
-		mix->pan = val;
-	else
-		mix->vol = val;
 	if (outidx & 1 && out[-1].stereo)
-		--out, --outidx;
-	if (inidx & 1 && in[-1].stereo)
-		--in, --inidx;
-	mix = &out->mix[inidx];
+		return -1;
+	ispan = val & 0x8000;
+	val = ((val & 0x7fff) ^ 0x4000) - 0x4000;
+	calclevel(out, in, 0, &level);
+	if (ispan)
+		level.pan = val;
+	else
+		level.vol = val <= -650 ? 0 : powf(10.f, val / 200.f);
+	setlevel(out, in, 0, &level);
 	if (in->stereo) {
-		float level0, level1, scale;
-
-		level0 = mix[0].vol <= -650 ? 0 : powf(10, mix[0].vol / 200.f);
-		level1 = mix[1].vol <= -650 ? 0 : powf(10, mix[1].vol / 200.f);
-		if (out->stereo) {
-			//scale = sqrtf(2.f / (1 + in->width * in->width));
-			scale = 1;
-		} else {
-			scale = 2;
-		}
-		level0 *= scale;
-		level1 *= scale;
-		if (level0 == 0 && level1 == 0) {
-			vol = -INFINITY;
-			pan = 0;
-		} else if (level0 >= level1) {
-			vol = 20 * log10f(level0);
-			pan = 100 * (level1 / level0 - 1);
-		} else {
-			vol = 20 * log10f(level1);
-			pan = -100 * (level0 / level1 - 1);
-		}
-	} else {
-		vol = mix->vol <= -650 ? -65.f : mix->vol / 10.f;
-		pan = mix->pan;
+		if (inidx & 1)
+			--in, --inidx;
+		calclevel(out, in, 1, &level);
 	}
 	snprintf(addrbuf, sizeof addrbuf, "/mix/%d/input/%d", outidx + 1, inidx + 1);
-	oscsend(addrbuf, ",f", vol);
+	oscsend(addrbuf, ",f", level.vol);
 	snprintf(addrbuf, sizeof addrbuf, "/mix/%d/input/%d/pan", outidx + 1, inidx + 1);
-	oscsend(addrbuf, ",i", pan);
+	oscsend(addrbuf, ",i", level.pan);
 	return 0;
 }
 
@@ -1745,7 +1785,7 @@ init(const char *port)
 	static const struct device *devices[] = {
 		&ffucxii,
 	};
-	int i, j;
+	int i;
 	size_t namelen;
 
 	for (i = 0; i < LEN(devices); ++i) {
@@ -1779,8 +1819,6 @@ init(const char *port)
 			perror(NULL);
 			return -1;
 		}
-		for (j = 0; j < device->inputslen + device->outputslen; ++j)
-			out->mix[j].vol = -650;
 	}
 	return 0;
 }
