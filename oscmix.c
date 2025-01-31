@@ -302,6 +302,19 @@ setinputmute(const struct oscnode *path[], int reg, struct oscmsg *msg)
 }
 
 static int
+newinputmute(const struct oscnode *path[], const char *addr, int reg, int val)
+{
+	struct input *in;
+	int inidx;
+
+	inidx = path[-1] - path[-2]->child;
+	assert(inidx < device->inputslen);
+	in = &inputs[inidx];
+	muteinput(in, val);
+	return newbool(path, addr, reg, val);
+}
+
+static int
 setinputstereo(const struct oscnode *path[], int reg, struct oscmsg *msg)
 {
 	int idx;
@@ -1134,7 +1147,7 @@ static const struct oscnode autoleveltree[] = {
 };
 
 static const struct oscnode inputtree[] = {
-	{"mute", 0x00, .set=setinputmute, .new=newbool},
+	{"mute", 0x00, .set=setinputmute, .new=newinputmute},
 	{"fx", 0x01, .set=setfixed, .new=newfixed, .min=-650, .max=0, .scale=0.1},
 	{"stereo", 0x02, .set=setinputstereo, .new=newinputstereo},
 	{"record", 0x03, .set=setbool, .new=newbool},
