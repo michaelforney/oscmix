@@ -712,6 +712,10 @@ setmix(const struct oscnode *path[], int reg, struct oscmsg *msg)
 
 	if (*msg->type) {
 		level.pan = oscgetint(msg);
+		if (level.pan < -100)
+			level.pan = -100;
+		else if (level.pan > 100)
+			level.pan = 100;
 		if (*msg->type && in->stereo && out->stereo)
 			level.width = oscgetfloat(msg);
 	}
