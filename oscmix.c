@@ -268,7 +268,7 @@ muteinput(struct input *in, bool mute)
 	if (in->mute == mute)
 		return;
 	ich = in - inputs;
-	if (ich & 1)
+	if (in->stereo && ich & 1)
 		--in, --ich;
 	in[0].mute = mute;
 	if (in->stereo)
@@ -277,7 +277,7 @@ muteinput(struct input *in, bool mute)
 		out = &outputs[och];
 		if (out->mix[ich] > 0)
 			setmonolevel(0x4000 | och << 6 | ich, mute ? 0 : out->mix[ich]);
-		if (out->mix[ich + 1] > 0)
+		if (in->stereo && out->mix[ich + 1] > 0)
 			setmonolevel(0x4000 | och << 6 | (ich + 1), mute ? 0 : out->mix[ich + 1]);
 	}
 }
