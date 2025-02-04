@@ -584,7 +584,7 @@ class Channel {
 			for (let i = 0; i < 20; ++i) {
 				this.volume[i] = -65;
 				iface.methods.set(`/mix/${i+1}${prefix}`, (args) => {
-					const value = Math.max(args[0], -65);
+					const value = Math.max(Math.round(args[0] / volumeNumber.step) * volumeNumber.step, -65);
 					this.volume[i] = value;
 					if (output.selectedIndex == i) {
 						volumeRange.value = value;
