@@ -582,13 +582,13 @@ calclevel(const struct output *out, const struct input *in, bool instereo, struc
 		if (instereo) {
 			rl = out[0].mix[ich + 1];
 			rr = out[1].mix[ich + 1];
-			w = 2 * ll / (ll + rl) - 1;
+			w = ll + rl == 0 ? 1 : 2 * ll / (ll + rl) - 1;
 			if (ll < rr) {  /* p > 0 */
 				l->vol = 2 * rr / (1 + w);
 				l->pan = lroundf(100 * (1 - ll / rr));
 			} else {
 				l->vol = 2 * ll / (1 + w);
-				l->pan = lroundf(100 * (rr / ll - 1));
+				l->pan = ll == 0 ? 0 : lroundf(100 * (rr / ll - 1));
 			}
 			l->width = lroundf(100 * w);
 		} else {
@@ -604,7 +604,7 @@ calclevel(const struct output *out, const struct input *in, bool instereo, struc
 				l->pan = lroundf(100 * (1 - ll / rl));
 			} else {
 				l->vol = 2 * ll;
-				l->pan = lroundf(100 * (rl / ll - 1));
+				l->pan = ll == 0 ? 0 : lroundf(100 * (rl / ll - 1));
 			}
 		} else {
 			l->vol = ll;
