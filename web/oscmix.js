@@ -560,6 +560,7 @@ class Channel {
 
 		const volumeRange = fragment.getElementById('volume-range');
 		const volumeNumber = fragment.getElementById('volume-number');
+		const panNumber = fragment.getElementById('pan')
 		if (type == Channel.OUTPUT) {
 			volumeRange.oninput = volumeNumber.onchange = (event) => {
 				volumeRange.value = event.target.value;
@@ -570,25 +571,38 @@ class Channel {
 				volumeRange.value = args[0];
 				volumeNumber.value = args[0];
 			});
+			iface.bind(prefix + '/balance', ',i', panNumber, 'valueAsNumber', 'change');
 		} else {
 			const output = fragment.getElementById('volume-output');
 			output.addEventListener('change', (event) => {
 				volumeRange.value = volumeNumber.value = this.volume[event.target.selectedIndex];
+				panNumber.value = this.pan[event.target.selectedIndex];
 			});
 			volumeRange.oninput = volumeNumber.onchange = (event) => {
 				volumeRange.value = volumeNumber.value = event.target.value;
 				this.volume[output.selectedIndex] = event.target.value;
-				iface.send(`/mix/${output.selectedIndex+1}${prefix}`, ',f', [event.target.value]);
+				iface.send(`/mix/${output.selectedIndex+1}${prefix}`, ',fi', [event.target.value, this.pan[output.selectedIndex]]);
+			};
+			panNumber.onchange = (event) => {
+				this.pan[output.selectedIndex] = event.target.value;
+				iface.send(`/mix/${output.selectedIndex+1}${prefix}`, ',fi', [this.volume[output.selectedIndex], event.target.value]);
 			};
 			this.volume = [];
+			this.pan = [];
 			for (let i = 0; i < 20; ++i) {
 				this.volume[i] = -65;
+				this.pan[i] = 0;
 				iface.methods.set(`/mix/${i+1}${prefix}`, (args) => {
-					const value = Math.max(Math.round(args[0] / volumeNumber.step) * volumeNumber.step, -65);
-					this.volume[i] = value;
+					const vol = Math.max(Math.round(args[0] / volumeNumber.step) * volumeNumber.step, -65);
+					const pan = args[1];
+					this.volume[i] = vol;
+					if (pan)
+						this.pan[i] = pan;
 					if (output.selectedIndex == i) {
-						volumeRange.value = value;
-						volumeNumber.value = value;
+						volumeRange.value = vol;
+						volumeNumber.value = vol;
+						if (pan)
+							panNumber.value = pan;
 					}
 				});
 			}

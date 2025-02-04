@@ -765,9 +765,7 @@ newmix(const struct oscnode *path[], const char *addr, int reg, int val)
 		calclevel(out, in, 1, &level);
 	}
 	snprintf(addrbuf, sizeof addrbuf, "/mix/%d/input/%d", outidx + 1, inidx + 1);
-	oscsend(addrbuf, ",f", level.vol);
-	snprintf(addrbuf, sizeof addrbuf, "/mix/%d/input/%d/pan", outidx + 1, inidx + 1);
-	oscsend(addrbuf, ",i", level.pan);
+	oscsend(addrbuf, ",fi", level.vol > 0 ? 20.f * log10f(level.vol) : -INFINITY, level.pan);
 	return 0;
 }
 

@@ -158,6 +158,9 @@ label:has(#connection-type:not([data-value="WebSocket"])) ~ .connection-websocke
 	text-align: center;
 	font-weight: bold;
 }
+.channel-pan {
+	text-align: center;
+}
 .channel-mute {
 	display: flex;
 	justify-content: center;
