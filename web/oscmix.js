@@ -870,7 +870,13 @@ function setupInterface() {
 	/* allow scrolling on number and range inputs */
 	const wheel = (event) => {
 		event.preventDefault();
-		event.target.valueAsNumber = Math.min(Math.max(event.target.valueAsNumber - event.deltaY * Number(event.target.step) / 180, event.target.min), event.target.max);
+		const step = Number(event.target.step) || 1;
+		let value = event.target.valueAsNumber;
+		if (event.deltaY < 0)
+			value += step;
+		else if (event.deltaY > 0)
+			value -= step;
+		event.target.valueAsNumber = Math.min(Math.max(value, event.target.min), event.target.max);
 		event.target.dispatchEvent(new Event(event.target.type == 'range' ? 'input' : 'change'));
 	};
 	const focus = (event) => event.target.addEventListener('wheel', wheel, {passive: false});
