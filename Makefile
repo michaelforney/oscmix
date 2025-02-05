@@ -41,6 +41,7 @@ OSCMIX_OBJ=\
 	sysex.o\
 	util.o\
 	\
+	device_ff802.o\
 	device_ffucxii.o
 
 WSDGRAM_OBJ=\
