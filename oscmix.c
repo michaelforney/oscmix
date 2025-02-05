@@ -1,5 +1,6 @@
 #define _XOPEN_SOURCE 700  /* for memccpy */
 #include <assert.h>
+#include <limits.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -789,10 +790,10 @@ getsamplerate(int val)
 static int
 newsamplerate(const struct oscnode *path[], const char *addr, int reg, int val)
 {
-	uint_least32_t rate;
+	long rate;
 
 	rate = getsamplerate(val);
-	if (rate != 0)
+	if (rate != 0 && rate < INT_MAX)
 		oscsend(addr, ",i", rate);
 	return 0;
 }
@@ -832,7 +833,7 @@ newdurecstatus(const struct oscnode *path[], const char *addr, int reg, int val)
 	int status;
 	int position;
 
-	status = val & 0xf;
+	status = val & 0xF;
 	if (status != durec.status) {
 		durec.status = status;
 		oscsendenum("/durec/status", status, names, LEN(names));
@@ -1616,7 +1617,7 @@ oscsend(const char *addr, const char *type, ...)
 	for (; *type; ++type) {
 		switch (*type) {
 		case 'f': oscputfloat(&oscmsg, va_arg(ap, double)); break;
-		case 'i': oscputint(&oscmsg, va_arg(ap, uint_least32_t)); break;
+		case 'i': oscputint(&oscmsg, va_arg(ap, int)); break;
 		case 's': oscputstr(&oscmsg, va_arg(ap, const char *)); break;
 		default: assert(0);
 		}
@@ -1733,9 +1734,9 @@ handlelevels(int subid, uint_least32_t *payload, size_t len)
 			if (peakfx) {
 				peakfxdb = 20 * log10((peakfx[i] >> 4) / 0x1p23);
 				rmsfxdb = 10 * log10(rmsfx[i] / 0x1p54);
-				oscsend(addr, ",ffffi", peakdb, rmsdb, peakfxdb, rmsfxdb, peak & peakfx[i] & 1);
+				oscsend(addr, ",ffffi", peakdb, rmsdb, peakfxdb, rmsfxdb, (int)(peak & peakfx[i] & 1));
 			} else {
-				oscsend(addr, ",ffi", peakdb, rmsdb, peak & 1);
+				oscsend(addr, ",ffi", peakdb, rmsdb, (int)(peak & 1));
 			}
 		} else {
 			*peakfx++ = peak;
