@@ -1814,7 +1814,7 @@ init(const char *port)
 		}
 	}
 	if (i == LEN(devices)) {
-		fprintf(stderr, "unsupported device '%s'", port);
+		fprintf(stderr, "unsupported device '%s'\n", port);
 		return -1;
 	}
 
