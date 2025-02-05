@@ -835,12 +835,12 @@ newdurecstatus(const struct oscnode *path[], const char *addr, int reg, int val)
 	status = val & 0xf;
 	if (status != durec.status) {
 		durec.status = status;
-		oscsendenum("/durec/status", val & 0xf, names, LEN(names));
+		oscsendenum("/durec/status", status, names, LEN(names));
 	}
 	position = (val >> 8) * 100 / 65;
 	if (position != durec.position) {
 		durec.position = position;
-		oscsend("/durec/position", ",i", (val >> 8) * 100 / 65);
+		oscsend("/durec/position", ",i", position);
 	}
 	return 0;
 }
@@ -949,12 +949,12 @@ newdurecnext(const struct oscnode *path[], const char *addr, int reg, int val)
 	next = ((val & 0xfff) ^ 0x800) - 0x800;
 	if (next != durec.next) {
 		durec.next = next;
-		oscsend(addr, ",i", ((val & 0xfff) ^ 0x800) - 0x800);
+		oscsend(addr, ",i", next);
 	}
 	playmode = val >> 12;
 	if (playmode != durec.playmode) {
 		durec.playmode = playmode;
-		oscsendenum("/durec/playmode", val >> 12, names, LEN(names));
+		oscsendenum("/durec/playmode", playmode, names, LEN(names));
 	}
 	return 0;
 }
