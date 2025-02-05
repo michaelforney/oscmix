@@ -33,6 +33,10 @@ gtk:
 web:
 	$(MAKE) -C web
 
+DEVICES=\
+	device_ff802.o\
+	device_ffucxii.o
+
 OSCMIX_OBJ=\
 	main.o\
 	osc.o\
@@ -40,9 +44,7 @@ OSCMIX_OBJ=\
 	socket.o\
 	sysex.o\
 	util.o\
-	\
-	device_ff802.o\
-	device_ffucxii.o
+	$(DEVICES)
 
 WSDGRAM_OBJ=\
 	wsdgram.o\
@@ -51,6 +53,8 @@ WSDGRAM_OBJ=\
 	sha1.o\
 	socket.o\
 	util.o
+
+oscmix.o $(DEVICES): device.h
 
 oscmix: $(OSCMIX_OBJ)
 	$(CC) $(LDFLAGS) -o $@ $(OSCMIX_OBJ) -l pthread -l m
