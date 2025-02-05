@@ -784,7 +784,7 @@ getsamplerate(int val)
 		176400,
 		192000,
 	};
-	return val > 0 && val < LEN(samplerate) ? samplerate[val] : 0;
+	return val >= 0 && val < LEN(samplerate) ? samplerate[val] : 0;
 }
 
 static int
