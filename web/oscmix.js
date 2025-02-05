@@ -481,15 +481,16 @@ class Channel {
 		case Channel.INPUT:
 			flags.add('input');
 			if (index == 0 || index == 1)
-				flags.add('mic');
+				flags.add('48v');
 			if (index == 2 || index == 3)
-				flags.add('inst');
+				flags.add('hi-z');
+			if (index <= 3)
+				flags.add('autoset');
 			if (index <= 7) {
-				flags.add('analog');
-				flags.add('analog-input');
+				if (index >= 2)
+					flags.add('reflevel');
+				flags.add('gain');
 			}
-			if (index >= 4 && index <= 7)
-				flags.add('line');
 			name = Channel.#inputNames[index];
 			prefix = `/input/${index + 1}`;
 			break;
@@ -501,7 +502,7 @@ class Channel {
 		case Channel.OUTPUT:
 			flags.add('output');
 			if (index <= 7)
-				flags.add('analog');
+				flags.add('reflevel');
 			name = Channel.#outputNames[index];
 			prefix = `/output/${index + 1}`;
 			break;
