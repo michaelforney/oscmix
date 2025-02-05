@@ -2,10 +2,11 @@
 #define DEVICE_H
 
 enum inputflags {
-	INPUT_GAIN = 1 << 0,
-	INPUT_REFLEVEL = 1 << 1,
-	INPUT_48V = 1 << 2,
-	INPUT_HIZ = 1 << 3,
+	INPUT_HAS_GAIN = 1 << 0,
+	INPUT_HAS_AUTOSET = 1 << 1,
+	INPUT_HAS_REFLEVEL = 1 << 2,
+	INPUT_HAS_48V = 1 << 3,
+	INPUT_HAS_HIZ = 1 << 4,
 };
 
 struct inputinfo {
@@ -14,7 +15,7 @@ struct inputinfo {
 };
 
 enum outputflags {
-	OUTPUT_REFLEVEL = 1 << 0,
+	OUTPUT_HAS_REFLEVEL = 1 << 0,
 };
 
 struct outputinfo {
@@ -23,8 +24,8 @@ struct outputinfo {
 };
 
 enum deviceflags {
-	DEVICE_DUREC = 1 << 0,
-	DEVICE_ROOMEQ = 1 << 1,
+	DEVICE_HAS_DUREC = 1 << 0,
+	DEVICE_HAS_ROOMEQ = 1 << 1,
 };
 
 struct device {

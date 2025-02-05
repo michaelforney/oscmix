@@ -421,7 +421,7 @@ setinput48v(const struct oscnode *path[], int reg, struct oscmsg *msg)
 
 	idx = path[-1] - path[-2]->child;
 	assert(idx < device->inputslen);
-	if (device->inputs[idx].flags & INPUT_48V)
+	if (device->inputs[idx].flags & INPUT_HAS_48V)
 		return setbool(path, reg, msg);
 	return -1;
 }
@@ -436,15 +436,15 @@ newinput48v_reflevel(const struct oscnode *path[], const char *addr, int reg, in
 	idx = path[-1] - path[-2]->child;
 	assert(idx < device->inputslen);
 	info = &device->inputs[idx];
-	if (info->flags & INPUT_48V) {
+	if (info->flags & INPUT_HAS_48V) {
 		char addrbuf[256];
 
 		snprintf(addrbuf, sizeof addrbuf, "/input/%d/48v", idx + 1);
 		return newbool(path, addrbuf, reg, val);
-	} else if (info->flags & INPUT_HIZ) {
+	} else if (info->flags & INPUT_HAS_HIZ) {
 		oscsendenum(addr, val & 0xf, names, 2);
 		return 0;
-	} else if (info->flags & INPUT_REFLEVEL) {
+	} else if (info->flags & INPUT_HAS_REFLEVEL) {
 		oscsendenum(addr, val & 0xf, names + 1, 2);
 		return 0;
 	}
@@ -458,7 +458,7 @@ setinputhiz(const struct oscnode *path[], int reg, struct oscmsg *msg)
 	
 	idx = path[-1] - path[-2]->child;
 	assert(idx < device->inputslen);
-	if (device->inputs[idx].flags & INPUT_HIZ)
+	if (device->inputs[idx].flags & INPUT_HAS_HIZ)
 		return setbool(path, reg, msg);
 	return -1;
 }
@@ -470,7 +470,7 @@ newinputhiz(const struct oscnode *path[], const char *addr, int reg, int val)
 	
 	idx = path[-1] - path[-2]->child;
 	assert(idx < device->inputslen);
-	if (device->inputs[idx].flags & INPUT_HIZ)
+	if (device->inputs[idx].flags & INPUT_HAS_HIZ)
 		return newbool(path, addr, reg, val);
 	return -1;
 }
