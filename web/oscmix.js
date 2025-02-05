@@ -597,12 +597,12 @@ class Channel {
 					const vol = Math.max(Math.round(args[0] / volumeNumber.step) * volumeNumber.step, -65);
 					const pan = args[1];
 					this.volume[i] = vol;
-					if (pan)
+					if (pan != null)
 						this.pan[i] = pan;
 					if (output.selectedIndex == i) {
 						volumeRange.value = vol;
 						volumeNumber.value = vol;
-						if (pan)
+						if (pan != null)
 							panNumber.value = pan;
 					}
 				});
