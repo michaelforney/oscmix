@@ -19,11 +19,19 @@
 #define LEN(a) (sizeof (a) / sizeof *(a))
 #define PI 3.14159265358979323846
 
-struct oscnode {
+struct context {
+	const struct node *node;
+	const char *pattern;
+	char *addr, *addrpos, *addrend;
+	struct param param;
+	bool exact;
+};
+
+struct node {
 	const char *name;
-	int reg;
-	int (*set)(const struct oscnode *path[], int reg, struct oscmsg *msg);
-	int (*new)(const struct oscnode *path[], const char *addr, int reg, int val);
+	enum control ctl;
+	void (*set)(struct context *ctx, struct oscmsg *msg);
+	void (*new)(struct context *ctx, int val);
 	union {
 		struct {
 			const char *const *const names;
@@ -35,7 +43,7 @@ struct oscnode {
 			float scale;
 		};
 	};
-	const struct oscnode *child;
+	const struct node *tree;
 };
 
 struct input {
@@ -145,67 +153,66 @@ setreg(unsigned reg, unsigned val)
 	return 0;
 }
 
-static int
-setint(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+setval(struct context *ctx, int val)
+{
+	int reg;
+
+	reg = device->ctltoreg(ctx->node->ctl, &ctx->param);
+	if (reg != -1)
+		setreg(reg, val);
+}
+
+static void
+setint(struct context *ctx, struct oscmsg *msg)
 {
 	int_least32_t val;
 
 	val = oscgetint(msg);
 	if (oscend(msg) != 0)
-		return -1;
-	setreg(reg, val);
-	return 0;
+		return;
+	setval(ctx, val);
 }
 
-static int
-newint(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newint(struct context *ctx, int val)
 {
-	oscsend(addr, ",i", val);
-	return 0;
+	oscsend(ctx->addr, ",i", val);
 }
 
-static int
-setfixed(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+setfixed(struct context *ctx, struct oscmsg *msg)
 {
-	const struct oscnode *node;
 	float val;
 
-	node = *path;
 	val = oscgetfloat(msg);
 	if (oscend(msg) != 0)
-		return -1;
-	setreg(reg, lroundf(val / node->scale));
-	return 0;
+		return;
+	setval(ctx, lroundf(val / ctx->node->scale));
 }
 
-static int
-newfixed(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newfixed(struct context *ctx, int val)
 {
-	const struct oscnode *node;
-
-	node = *path;
-	oscsend(addr, ",f", val * node->scale);
-	return 0;
+	oscsend(ctx->addr, ",f", val * ctx->node->scale);
 }
 
-static int
-setenum(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+setenum(struct context *ctx, struct oscmsg *msg)
 {
-	const struct oscnode *node;
 	const char *str;
 	int val;
 
-	node = *path;
 	switch (*msg->type) {
 	case 's':
 		str = oscgetstr(msg);
 		if (str) {
-			for (val = 0; val < node->nameslen; ++val) {
-				if (strcasecmp(str, node->names[val]) == 0)
+			for (val = 0; val < ctx->node->nameslen; ++val) {
+				if (strcasecmp(str, ctx->node->names[val]) == 0)
 					break;
 			}
-			if (val == node->nameslen)
-				return -1;
+			if (val == ctx->node->nameslen)
+				return;
 		}
 		break;
 	default:
@@ -213,51 +220,88 @@ setenum(const struct oscnode *path[], int reg, struct oscmsg *msg)
 		break;
 	}
 	if (oscend(msg) != 0)
-		return -1;
-	setreg(reg, val);
-	return 0;
+		return;
+	setval(ctx, val);
 }
 
-static int
-newenum(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newenum(struct context *ctx, int val)
 {
-	const struct oscnode *node;
-
-	node = *path;
-	oscsendenum(addr, val, node->names, node->nameslen);
-	return 0;
+	oscsendenum(ctx->addr, val, ctx->node->names, ctx->node->nameslen);
 }
 
-static int
-setbool(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+setbool(struct context *ctx, struct oscmsg *msg)
 {
 	bool val;
 
+	if (!ctx->exact)
+		return;
 	val = oscgetint(msg);
 	if (oscend(msg) != 0)
-		return -1;
-	setreg(reg, val);
-	return 0;
+		return;
+	setval(ctx, val);
 }
 
-static int
-newbool(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newbool(struct context *ctx, int val)
 {
-	oscsend(addr, ",i", val != 0);
-	return 0;
+	if (ctx->exact)
+		oscsend(ctx->addr, ",i", val != 0);
 }
 
-static int
-setmixlevel(int reg, float level)
+static void
+setmixlevel(const struct input *in, const struct output *out, float level)
 {
+	int reg;
 	long val;
+	struct param p;
 
+	p.in = in - inputs;
+	p.out = out - outputs;
+	reg = device->ctltoreg(MIX_LEVEL, &p);
+	if (reg == -1)
+		return;
 	val = lroundf(level * 0x8000);
 	assert(val >= 0);
 	assert(val <= 0x10000);
 	if (val > 0x4000)
 		val = (val >> 3) - 0x8000;
-	return setreg(reg, val);
+	setreg(reg, val);
+}
+
+static void
+setchannel(struct context *ctx, struct oscmsg *msg)
+{
+	char *end;
+	long index;
+
+	index = strtol(ctx->pattern + 1, &end, 10);
+	if (*end != '/')
+		return;
+	if (strcmp(ctx->node->name, "input") == 0)
+		ctx->param.in = index - 1;
+	else
+		ctx->param.out = index - 1;
+	ctx->pattern = end;
+}
+
+static void
+newchannel(struct context *ctx, int val)
+{
+	const char *type;
+	int ret, chan;
+
+	if (ctx->param.in != -1) {
+		type = "input";
+		chan = ctx->param.in;
+	} else {
+		type = "output";
+		chan = ctx->param.out;
+	}
+	ret = snprintf(ctx->addr, ctx->addrend - ctx->addr, "/%s/%d", type, chan + 1);
+	if (ret >= 0)
+		ctx->addrpos = ctx->addr + ret;
 }
 
 static void
@@ -265,7 +309,6 @@ muteinput(struct input *in, bool mute)
 {
 	const struct output *out;
 	const float *mix;
-	int reg;
 
 	if (in->mute == mute)
 		return;
@@ -274,243 +317,173 @@ muteinput(struct input *in, bool mute)
 	in[0].mute = mute;
 	if (in->stereo)
 		in[1].mute = mute;
-	for (out = outputs; out < outputs + device->outputslen; ++out) {
+	for (out = outputs; out != outputs + device->outputslen; ++out) {
 		mix = &out->mix[in - inputs];
-		reg = 0x4000 | (out - outputs) << 6 | (in - inputs);
 		if (mix[0] > 0)
-			setmixlevel(reg, mute ? 0 : mix[0]);
+			setmixlevel(in, out, mute ? 0 : mix[0]);
 		if (in->stereo && mix[1] > 0)
-			setmixlevel(reg + 1, mute ? 0 : mix[1]);
+			setmixlevel(in + 1, out, mute ? 0 : mix[1]);
 	}
 }
 
-static int
-setinputmute(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+setinputmute(struct context *ctx, struct oscmsg *msg)
 {
 	struct input *in;
-	int inidx;
 	bool val;
 
 	val = oscgetint(msg);
 	if (oscend(msg) != 0)
-		return -1;
-	inidx = path[-1] - path[-2]->child;
-	assert(inidx < device->inputslen);
+		return;
+	assert((unsigned)ctx->param.in < device->inputslen);
 	/* mutex */
-	in = &inputs[inidx];
-	setreg(reg, val);
+	in = &inputs[ctx->param.in];
+	setval(ctx, val);
 	muteinput(in, val);
-	return 0;
 }
 
-static int
-newinputmute(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newinputmute(struct context *ctx, int val)
 {
 	struct input *in;
-	int inidx;
 
-	inidx = path[-1] - path[-2]->child;
-	assert(inidx < device->inputslen);
-	in = &inputs[inidx];
+	assert((unsigned)ctx->param.in < device->inputslen);
+	in = &inputs[ctx->param.in];
 	muteinput(in, val);
-	return newbool(path, addr, reg, val);
+	newbool(ctx, val);
 }
 
-static int
-setinputstereo(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+setinputstereo(struct context *ctx, struct oscmsg *msg)
 {
-	int idx;
+	struct input *in;
 	bool val;
 
 	val = oscgetint(msg);
 	if (oscend(msg) != 0)
-		return -1;
-	idx = (path[-1] - path[-2]->child) & -2;
-	assert(idx < device->inputslen);
-	inputs[idx].stereo = val;
-	inputs[idx + 1].stereo = val;
-	setreg(idx << 6 | 2, val);
-	setreg((idx + 1) << 6 | 2, val);
-	return 0;
+		return;
+	in = &inputs[ctx->param.in & ~1];
+	in[0].stereo = in[1].stereo = val;
+	setval(ctx, val);
+	ctx->param.in ^= 1;
+	setval(ctx, val);
 }
 
-static int
-newinputstereo(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newinputstereo(struct context *ctx, int val)
 {
-	int idx;
-	char addrbuf[256];
+	struct input *in;
 
-	idx = (path[-1] - path[-2]->child) & -2;
-	assert(idx < device->inputslen);
-	inputs[idx].stereo = val;
-	inputs[idx + 1].stereo = val;
-	addr = addrbuf;
-	snprintf(addrbuf, sizeof addrbuf, "/input/%d/stereo", idx + 1);
-	oscsend(addr, ",i", val != 0);
-	snprintf(addrbuf, sizeof addrbuf, "/input/%d/stereo", idx + 2);
-	oscsend(addr, ",i", val != 0);
-	return 0;
+	assert((unsigned)ctx->param.in < device->inputslen);
+	in = &inputs[ctx->param.in & ~1];
+	in[0].stereo = val;
+	in[1].stereo = val;
+	snprintf(ctx->addr, ctx->addrend - ctx->addr, "/input/%d/stereo", (int)(in - inputs) + 1);
+	oscsend(ctx->addr, ",i", val != 0);
+	snprintf(ctx->addr, ctx->addrend - ctx->addr, "/input/%d/stereo", (int)(in - inputs) + 2);
+	oscsend(ctx->addr, ",i", val != 0);
 }
 
-static int
-newoutputstereo(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newoutputstereo(struct context *ctx, int val)
 {
-	int idx;
-	char addrbuf[256];
+	struct output *out;
 
-	idx = (path[-1] - path[-2]->child) & -2;
-	assert(idx < device->outputslen);
-	outputs[idx].stereo = val;
-	outputs[idx + 1].stereo = val;
-	addr = addrbuf;
-	snprintf(addrbuf, sizeof addrbuf, "/output/%d/stereo", idx + 1);
-	oscsend(addr, ",i", val != 0);
-	snprintf(addrbuf, sizeof addrbuf, "/output/%d/stereo", idx + 2);
-	oscsend(addr, ",i", val != 0);
-	return 0;
+	assert((unsigned)ctx->param.out < device->outputslen);
+	out = &outputs[ctx->param.out & ~1];
+	out[0].stereo = val;
+	out[1].stereo = val;
+	snprintf(ctx->addr, ctx->addrend - ctx->addr, "/output/%d/stereo", (int)(out - outputs));
+	oscsend(ctx->addr, ",i", val != 0);
+	snprintf(ctx->addr, ctx->addrend - ctx->addr, "/output/%d/stereo", (int)(out - outputs + 1));
+	oscsend(ctx->addr, ",i", val != 0);
 }
 
-static int
-setinputname(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+setname(struct context *ctx, struct oscmsg *msg)
 {
 	const char *name;
 	char namebuf[12];
-	int i, ch, val;
+	int i, reg, val;
 
-	ch = path[-1] - path[-2]->child;
-	if (ch >= 20)
-		return -1;
 	name = oscgetstr(msg);
 	if (oscend(msg) != 0)
-		return -1;
-	strncpy(namebuf, name, sizeof namebuf);
+		return;
+	reg = device->ctltoreg(ctx->node->ctl, &ctx->param);
+	if (reg == -1)
+		return;
+	strncpy(namebuf, name, sizeof namebuf - 1);
 	namebuf[sizeof namebuf - 1] = '\0';
-	reg = 0x3200 + ch * 8;
 	for (i = 0; i < sizeof namebuf; i += 2, ++reg) {
 		val = getle16(namebuf + i);
 		setreg(reg, val);
 	}
-	return 0;
 }
 
-static int
-setinputgain(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+setinputgain(struct context *ctx, struct oscmsg *msg)
 {
+	const struct inputinfo *info;
 	float val;
-	bool mic;
 
 	val = oscgetfloat(msg);
 	if (oscend(msg) != 0)
-		return -1;
-	mic = (path[-1] - path[-2]->child) <= 1;
-	if (val < 0 || val > 75 || (!mic && val > 24))
-		return -1;
-	setreg(reg, val * 10);
-	return 0;
+		return;
+	assert((unsigned)ctx->param.in < device->inputslen);
+	info = &device->inputs[ctx->param.in];
+	if (info->flags & INPUT_HAS_GAIN) {
+		if (val < info->gain.min)
+			val = info->gain.min;
+		if (val > info->gain.max)
+			val = info->gain.max;
+		setval(ctx, val * 10);
+	}
 }
 
-static int
-newinputgain(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newinputgain(struct context *ctx, int val)
 {
-	oscsend(addr, ",f", val / 10.0);
-	return 0;
+	oscsend(ctx->addr, ",f", val / 10.0);
 }
 
-static int
-setinput48v(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+newinputreflevel(struct context *ctx, int val)
 {
-	int idx;
-
-	idx = path[-1] - path[-2]->child;
-	assert(idx < device->inputslen);
-	if (device->inputs[idx].flags & INPUT_HAS_48V)
-		return setbool(path, reg, msg);
-	return -1;
-}
-
-static int
-newinput48v_reflevel(const struct oscnode *path[], const char *addr, int reg, int val)
-{
-	static const char *const names[] = {"+7dBu", "+13dBu", "+19dBu"};
-	int idx;
 	const struct inputinfo *info;
 
-	idx = path[-1] - path[-2]->child;
-	assert(idx < device->inputslen);
-	info = &device->inputs[idx];
-	if (info->flags & INPUT_HAS_48V) {
-		char addrbuf[256];
-
-		snprintf(addrbuf, sizeof addrbuf, "/input/%d/48v", idx + 1);
-		return newbool(path, addrbuf, reg, val);
-	} else if (info->flags & INPUT_HAS_HIZ) {
-		oscsendenum(addr, val & 0xf, names, 2);
-		return 0;
-	} else if (info->flags & INPUT_HAS_REFLEVEL) {
-		oscsendenum(addr, val & 0xf, names + 1, 2);
-		return 0;
-	}
-	return -1;
+	assert((unsigned)ctx->param.in < device->inputslen);
+	info = &device->inputs[ctx->param.in];
+	oscsendenum(ctx->addr, val & 0xf, info->reflevel.names, info->reflevel.nameslen);
 }
 
-static int
-setinputhiz(const struct oscnode *path[], int reg, struct oscmsg *msg)
-{
-	int idx;
-
-	idx = path[-1] - path[-2]->child;
-	assert(idx < device->inputslen);
-	if (device->inputs[idx].flags & INPUT_HAS_HIZ)
-		return setbool(path, reg, msg);
-	return -1;
-}
-
-static int
-newinputhiz(const struct oscnode *path[], const char *addr, int reg, int val)
-{
-	int idx;
-
-	idx = path[-1] - path[-2]->child;
-	assert(idx < device->inputslen);
-	if (device->inputs[idx].flags & INPUT_HAS_HIZ)
-		return newbool(path, addr, reg, val);
-	return -1;
-}
-
-static int
-setoutputloopback(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+setoutputloopback(struct context *ctx, struct oscmsg *msg)
 {
 	bool val;
 	unsigned char buf[4], sysexbuf[7 + 5];
-	int idx;
 
 	val = oscgetint(msg);
 	if (oscend(msg) != 0)
-		return -1;
-	idx = path[-1] - path[-2]->child;
-	if (val)
-		idx |= 0x80;
-	putle32(buf, idx);
+		return;
+	putle32(buf, val << 7 | ctx->param.in);
 	writesysex(3, buf, sizeof buf, sysexbuf);
-	return 0;
 }
 
-static int
-seteqdrecord(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+seteqdrecord(struct context *ctx, struct oscmsg *msg)
 {
 	bool val;
 	unsigned char buf[4], sysexbuf[7 + 5];
 
 	val = oscgetint(msg);
 	if (oscend(msg) != 0)
-		return -1;
+		return;
 	putle32(buf, val);
 	writesysex(4, buf, sizeof buf, sysexbuf);
-	return 0;
 }
 
-static int
-newdspload(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newdspload(struct context *ctx, int val)
 {
 	if (dsp.load != (val & 0xff)) {
 		dsp.load = val & 0xff;
@@ -520,43 +493,51 @@ newdspload(const struct oscnode *path[], const char *addr, int reg, int val)
 		dsp.vers = val >> 8;
 		oscsend("/hardware/dspvers", ",i", dsp.vers);
 	}
-	return 0;
 }
 
-static int
-newdspavail(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newdspavail(struct context *ctx, int val)
 {
-	return 0;
 }
 
-static int
-newdspactive(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newdspstatus(struct context *ctx, int val)
 {
-	return 0;
 }
 
-static int
-newarcencoder(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newarcdelta(struct context *ctx, int val)
 {
-	return 0;
 }
 
-static int
-setdb(int reg, float db)
+static void
+setdb(const struct output *out, const struct input *in, float db)
 {
-	int val;
+	int reg, val;
+	struct param p;
 
+	p.in = in - inputs;
+	p.out = out - outputs;
+	reg = device->ctltoreg(MIX, &p);
+	if (reg == -1)
+		return;
 	val = (isinf(db) && db < 0 ? -650 : lroundf(db * 10.f)) & 0x7fff;
-	return setreg(reg, val);
+	setreg(reg, val);
 }
 
-static int
-setpan(int reg, int pan)
+static void
+setpan(const struct output *out, const struct input *in, int pan)
 {
-	int val;
+	int reg, val;
+	struct param p;
 
+	p.in = in - inputs;
+	p.out = out - outputs;
+	reg = device->ctltoreg(MIX, &p);
+	if (reg == -1)
+		return;
 	val = (pan & 0x7fff) | 0x8000;
-	return setreg(reg, val);
+	setreg(reg, val);
 }
 
 struct level {
@@ -618,9 +599,9 @@ calclevel(const struct output *out, const struct input *in, bool instereo, struc
 static void
 setlevel(struct output *out, const struct input *in, bool instereo, const struct level *l)
 {
-	int och, ich;
 	float w, theta;
 	float ll, lr, rl, rr;
+	float *mix[2];
 
 	if (instereo)
 		instereo = in->stereo;
@@ -628,9 +609,9 @@ setlevel(struct output *out, const struct input *in, bool instereo, const struct
 		--in;
 	if (out->stereo && (out - outputs) & 1)
 		--out;
-	och = out - outputs;
-	ich = in - inputs;
+	mix[0] = &out[0].mix[in - inputs];
 	if (out->stereo) {
+		mix[1] = &out[1].mix[in - inputs];
 		if (instereo) {
 			w = l->width / 100.f;
 			if (l->pan > 0) {
@@ -644,22 +625,22 @@ setlevel(struct output *out, const struct input *in, bool instereo, const struct
 				rl = (1 - w) / 2.f * l->vol;
 				rr = (100 + l->pan) * (1 + w) / 200.f * l->vol;
 			}
-			out[0].mix[ich + 1] = rl;
-			out[1].mix[ich + 1] = rr;
+			mix[0][1] = rl;
+			mix[1][1] = rr;
 			if (!in->mute) {
-				setmixlevel(0x4000 | och << 6 | (ich + 1), rl);
-				setmixlevel(0x4000 | (och + 1) << 6 | (ich + 1), rr);
+				setmixlevel(in + 1, out, rl);
+				setmixlevel(in + 1, out + 1, rr);
 			}
 		} else {
 			theta = (l->pan + 100) * PI / 400.f;
 			ll = cosf(theta) * l->vol;
 			lr = sinf(theta) * l->vol;
 		}
-		out[0].mix[ich] = ll;
-		out[1].mix[ich] = lr;
+		mix[0][0] = ll;
+		mix[1][0] = lr;
 		if (!in->mute) {
-			setmixlevel(0x4000 | och << 6 | ich, ll);
-			setmixlevel(0x4000 | (och + 1) << 6 | ich, lr);
+			setmixlevel(in, out, ll);
+			setmixlevel(in, out + 1, lr);
 		}
 	} else {
 		if (instereo) {
@@ -670,43 +651,48 @@ setlevel(struct output *out, const struct input *in, bool instereo, const struct
 				ll = l->vol / 2;
 				rl = (100 + l->pan) / 200.f * l->vol;
 			}
-			out[0].mix[ich + 1] = rl;
+			mix[0][1] = rl;
 			if (!in->mute)
-				setmixlevel(0x4000 | och << 6 | (ich + 1), rl);
+				setmixlevel(in + 1, out, rl);
 		} else {
 			ll = l->vol;
 		}
-		out[0].mix[ich] = ll;
+		mix[0][0] = ll;
 		if (!in->mute)
-			setmixlevel(0x4000 | och << 6 | ich, ll);
+			setmixlevel(in, out, ll);
 	}
 }
 
-static int
-setmix(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+setmix(struct context *ctx, struct oscmsg *msg)
 {
-	int outidx, inidx;
+	unsigned long i;
+	char *end;
 	float vol;
 	struct level level;
 	struct output *out;
 	struct input *in;
 
-	outidx = path[-2] - path[-3]->child;
-	assert(outidx < device->outputslen);
-	out = &outputs[outidx];
-	if (out->stereo && outidx & 1)
-		--out, --outidx;
+	i = strtoul(ctx->pattern + 1, &end, 10) - 1;
+	if (*end != '/' || i >= device->outputslen)
+		return;
+	ctx->param.out = i;
+	ctx->pattern = end;
+	out = &outputs[i];
 
-	inidx = path[0] - path[-1]->child;
-	if (reg & 0x20) {
-		assert(inidx < device->outputslen);
-		in = &inputs[device->inputslen + inidx];
-	} else {
-		assert(inidx < device->inputslen);
-		in = &inputs[inidx];
-	}
-	if (in->stereo && inidx & 1)
-		--in, --inidx;
+	if (!oscmatch(ctx->pattern, "input", &end))
+		return;
+	i = strtoul(end + 1, &end, 10) - 1;
+	if (*end || i >= device->inputslen + device->outputslen)
+		return;
+	ctx->param.in = i;
+	ctx->pattern = end;
+	in = &inputs[i];
+
+	if (out->stereo && (out - outputs) & 1)
+		--out;
+	if (in->stereo && (in - inputs) & 1)
+		--in;
 
 	calclevel(out, in, 1, &level);
 	level.width = in->width;
@@ -721,37 +707,34 @@ setmix(const struct oscnode *path[], int reg, struct oscmsg *msg)
 			level.pan = 100;
 	}
 	if (oscend(msg) != 0)
-		return -1;
+		return;
 	setlevel(out, in, 1, &level);
 	calclevel(out, in, 0, &level);
-	setdb(reg, 20.f * log10f(level.vol));
-	setpan(reg, level.pan);
+	setdb(out, in, 20.f * log10f(level.vol));
+	setpan(out, in, level.pan);
 	if (in->stereo) {
 		calclevel(out, in + 1, 0, &level);
-		setdb(reg + 1, 20.f * log10f(level.vol));
-		setpan(reg + 1, level.pan);
+		setdb(out, in + 1, 20.f * log10f(level.vol));
+		setpan(out, in + 1, level.pan);
 	}
-	return 0;
 }
 
-static int
-newmix(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newmix(struct context *ctx, int val)
 {
 	struct output *out;
 	struct input *in;
-	int outidx, inidx;
 	bool ispan;
-	char addrbuf[256];
 	struct level level;
 
-	outidx = (reg & 0xfff) >> 6;
-	inidx = reg & 0x3f;
-	if (outidx >= device->outputslen || inidx >= device->inputslen)
-		return -1;
-	out = &outputs[outidx];
-	in = &inputs[inidx];
-	if (outidx & 1 && out[-1].stereo)
-		return -1;
+	if (ctx->param.out >= device->outputslen || ctx->param.in >= device->inputslen)
+		return;
+	assert(ctx->param.in >= 0);
+	assert(ctx->param.out >= 0);
+	in = &inputs[ctx->param.in];
+	out = &outputs[ctx->param.out];
+	if ((out - outputs) & 1 && out->stereo)
+		return;
 	ispan = val & 0x8000;
 	val = ((val & 0x7fff) ^ 0x4000) - 0x4000;
 	calclevel(out, in, 0, &level);
@@ -769,13 +752,12 @@ newmix(const struct oscnode *path[], const char *addr, int reg, int val)
 	}
 	setlevel(out, in, 0, &level);
 	if (in->stereo) {
-		if (inidx & 1)
-			--in, --inidx;
+		if ((in - inputs) & 1)
+			--in;
 		calclevel(out, in, 1, &level);
 	}
-	snprintf(addrbuf, sizeof addrbuf, "/mix/%d/input/%d", outidx + 1, inidx + 1);
-	oscsend(addrbuf, ",fi", level.vol > 0 ? 20.f * log10f(level.vol) : -INFINITY, level.pan);
-	return 0;
+	snprintf(ctx->addr, ctx->addrend - ctx->addr, "/mix/%d/input/%d", (int)(out - outputs) + 1, (int)(in - inputs) + 1);
+	oscsend(ctx->addr, ",fi", level.vol > 0 ? 20.f * log10f(level.vol) : -INFINITY, level.pan);
 }
 
 static long
@@ -795,43 +777,38 @@ getsamplerate(int val)
 	return val >= 0 && val < LEN(samplerate) ? samplerate[val] : 0;
 }
 
-static int
-newsamplerate(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newsamplerate(struct context *ctx, int val)
 {
 	long rate;
 
 	rate = getsamplerate(val);
-	if (rate != 0 && rate < INT_MAX)
-		oscsend(addr, ",i", rate);
-	return 0;
+	if (rate != 0)
+		oscsend(ctx->addr, ",i", rate);
 }
 
-static int
-newdynlevel(const struct oscnode *path[], const char *unused, int reg, int val)
+static void
+newmeter(struct context *ctx, int val)
 {
-	/*
-	char addr[256];
-	int ch;
+	const char *type, *name;
+	int chan;
 
-	ch = (reg - 0x3180) * 2;
-	if (ch < 20) {
-		snprintf(addr, sizeof addr, "/input/%d/dynamics/level", ch + 1);
-		oscsend(addr, ",i", val >> 8 & 0xff);
-		snprintf(addr, sizeof addr, "/input/%d/dynamics/level", ch + 2);
-		oscsend(addr, ",i", val & 0xff);
-	} else if (ch < 40) {
-		ch -= 20;
-		snprintf(addr, sizeof addr, "/output/%d/dynamics/level", ch + 1);
-		oscsend(addr, ",i", val >> 8 & 0xff);
-		snprintf(addr, sizeof addr, "/output/%d/dynamics/level", ch + 2);
-		oscsend(addr, ",i", val & 0xff);
+	if (ctx->param.in != -1) {
+		type = "input";
+		chan = ctx->param.in;
+	} else {
+		type = "output";
+		chan = ctx->param.out;
 	}
-	*/
-	return 0;
+	name = ctx->node->ctl == AUTOLEVEL_METER ? "autolevel" : "dynamics";
+	snprintf(ctx->addr, ctx->addrend - ctx->addr, "/%s/%d/%s/meter", type, chan + 1, name);
+	oscsend(ctx->addr, ",i", val >> 8 & 0xFF);
+	snprintf(ctx->addr, ctx->addrend - ctx->addr, "/%s/%d/%s/meter", type, chan + 2, name);
+	oscsend(ctx->addr, ",i", val & 0xFF);
 }
 
-static int
-newdurecstatus(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newdurecstatus(struct context *ctx, int val)
 {
 	static const char *const names[] = {
 		"No Media", "Filesystem Error", "Initializing", "Reinitializing",
@@ -851,21 +828,19 @@ newdurecstatus(const struct oscnode *path[], const char *addr, int reg, int val)
 		durec.position = position;
 		oscsend("/durec/position", ",i", position);
 	}
-	return 0;
 }
 
-static int
-newdurectime(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newdurectime(struct context *ctx, int val)
 {
 	if (val != durec.time) {
 		durec.time = val;
-		oscsend(addr, ",i", val);
+		oscsend("/durec/time", ",i", val);
 	}
-	return 0;
 }
 
-static int
-newdurecusbstatus(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newdurecusbstatus(struct context *ctx, int val)
 {
 	int usbload, usberrors;
 
@@ -879,76 +854,76 @@ newdurecusbstatus(const struct oscnode *path[], const char *addr, int reg, int v
 		durec.usberrors = usberrors;
 		oscsend("/durec/usberrors", ",i", val & 0xff);
 	}
-	return 0;
 }
 
-static int
-newdurectotalspace(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newdurectotalspace(struct context *ctx, int val)
 {
 	float totalspace;
 
 	totalspace = val / 16.f;
 	if (totalspace != durec.totalspace) {
 		durec.totalspace = totalspace;
-		oscsend(addr, ",f", totalspace);
+		oscsend("/durec/totalspace", ",f", totalspace);
 	}
-	return 0;
 }
 
-static int
-newdurecfreespace(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newdurecfreespace(struct context *ctx, int val)
 {
 	float freespace;
 
 	freespace = val / 16.f;
 	if (freespace != durec.freespace) {
 		durec.freespace = freespace;
-		oscsend(addr, ",f", freespace);
+		oscsend("/durec/freespace", ",f", freespace);
 	}
-	return 0;
 }
 
-static int
-newdurecfileslen(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+resizedurecfiles(size_t len)
 {
-	if (val < 0 || val == durec.fileslen)
-		return 0;
-	durec.files = realloc(durec.files, val * sizeof *durec.files);
+	if (len < 0 || len == durec.fileslen)
+		return;
+	durec.files = realloc(durec.files, len * sizeof *durec.files);
 	if (!durec.files)
-		fatal(NULL);
-	if (val > durec.fileslen)
-		memset(durec.files + durec.fileslen, 0, (val - durec.fileslen) * sizeof *durec.files);
-	durec.fileslen = val;
+		fatal(NULL);  /* XXX: probably shouldn't exit */
+	if (len > durec.fileslen)
+		memset(durec.files + durec.fileslen, 0, (len - durec.fileslen) * sizeof *durec.files);
+	durec.fileslen = len;
 	if (durec.index >= durec.fileslen)
 		durec.index = -1;
-	oscsend(addr, ",i", val);
-	return 0;
+	oscsend("/durec/numfiles", ",i", len);
 }
 
-static int
-setdurecfile(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+newdurecfileslen(struct context *ctx, int val)
+{
+	resizedurecfiles(val);
+}
+
+static void
+setdurecfile(struct context *ctx, struct oscmsg *msg)
 {
 	int val;
 
 	val = oscgetint(msg);
 	if (oscend(msg) != 0)
-		return -1;
-	setreg(0x3e9c, val | 0x8000);
-	return 0;
+		return;
+	setval(ctx, val | 0x8000);
 }
 
-static int
-newdurecfile(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newdurecfile(struct context *ctx, int val)
 {
 	if (val != durec.file) {
 		durec.file = val;
-		oscsend(addr, ",i", val);
+		oscsend(ctx->addr, ",i", val);
 	}
-	return 0;
 }
 
-static int
-newdurecnext(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newdurecnext(struct context *ctx, int val)
 {
 	static const char *const names[] = {
 		"Single", "UFX Single", "Continuous", "Single Next", "Repeat Single", "Repeat All",
@@ -958,66 +933,66 @@ newdurecnext(const struct oscnode *path[], const char *addr, int reg, int val)
 	next = ((val & 0xfff) ^ 0x800) - 0x800;
 	if (next != durec.next) {
 		durec.next = next;
-		oscsend(addr, ",i", next);
+		oscsend("/durec/next", ",i", next);
 	}
 	playmode = val >> 12;
 	if (playmode != durec.playmode) {
 		durec.playmode = playmode;
 		oscsendenum("/durec/playmode", playmode, names, LEN(names));
 	}
-	return 0;
 }
 
-static int
-newdurecrecordtime(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newdurecrecordtime(struct context *ctx, int val)
 {
-	if (val != durec.recordtime) {
-		durec.recordtime = val;
-		oscsend(addr, ",i", val);
+	unsigned time;
+
+	time = (unsigned)val & 0xFFFF;
+	if (time != durec.recordtime) {
+		durec.recordtime = time;
+		oscsend("/durec/recordtime", ",i", time);
 	}
-	return 0;
 }
 
-static int
-newdurecindex(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newdurecindex(struct context *ctx, int val)
 {
 	if (val + 1 > durec.fileslen)
-		newdurecfileslen(NULL, "/durec/numfiles", -1, val + 1);
+		resizedurecfiles(val + 1);
 	durec.index = val;
-	return 0;
 }
 
-static int
-newdurecname(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newdurecname(struct context *ctx, int val)
 {
 	struct durecfile *f;
 	char *pos, old[2];
+	int off;
 
 	if (durec.index == -1)
-		return 0;
+		return;
 	assert(durec.index < durec.fileslen);
 	f = &durec.files[durec.index];
-	reg -= 0x358b;
-	assert(reg < sizeof f->name / 2);
-	pos = f->name + reg * 2;
+	off = (ctx->node->ctl - DUREC_NAME0) * 2;
+	assert(off >= 0 && off < sizeof f->name);
+	pos = f->name + off;
 	memcpy(old, pos, sizeof old);
 	putle16(pos, val);
 	if (memcmp(old, pos, sizeof old) != 0)
 		oscsend("/durec/name", ",is", durec.index, f->name);
-	return 0;
 }
 
-static int
-newdurecinfo(const struct oscnode *path[], const char *unused, int reg, int val)
+static void
+newdurecinfo(struct context *ctx, int val)
 {
 	struct durecfile *f;
 	unsigned long samplerate;
 	int channels;
 
 	if (durec.index == -1)
-		return 0;
+		return;
 	f = &durec.files[durec.index];
-	samplerate = getsamplerate(val & 0xff);
+	samplerate = getsamplerate(val & 0xFF);
 	if (samplerate != f->samplerate) {
 		f->samplerate = samplerate;
 		oscsend("/durec/samplerate", ",ii", durec.index, samplerate);
@@ -1027,65 +1002,59 @@ newdurecinfo(const struct oscnode *path[], const char *unused, int reg, int val)
 		f->channels = channels;
 		oscsend("/durec/channels", ",ii", durec.index, channels);
 	}
-	return 0;
 }
 
-static int
-newdureclength(const struct oscnode *path[], const char *unused, int reg, int val)
+static void
+newdureclength(struct context *ctx, int val)
 {
 	struct durecfile *f;
 
 	if (durec.index == -1)
-		return 0;
+		return;
 	f = &durec.files[durec.index];
 	if (val != f->length) {
 		f->length = val;
 		oscsend("/durec/length", ",ii", durec.index, val);
 	}
-	return 0;
 }
 
-static int
-setdurecstop(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+setdurecstop(struct context *ctx, struct oscmsg *msg)
 {
 	if (oscend(msg) != 0)
-		return -1;
-	setreg(0x3e9a, 0x8120);
-	return 0;
+		return;
+	setval(ctx, 0x8120);
 }
 
-static int
-setdurecplay(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+setdurecplay(struct context *ctx, struct oscmsg *msg)
 {
 	if (oscend(msg) != 0)
-		return -1;
-	setreg(0x3e9a, 0x8123);
-	return 0;
+		return;
+	setval(ctx, 0x8123);
 }
 
-static int
-setdurecrecord(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+setdurecrecord(struct context *ctx, struct oscmsg *msg)
 {
 	if (oscend(msg) != 0)
-		return -1;
-	setreg(0x3e9a, 0x8122);
-	return 0;
+		return;
+	setval(ctx, 0x8122);
 }
 
-static int
-setdurecdelete(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+setdurecdelete(struct context *ctx, struct oscmsg *msg)
 {
 	int val;
 
 	val = oscgetint(msg);
 	if (oscend(msg) != 0)
-		return -1;
-	setreg(0x3e9b, 0x8000 | val);
-	return 0;
+		return;
+	setval(ctx, 0x8000 | val);
 }
 
-static int
-setrefresh(const struct oscnode *path[], int reg, struct oscmsg *msg)
+static void
+setrefresh(struct context *ctx, struct oscmsg *msg)
 {
 	struct input *pb;
 	char addr[256];
@@ -1093,7 +1062,7 @@ setrefresh(const struct oscnode *path[], int reg, struct oscmsg *msg)
 
 	dsp.vers = -1;
 	dsp.load = -1;
-	setreg(0x3e04, 0x67cd);
+	setval(ctx, device->refresh);
 	refreshing = true;
 	/* FIXME: needs lock */
 	for (i = 0; i < device->outputslen; ++i) {
@@ -1102,455 +1071,272 @@ setrefresh(const struct oscnode *path[], int reg, struct oscmsg *msg)
 		oscsend(addr, ",i", pb->stereo);
 	}
 	oscflush();
-	return 0;
 }
 
-static int
-refreshdone(const struct oscnode *path[], const char *addr, int reg, int val)
+static void
+newrefresh(struct context *ctx, int val)
 {
 	refreshing = false;
 	if (dflag)
 		fprintf(stderr, "refresh done\n");
-	return 0;
 }
 
-static const struct oscnode lowcuttree[] = {
-	{"freq", 1, .set=setint, .new=newint, .min=20, .max=500},
-	{"slope", 2, .set=setint, .new=newint},
+static const struct node lowcuttree[] = {
+	{"freq", LOWCUT_FREQ, .set=setint, .new=newint, .min=20, .max=500},
+	{"slope", LOWCUT_SLOPE, .set=setint, .new=newint},
 	{0},
 };
 
-static const struct oscnode eqtree[] = {
-	{"band1type", 1, .set=setenum, .new=newenum, .names=(const char *const[]){
+static const struct node eqtree[] = {
+	{"band1freq", EQ_BAND1FREQ, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band1gain", EQ_BAND1GAIN, .set=setfixed, .new=newfixed, .scale=0.1, .min=-200, .max=200},
+	{"band1q", EQ_BAND1Q, .set=setfixed, .new=newfixed, .scale=0.1, .min=4, .max=99},
+	{"band1type", EQ_BAND1TYPE, .set=setenum, .new=newenum, .names=(const char *const[]){
 		"Peak", "Low Shelf", "High Pass", "Low Pass",
 	}, .nameslen=4},
-	{"band1gain", 2, .set=setfixed, .new=newfixed, .scale=0.1, .min=-200, .max=200},
-	{"band1freq", 3, .set=setint, .new=newint, .min=20, .max=20000},
-	{"band1q", 4, .set=setfixed, .new=newfixed, .scale=0.1, .min=4, .max=99},
-	{"band2gain", 5, .set=setfixed, .new=newfixed, .scale=0.1, .min=-200, .max=200},
-	{"band2freq", 6, .set=setint, .new=newint, .min=20, .max=20000},
-	{"band2q", 7, .set=setfixed, .new=newfixed, .scale=0.1, .min=4, .max=99},
-	{"band3type", 8, .set=setenum, .new=newenum, .names=(const char *const[]){
+	{"band2freq", EQ_BAND2FREQ, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band2gain", EQ_BAND2GAIN, .set=setfixed, .new=newfixed, .scale=0.1, .min=-200, .max=200},
+	{"band2q", EQ_BAND2Q, .set=setfixed, .new=newfixed, .scale=0.1, .min=4, .max=99},
+	{"band3freq", EQ_BAND3FREQ, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band3gain", EQ_BAND3GAIN, .set=setfixed, .new=newfixed, .scale=0.1, .min=-200, .max=200},
+	{"band3q", EQ_BAND3Q, .set=setfixed, .new=newfixed, .scale=0.1, .min=4, .max=99},
+	{"band3type", EQ_BAND3TYPE, .set=setenum, .new=newenum, .names=(const char *const[]){
 		"Peak", "High Shelf", "Low Pass", "High Pass",
 	}, .nameslen=3},
-	{"band3gain", 9, .set=setfixed, .new=newfixed, .scale=0.1, .min=-200, .max=200},
-	{"band3freq", 10, .set=setint, .new=newint, .min=20, .max=20000},
-	{"band3q", 11, .set=setfixed, .new=newfixed, .scale=0.1, .min=4, .max=99},
 	{0},
 };
 
-static const struct oscnode dynamicstree[] = {
-	{"gain", 1, .set=setfixed, .new=newfixed, .scale=0.1, .min=-300, .max=300},
-	{"attack", 2, .set=setint, .new=newint, .min=0, .max=200},
-	{"release", 3, .set=setint, .new=newint, .min=100, .max=999},
-	{"compthres", 4, .set=setfixed, .new=newfixed, .scale=0.1, .min=-600, .max=0},
-	{"compratio", 5, .set=setfixed, .new=newfixed, .scale=0.1, .min=10, .max=100},
-	{"expthres", 6, .set=setfixed, .new=newfixed, .scale=0.1, .min=-990, .max=200},
-	{"expratio", 7, .set=setfixed, .new=newfixed, .scale=0.1, .min=10, .max=100},
+static const struct node dynamicstree[] = {
+	{"gain", DYNAMICS_GAIN, .set=setfixed, .new=newfixed, .scale=0.1, .min=-300, .max=300},
+	{"attack", DYNAMICS_ATTACK, .set=setint, .new=newint, .min=0, .max=200},
+	{"release", DYNAMICS_RELEASE, .set=setint, .new=newint, .min=100, .max=999},
+	{"compthres", DYNAMICS_COMPTHRES, .set=setfixed, .new=newfixed, .scale=0.1, .min=-600, .max=0},
+	{"compratio", DYNAMICS_COMPRATIO, .set=setfixed, .new=newfixed, .scale=0.1, .min=10, .max=100},
+	{"expthres", DYNAMICS_EXPTHRES, .set=setfixed, .new=newfixed, .scale=0.1, .min=-990, .max=200},
+	{"expratio", DYNAMICS_EXPRATIO, .set=setfixed, .new=newfixed, .scale=0.1, .min=10, .max=100},
+	{NULL, DYNAMICS_METER, .new=newmeter},
 	{0},
 };
 
-static const struct oscnode autoleveltree[] = {
-	{"maxgain", 1, .set=setfixed, .new=newfixed, .scale=0.1, .min=0, .max=180},
-	{"headroom", 2, .set=setfixed, .new=newfixed, .scale=0.1, .min=30, .max=120},
-	{"risetime", 3, .set=setint, .new=newint, .min=100, .max=9900},
-	{0},
+static const struct node autoleveltree[] = {
+	{"maxgain", AUTOLEVEL_MAXGAIN, .set=setfixed, .new=newfixed, .scale=0.1, .min=0, .max=180},
+	{"headroom", AUTOLEVEL_HEADROOM, .set=setfixed, .new=newfixed, .scale=0.1, .min=30, .max=120},
+	{"risetime", AUTOLEVEL_RISETIME, .set=setint, .new=newint, .min=100, .max=9900},
+	{NULL, AUTOLEVEL_METER, .new=newmeter},
+	{""},
 };
 
-static const struct oscnode inputtree[] = {
-	{"mute", 0x00, .set=setinputmute, .new=newinputmute},
-	{"fx", 0x01, .set=setfixed, .new=newfixed, .min=-650, .max=0, .scale=0.1},
-	{"stereo", 0x02, .set=setinputstereo, .new=newinputstereo},
-	{"record", 0x03, .set=setbool, .new=newbool},
-	{"", 0x04},  /* ? */
-	{"playchan", 0x05, .set=setint, .new=newint, .min=1, .max=60},
-	{"msproc", 0x06, .set=setbool, .new=newbool},
-	{"phase", 0x07, .set=setbool, .new=newbool},
-	{"gain", 0x08, .set=setinputgain, .new=newinputgain},
-	{"48v", 0x09, .set=setinput48v},
-	{"reflevel", 0x09, .set=setint, .new=newinput48v_reflevel},
-	{"autoset", 0x0a, .set=setbool, .new=newbool},
-	{"hi-z", 0x0b, .set=setinputhiz, .new=newinputhiz},
-	{"lowcut", 0x0c, .set=setbool, .new=newbool, .child=lowcuttree},
-	{"eq", 0x0f, .set=setbool, .new=newbool, .child=eqtree},
-	{"dynamics", 0x1b, .set=setbool, .new=newbool, .child=dynamicstree},
-	{"autolevel", 0x23, .set=setbool, .new=newbool, .child=autoleveltree},
-	{"name", -1, .set=setinputname},
-	{0},
-};
-
-static const struct oscnode roomeqtree[] = {
-	{"delay", 0x00, .set=setfixed, .new=newfixed, .min=0, .max=425, .scale=0.001},
-	{"enabled", 0x01, .set=setbool, .new=newbool},
-	{"band1type", 0x02, .set=setenum, .new=newenum, .names=(const char *const[]){
+static const struct node roomeqtree[] = {
+	{"delay", ROOMEQ_DELAY, .set=setfixed, .new=newfixed, .min=0, .max=425, .scale=0.001},
+	{"band1type", ROOMEQ_BAND1TYPE, .set=setenum, .new=newenum, .names=(const char *const[]){
 		"Peak", "Low Shelf", "High Pass", "Low Pass",
 	}, .nameslen=4},
-	{"band1gain", 0x03, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
-	{"band1freq", 0x04, .set=setint, .new=newint, .min=20, .max=20000},
-	{"band1q", 0x05, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
-	{"band2gain", 0x06, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
-	{"band2freq", 0x07, .set=setint, .new=newint, .min=20, .max=20000},
-	{"band2q", 0x08, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
-	{"band3gain", 0x09, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
-	{"band3freq", 0x0a, .set=setint, .new=newint, .min=20, .max=20000},
-	{"band3q", 0x0b, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
-	{"band4gain", 0x0c, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
-	{"band4freq", 0x0d, .set=setint, .new=newint, .min=20, .max=20000},
-	{"band4q", 0x0e, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
-	{"band5gain", 0x0f, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
-	{"band5freq", 0x10, .set=setint, .new=newint, .min=20, .max=20000},
-	{"band5q", 0x11, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
-	{"band6gain", 0x12, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
-	{"band6freq", 0x13, .set=setint, .new=newint, .min=20, .max=20000},
-	{"band6q", 0x14, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
-	{"band7gain", 0x15, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
-	{"band7freq", 0x16, .set=setint, .new=newint, .min=20, .max=20000},
-	{"band7q", 0x17, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
-	{"band8type", 0x18, .set=setenum, .new=newenum, .names=(const char *const[]){
+	{"band1gain", ROOMEQ_BAND1GAIN, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
+	{"band1freq", ROOMEQ_BAND1FREQ, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band1q", ROOMEQ_BAND1Q, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
+	{"band2gain", ROOMEQ_BAND2GAIN, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
+	{"band2freq", ROOMEQ_BAND2FREQ, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band2q", ROOMEQ_BAND2Q, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
+	{"band3gain", ROOMEQ_BAND3GAIN, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
+	{"band3freq", ROOMEQ_BAND3FREQ, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band3q", ROOMEQ_BAND3Q, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
+	{"band4gain", ROOMEQ_BAND4GAIN, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
+	{"band4freq", ROOMEQ_BAND4FREQ, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band4q", ROOMEQ_BAND4Q, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
+	{"band5gain", ROOMEQ_BAND5GAIN, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
+	{"band5freq", ROOMEQ_BAND5FREQ, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band5q", ROOMEQ_BAND5Q, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
+	{"band6gain", ROOMEQ_BAND6GAIN, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
+	{"band6freq", ROOMEQ_BAND6FREQ, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band6q", ROOMEQ_BAND6Q, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
+	{"band7gain", ROOMEQ_BAND7GAIN, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
+	{"band7freq", ROOMEQ_BAND7FREQ, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band7q", ROOMEQ_BAND7Q, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
+	{"band8type", ROOMEQ_BAND8TYPE, .set=setenum, .new=newenum, .names=(const char *const[]){
 		"Peak", "High Shelf", "Low Pass", "High Pass",
 	}, .nameslen=4},
-	{"band8gain", 0x19, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
-	{"band8freq", 0x1a, .set=setint, .new=newint, .min=20, .max=20000},
-	{"band8q", 0x1b, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
-	{"band9type", 0x1c, .set=setenum, .new=newenum, .names=(const char *const[]){
+	{"band8gain", ROOMEQ_BAND8GAIN, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
+	{"band8freq", ROOMEQ_BAND8FREQ, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band8q", ROOMEQ_BAND8Q, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
+	{"band9type", ROOMEQ_BAND9TYPE, .set=setenum, .new=newenum, .names=(const char *const[]){
 		"Peak", "High Shelf", "Low Pass", "High Pass",
 	}, .nameslen=4},
-	{"band9gain", 0x1d, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
-	{"band9freq", 0x1e, .set=setint, .new=newint, .min=20, .max=20000},
-	{"band9q", 0x1f, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
+	{"band9gain", ROOMEQ_BAND9GAIN, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
+	{"band9freq", ROOMEQ_BAND9FREQ, .set=setint, .new=newint, .min=20, .max=20000},
+	{"band9q", ROOMEQ_BAND9Q, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
 	{0},
 };
 
-static const struct oscnode outputtree[] = {
-	{"volume", 0x00, .set=setfixed, .new=newfixed, .scale=0.1, .min=-65.0, .max=6.0},
-	{"balance", 0x01, .set=setint, .new=newint, .min=-100, .max=100},
-	{"mute", 0x02, .set=setbool, .new=newbool},
-	{"fx", 0x03, .set=setfixed, .new=newfixed, .scale=0.1, .min=-65.0, .max=0.0},
-	{"stereo", 0x04, .set=setbool, .new=newoutputstereo},
-	{"record", 0x05, .set=setbool, .new=newbool},
-	{"", 0x06},  /* ? */
-	{"playchan", 0x07, .set=setint, .new=newint},
-	{"phase", 0x08, .set=setbool, .new=newbool},
-	{"reflevel", 0x09, .set=setenum, .new=newenum, .names=(const char *const[]){
-		"+4dBu", "+13dBu", "+19dBu",
-	}, .nameslen=3}, // TODO: phones
-	{"crossfeed", 0x0a, .set=setint, .new=newint},
-	{"volumecal", 0x0b, .set=setfixed, .new=newfixed, .min=-2400, .max=300, .scale=0.01},
-	{"lowcut", 0x0c, .set=setbool, .new=newbool, .child=lowcuttree},
-	{"eq", 0x0f, .set=setbool, .new=newbool, .child=eqtree},
-	{"dynamics", 0x1b, .set=setbool, .new=newbool, .child=dynamicstree},
-	{"autolevel", 0x23, .set=setbool, .new=newbool, .child=autoleveltree},
-	{"roomeq", -1, .child=roomeqtree},
-	{"loopback", -1, .set=setoutputloopback},
-	{0},
-};
-static const struct oscnode outputroomeqtree[] = {
-	{"roomeq", 0x00, .child=roomeqtree},
-	{0},
-};
-static const struct oscnode mixtree[] = {
-	{"input", 0, .child=(const struct oscnode[]){
-		{"1", 0x00, .set=setmix, .new=newmix},
-		{"2", 0x01, .set=setmix, .new=newmix},
-		{"3", 0x02, .set=setmix, .new=newmix},
-		{"4", 0x03, .set=setmix, .new=newmix},
-		{"5", 0x04, .set=setmix, .new=newmix},
-		{"6", 0x05, .set=setmix, .new=newmix},
-		{"7", 0x06, .set=setmix, .new=newmix},
-		{"8", 0x07, .set=setmix, .new=newmix},
-		{"9", 0x08, .set=setmix, .new=newmix},
-		{"10", 0x09, .set=setmix, .new=newmix},
-		{"11", 0x0a, .set=setmix, .new=newmix},
-		{"12", 0x0b, .set=setmix, .new=newmix},
-		{"13", 0x0c, .set=setmix, .new=newmix},
-		{"14", 0x0d, .set=setmix, .new=newmix},
-		{"15", 0x0e, .set=setmix, .new=newmix},
-		{"16", 0x0f, .set=setmix, .new=newmix},
-		{"17", 0x10, .set=setmix, .new=newmix},
-		{"18", 0x11, .set=setmix, .new=newmix},
-		{"19", 0x12, .set=setmix, .new=newmix},
-		{"20", 0x13, .set=setmix, .new=newmix},
+static const struct node roottree[] = {
+	{"input", .set=setchannel, .new=newchannel, .tree=(const struct node[]){
+		{"mute", INPUT_MUTE, .set=setinputmute, .new=newinputmute},
+		{"fx", INPUT_FXSEND, .set=setfixed, .new=newfixed, .min=-650, .max=0, .scale=0.1},
+		{"stereo", INPUT_STEREO, .set=setinputstereo, .new=newinputstereo},
+		{"record", INPUT_RECORD, .set=setbool, .new=newbool},
+		{"name", NAME, .set=setname},
+		{"playchan", INPUT_PLAYCHAN, .set=setint, .new=newint, .min=1, .max=60},
+		{"msproc", INPUT_MSPROC, .set=setbool, .new=newbool},
+		{"phase", INPUT_PHASE, .set=setbool, .new=newbool},
+		{"gain", INPUT_GAIN, .set=setinputgain, .new=newinputgain},
+		{"reflevel", INPUT_REFLEVEL, .set=setint, .new=newinputreflevel},
+		{"48v", INPUT_48V, .set=setbool, .new=newbool},
+		{"autoset", INPUT_AUTOSET, .set=setbool, .new=newbool},
+		{"hi-z", INPUT_HIZ, .set=setbool, .new=newbool},
+		{"lowcut", LOWCUT, .set=setbool, .new=newbool, .tree=lowcuttree},
+		{"eq", EQ, .set=setbool, .new=newbool, .tree=eqtree},
+		{"dynamics", DYNAMICS, .set=setbool, .new=newbool, .tree=dynamicstree},
+		{"autolevel", AUTOLEVEL, .set=setbool, .new=newbool, .tree=autoleveltree},
 		{0},
 	}},
-	{"playback", 0x20, .child=(const struct oscnode[]){
-		{"1", 0x00, .set=setmix, .new=newmix},
-		{"2", 0x01, .set=setmix, .new=newmix},
-		{"3", 0x02, .set=setmix, .new=newmix},
-		{"4", 0x03, .set=setmix, .new=newmix},
-		{"5", 0x04, .set=setmix, .new=newmix},
-		{"6", 0x05, .set=setmix, .new=newmix},
-		{"7", 0x06, .set=setmix, .new=newmix},
-		{"8", 0x07, .set=setmix, .new=newmix},
-		{"9", 0x08, .set=setmix, .new=newmix},
-		{"10", 0x09, .set=setmix, .new=newmix},
-		{"11", 0x0a, .set=setmix, .new=newmix},
-		{"12", 0x0b, .set=setmix, .new=newmix},
-		{"13", 0x0c, .set=setmix, .new=newmix},
-		{"14", 0x0d, .set=setmix, .new=newmix},
-		{"15", 0x0e, .set=setmix, .new=newmix},
-		{"16", 0x0f, .set=setmix, .new=newmix},
-		{"17", 0x10, .set=setmix, .new=newmix},
-		{"18", 0x11, .set=setmix, .new=newmix},
-		{"19", 0x12, .set=setmix, .new=newmix},
-		{"20", 0x13, .set=setmix, .new=newmix},
+	{"output", .set=setchannel, .new=newchannel, .tree=(const struct node[]){
+		{"volume", OUTPUT_VOLUME, .set=setfixed, .new=newfixed, .scale=0.1, .min=-65.0, .max=6.0},
+		{"pan", OUTPUT_PAN, .set=setint, .new=newint, .min=-100, .max=100},
+		{"mute", OUTPUT_MUTE, .set=setbool, .new=newbool},
+		{"fx", OUTPUT_FXRETURN, .set=setfixed, .new=newfixed, .scale=0.1, .min=-65.0, .max=0.0},
+		{"stereo", OUTPUT_STEREO, .set=setbool, .new=newoutputstereo},
+		{"record", OUTPUT_RECORD, .set=setbool, .new=newbool},
+		{"name", NAME, .set=setname},
+		{"playchan", OUTPUT_PLAYCHAN, .set=setint, .new=newint},
+		{"phase", OUTPUT_PHASE, .set=setbool, .new=newbool},
+		{"reflevel", OUTPUT_REFLEVEL, .set=setenum, .new=newenum, .names=(const char *const[]){
+			"+4dBu", "+13dBu", "+19dBu",
+		}, .nameslen=3}, // TODO: phones
+		{"crossfeed", OUTPUT_CROSSFEED, .set=setint, .new=newint},
+		{"volumecal", OUTPUT_VOLUMECAL, .set=setfixed, .new=newfixed, .min=-2400, .max=300, .scale=0.01},
+		{"lowcut", LOWCUT, .set=setbool, .new=newbool, .tree=lowcuttree},
+		{"eq", EQ, .set=setbool, .new=newbool, .tree=eqtree},
+		{"dynamics", DYNAMICS, .set=setbool, .new=newbool, .tree=dynamicstree},
+		{"autolevel", AUTOLEVEL, .set=setbool, .new=newbool, .tree=autoleveltree},
+		{"roomeq", ROOMEQ, .set=setbool, .new=newbool, .tree=roomeqtree},
+		{"loopback", .set=setoutputloopback},
 		{0},
 	}},
-	{0},
-};
-static const struct oscnode tree[] = {
-	{"input", 0, .child=(const struct oscnode[]){
-		{"1", 0x000, .child=inputtree},
-		{"2", 0x040, .child=inputtree},
-		{"3", 0x080, .child=inputtree},
-		{"4", 0x0c0, .child=inputtree},
-		{"5", 0x100, .child=inputtree},
-		{"6", 0x140, .child=inputtree},
-		{"7", 0x180, .child=inputtree},
-		{"8", 0x1c0, .child=inputtree},
-		{"9", 0x200, .child=inputtree},
-		{"10", 0x240, .child=inputtree},
-		{"11", 0x280, .child=inputtree},
-		{"12", 0x2c0, .child=inputtree},
-		{"13", 0x300, .child=inputtree},
-		{"14", 0x340, .child=inputtree},
-		{"15", 0x380, .child=inputtree},
-		{"16", 0x3c0, .child=inputtree},
-		{"17", 0x400, .child=inputtree},
-		{"18", 0x440, .child=inputtree},
-		{"19", 0x480, .child=inputtree},
-		{"20", 0x4c0, .child=inputtree},
+	{"playback", .tree=(const struct node[]){
 		{0},
 	}},
-	{"output", 0x0500, .child=(const struct oscnode[]){
-		{"1", 0x000, .child=outputtree},
-		{"2", 0x040, .child=outputtree},
-		{"3", 0x080, .child=outputtree},
-		{"4", 0x0c0, .child=outputtree},
-		{"5", 0x100, .child=outputtree},
-		{"6", 0x140, .child=outputtree},
-		{"7", 0x180, .child=outputtree},
-		{"8", 0x1c0, .child=outputtree},
-		{"9", 0x200, .child=outputtree},
-		{"10", 0x240, .child=outputtree},
-		{"11", 0x280, .child=outputtree},
-		{"12", 0x2c0, .child=outputtree},
-		{"13", 0x300, .child=outputtree},
-		{"14", 0x340, .child=outputtree},
-		{"15", 0x380, .child=outputtree},
-		{"16", 0x3c0, .child=outputtree},
-		{"17", 0x400, .child=outputtree},
-		{"18", 0x440, .child=outputtree},
-		{"19", 0x480, .child=outputtree},
-		{"20", 0x4c0, .child=outputtree},
-		{0},
-	}},
-	{"mix", 0x2000, .child=(const struct oscnode[]){
-		{"1", 0x000, .child=mixtree},
-		{"2", 0x040, .child=mixtree},
-		{"3", 0x080, .child=mixtree},
-		{"4", 0x0c0, .child=mixtree},
-		{"5", 0x100, .child=mixtree},
-		{"6", 0x140, .child=mixtree},
-		{"7", 0x180, .child=mixtree},
-		{"8", 0x1c0, .child=mixtree},
-		{"9", 0x200, .child=mixtree},
-		{"10", 0x240, .child=mixtree},
-		{"11", 0x280, .child=mixtree},
-		{"12", 0x2c0, .child=mixtree},
-		{"13", 0x300, .child=mixtree},
-		{"14", 0x340, .child=mixtree},
-		{"15", 0x380, .child=mixtree},
-		{"16", 0x3c0, .child=mixtree},
-		{"17", 0x400, .child=mixtree},
-		{"18", 0x440, .child=mixtree},
-		{"19", 0x480, .child=mixtree},
-		{"20", 0x4c0, .child=mixtree},
-		{0},
-	}},
-	{"", 0x2fc0, .new=refreshdone},
-	{"reverb", 0x3000, .set=setbool, .new=newbool, .child=(const struct oscnode[]){
-		{"type", 0x01, .set=setenum, .new=newenum, .names=(const char *const[]){
+	{"mix", MIX, .set=setmix, .new=newmix},
+	{"reverb", REVERB, .set=setbool, .new=newbool, .tree=(const struct node[]){
+		{"type", REVERB_TYPE, .set=setenum, .new=newenum, .names=(const char *const[]){
 			"Small Room", "Medium Room", "Large Room", "Walls",
 			"Shorty", "Attack", "Swagger", "Old School",
 			"Echoistic", "8plus9", "Grand Wide", "Thicker",
 			"Envelope", "Gated", "Space",
 		}, .nameslen=15},
-		{"predelay", 0x02, .set=setint, .new=newint},
-		{"lowcut", 0x03, .set=setint, .new=newint},
-		{"roomscale", 0x04, .set=setfixed, .new=newfixed, .scale=0.01},
-		{"attack", 0x05, .set=setint, .new=newint},
-		{"hold", 0x06, .set=setint, .new=newint},
-		{"release", 0x07, .set=setint, .new=newint},
-		{"highcut", 0x08, .set=setint, .new=newint},
-		{"time", 0x09, .set=setfixed, .new=newfixed, .scale=0.1},
-		{"highdamp", 0x0a, .set=setint, .new=newint},
-		{"smooth", 0x0b, .set=setint, .new=newint},
-		{"volume", 0x0c, .set=setfixed, .new=newfixed, .scale=0.1},
-		{"width", 0x0d, .set=setfixed, .new=newfixed, .scale=0.01},
+		{"predelay", REVERB_PREDELAY, .set=setint, .new=newint},
+		{"lowcut", REVERB_LOWCUT, .set=setint, .new=newint},
+		{"roomscale", REVERB_ROOMSCALE, .set=setfixed, .new=newfixed, .scale=0.01},
+		{"attack", REVERB_ATTACK, .set=setint, .new=newint},
+		{"hold", REVERB_HOLD, .set=setint, .new=newint},
+		{"release", REVERB_RELEASE, .set=setint, .new=newint},
+		{"highcut", REVERB_HIGHCUT, .set=setint, .new=newint},
+		{"time", REVERB_TIME, .set=setfixed, .new=newfixed, .scale=0.1},
+		{"highdamp", REVERB_HIGHDAMP, .set=setint, .new=newint},
+		{"smooth", REVERB_SMOOTH, .set=setint, .new=newint},
+		{"volume", REVERB_VOLUME, .set=setfixed, .new=newfixed, .scale=0.1},
+		{"width", REVERB_WIDTH, .set=setfixed, .new=newfixed, .scale=0.01},
 		{0},
 	}},
-	{"echo", 0x3014, .set=setbool, .new=newbool, .child=(const struct oscnode[]){
-		{"type", 0x01, .set=setenum, .new=newenum, .names=(const char *const[]){
+	{"echo", ECHO, .set=setbool, .new=newbool, .tree=(const struct node[]){
+		{"type", ECHO_TYPE, .set=setenum, .new=newenum, .names=(const char *const[]){
 			"Stereo Echo",
 			"Stereo Cross",
 			"Pong Echo",
 		}, .nameslen=3},
-		{"delay", 0x02, .set=setfixed, .new=newfixed, .scale=0.001, .min=0, .max=2000},
-		{"feedback", 0x03, .set=setint, .new=newint},
-		{"highcut", 0x04, .set=setenum, .new=newenum, .names=(const char *const[]){
+		{"delay", ECHO_DELAY, .set=setfixed, .new=newfixed, .scale=0.001, .min=0, .max=2000},
+		{"feedback", ECHO_FEEDBACK, .set=setint, .new=newint},
+		{"highcut", ECHO_HIGHCUT, .set=setenum, .new=newenum, .names=(const char *const[]){
 			"Off", "16kHz", "12kHz", "8kHz", "4kHz", "2kHz",
 		}, .nameslen=6},
-		{"volume", 0x05, .set=setfixed, .new=newfixed, .scale=0.1, .min=-650, .max=60},
-		{"width", 0x06, .set=setfixed, .new=newfixed, .scale=0.01},
+		{"volume", ECHO_VOLUME, .set=setfixed, .new=newfixed, .scale=0.1, .min=-650, .max=60},
+		{"width", ECHO_WIDTH, .set=setfixed, .new=newfixed, .scale=0.01},
 		{0},
 	}},
-	{"controlroom", 0x3050, .child=(const struct oscnode[]){
-		{"mainout", 0, .set=setenum, .new=newenum, .names=(const char *const[]){
+	{"controlroom", .tree=(const struct node[]){
+		{"mainout", CTLROOM_MAINOUT, .set=setenum, .new=newenum, .names=(const char *const[]){
 			"1/2", "3/4", "5/6", "7/8", "9/10",
 			"11/12", "13/14", "15/16", "17/18", "19/20",
 		}, .nameslen=10},
-		{"mainmono", 1, .set=setbool, .new=newbool},
-		{"", 2},  /* phones source? */
-		{"muteenable", 3, .set=setbool, .new=newbool},
-		{"dimreduction", 4, .set=setfixed, .new=newfixed, .scale=0.1, .min=-650, .max=0},
-		{"dim", 5, .set=setbool, .new=newbool},
-		{"recallvolume", 6, .set=setfixed, .new=newfixed, .scale=0.1, .min=-650, .max=0},
+		{"mainmono", CTLROOM_MAINMONO, .set=setbool, .new=newbool},
+		{"muteenable", CTLROOM_MUTEENABLE, .set=setbool, .new=newbool},
+		{"dimreduction", CTLROOM_DIMREDUCTION, .set=setfixed, .new=newfixed, .scale=0.1, .min=-650, .max=0},
+		{"dim", CTLROOM_DIM, .set=setbool, .new=newbool},
+		{"recallvolume", CTLROOM_RECALLVOLUME, .set=setfixed, .new=newfixed, .scale=0.1, .min=-650, .max=0},
 		{0},
 	}},
-	{"clock", 0x3060, .child=(const struct oscnode[]){
-		{"source", 4, .set=setenum, .new=newenum, .names=(const char *const[]){
+	{"clock", .tree=(const struct node[]){
+		{"source", CLOCK_SOURCE, .set=setenum, .new=newenum, .names=(const char *const[]){
 			"Internal", "Word Clock", "SPDIF", "AES", "Optical",
 		}, .nameslen=5},
-		{"samplerate", 5, .new=newsamplerate},
-		{"wckout", 6, .set=setbool, .new=newbool},
-		{"wcksingle", 7, .set=setbool, .new=newbool},
-		{"wckterm", 8, .set=setbool, .new=newbool},
+		{"samplerate", CLOCK_SAMPLERATE, .new=newsamplerate},
+		{"wckout", CLOCK_WCKOUT, .set=setbool, .new=newbool},
+		{"wcksingle", CLOCK_WCKSINGLE, .set=setbool, .new=newbool},
+		{"wckterm", CLOCK_WCKTERM, .set=setbool, .new=newbool},
 		{0},
 	}},
-	{"hardware", 0x3070, .child=(const struct oscnode[]){
-		{"opticalout", 8, .set=setenum, .new=newenum, .names=(const char *const[]){
+	{"hardware", .tree=(const struct node[]){
+		{"opticalout", HARDWARE_OPTICALOUT, .set=setenum, .new=newenum, .names=(const char *const[]){
 			"ADAT", "SPDIF",
 		}, .nameslen=2},
-		{"spdifout", 9, .set=setenum, .new=newenum, .names=(const char *const[]){
+		{"spdifout", HARDWARE_SPDIFOUT, .set=setenum, .new=newenum, .names=(const char *const[]){
 			"Consumer", "Professional",
 		}, .nameslen=2},
-		{"ccmode", 10},
-		{"ccmix", 11, .set=setenum, .new=newenum, .names=(const char *const[]){
+		{"ccmode", HARDWARE_CCMODE, .new=newbool},
+		{"ccmix", HARDWARE_CCMIX, .set=setenum, .new=newenum, .names=(const char *const[]){
 			"TotalMix App", "6ch + phones", "8ch", "20ch",
 		}, .nameslen=4},
-		{"standalonemidi", 12, .set=setbool, .new=newbool},
-		{"standalonearc", 13, .set=setenum, .new=newenum, .names=(const char *const[]){
+		{"standalonemidi", HARDWARE_STANDALONEMIDI, .set=setbool, .new=newbool},
+		{"standalonearc", HARDWARE_STANDALONEARC, .set=setenum, .new=newenum, .names=(const char *const[]){
 			"Volume", "1s Op", "Normal",
 		}, .nameslen=3},
-		{"lockkeys", 14, .set=setenum, .new=newenum, .names=(const char *const[]){
+		{"lockkeys", HARDWARE_LOCKKEYS, .set=setenum, .new=newenum, .names=(const char *const[]){
 			"Off", "Keys", "All",
 		}, .nameslen=3},
-		{"remapkeys", 15, .set=setbool, .new=newbool},
-		{"", 16, .new=newdspload},
-		{"", 17, .new=newdspavail},
-		{"", 18, .new=newdspactive},
-		{"", 19, .new=newarcencoder},
-
-		{"eqdrecord", -1, .set=seteqdrecord},
+		{"remapkeys", HARDWARE_REMAPKEYS, .set=setbool, .new=newbool},
+		{"eqdrecord", .set=seteqdrecord},
+		{NULL, HARDWARE_DSPVERLOAD, .new=newdspload},
+		{NULL, HARDWARE_DSPAVAIL, .new=newdspavail},
+		{NULL, HARDWARE_DSPSTATUS, .new=newdspstatus},
+		{NULL, HARDWARE_ARCDELTA, .new=newarcdelta},
 		{0},
 	}},
-	{"input", 0x3180, .child=(const struct oscnode[]){
-		{"", 0, .new=newdynlevel},
-		{"", 1, .new=newdynlevel},
-		{"", 2, .new=newdynlevel},
-		{"", 3, .new=newdynlevel},
-		{"", 4, .new=newdynlevel},
-		{"", 5, .new=newdynlevel},
-		{"", 6, .new=newdynlevel},
-		{"", 7, .new=newdynlevel},
-		{"", 8, .new=newdynlevel},
-		{"", 9, .new=newdynlevel},
-		{"", 10, .new=newdynlevel},
-		{"", 11, .new=newdynlevel},
-		{"", 12, .new=newdynlevel},
-		{"", 13, .new=newdynlevel},
-		{"", 14, .new=newdynlevel},
-		{"", 15, .new=newdynlevel},
-		{"", 16, .new=newdynlevel},
-		{"", 17, .new=newdynlevel},
-		{"", 18, .new=newdynlevel},
-		{"", 19, .new=newdynlevel},
+	{"durec", .tree=(const struct node[]){
+		{"play", .set=setdurecplay},
+		{"stop", .set=setdurecstop},
+		{"record", .set=setdurecrecord},
+		{"delete", .set=setdurecdelete},
+		{"file", DUREC_FILE, .set=setdurecfile, .new=newdurecfile},
+		{NULL, DUREC_STATUS, .new=newdurecstatus},
+		{NULL, DUREC_TIME, .new=newdurectime},
+		{NULL, DUREC_USBLOAD, .new=newdurecusbstatus},
+		{NULL, DUREC_TOTALSPACE, .new=newdurectotalspace},
+		{NULL, DUREC_FREESPACE, .new=newdurecfreespace},
+		{NULL, DUREC_NUMFILES, .new=newdurecfileslen},
+		{NULL, DUREC_NEXT, .new=newdurecnext},
+		{NULL, DUREC_RECORDTIME, .new=newdurecrecordtime},
+		{NULL, DUREC_INDEX, .new=newdurecindex},
+		{NULL, DUREC_NAME0, .new=newdurecname},
+		{NULL, DUREC_NAME1, .new=newdurecname},
+		{NULL, DUREC_NAME2, .new=newdurecname},
+		{NULL, DUREC_NAME3, .new=newdurecname},
+		{NULL, DUREC_INFO, .new=newdurecinfo},
+		{NULL, DUREC_LENGTH, .new=newdureclength},
 		{0},
 	}},
-	{"durec", 0x3580, .child=(const struct oscnode[]){
-		{"status", 0, .new=newdurecstatus},
-		{"time", 1, .new=newdurectime},
-		{"", 2},  /* ? */
-		{"usbload", 3, .new=newdurecusbstatus},
-		{"totalspace", 4, .new=newdurectotalspace},
-		{"freespace", 5, .new=newdurecfreespace},
-		{"numfiles", 6, .new=newdurecfileslen},
-		{"file", 7, .new=newdurecfile, .set=setdurecfile},
-		{"next", 8, .new=newdurecnext},
-		{"recordtime", 9, .new=newdurecrecordtime},
-		{"", 10, .new=newdurecindex},
-		{"", 11, .new=newdurecname},
-		{"", 12, .new=newdurecname},
-		{"", 13, .new=newdurecname},
-		{"", 14, .new=newdurecname},
-		{"", 15, .new=newdurecinfo},
-		{"", 16, .new=newdureclength},
-
-		{"stop", -1, .set=setdurecstop},
-		{"play", -1, .set=setdurecplay},
-		{"record", -1, .set=setdurecrecord},
-		{"delete", -1, .set=setdurecdelete},
-		{0},
-	}},
-	{"output", 0x35d0, .child=(const struct oscnode[]){
-		{"1", 0x000, .child=outputroomeqtree},
-		{"2", 0x020, .child=outputroomeqtree},
-		{"3", 0x040, .child=outputroomeqtree},
-		{"4", 0x060, .child=outputroomeqtree},
-		{"5", 0x080, .child=outputroomeqtree},
-		{"6", 0x0a0, .child=outputroomeqtree},
-		{"7", 0x0c0, .child=outputroomeqtree},
-		{"8", 0x0e0, .child=outputroomeqtree},
-		{"9", 0x100, .child=outputroomeqtree},
-		{"10", 0x120, .child=outputroomeqtree},
-		{"11", 0x140, .child=outputroomeqtree},
-		{"12", 0x160, .child=outputroomeqtree},
-		{"13", 0x180, .child=outputroomeqtree},
-		{"14", 0x1a0, .child=outputroomeqtree},
-		{"15", 0x1c0, .child=outputroomeqtree},
-		{"16", 0x1e0, .child=outputroomeqtree},
-		{"17", 0x200, .child=outputroomeqtree},
-		{"18", 0x220, .child=outputroomeqtree},
-		{"19", 0x240, .child=outputroomeqtree},
-		{"20", 0x260, .child=outputroomeqtree},
-		{0},
-	}},
-	/* write-only */
-	{"refresh", -1, .set=setrefresh},
+	{"refresh", REFRESH, .set=setrefresh, .new=newrefresh},
 	{0},
 };
 
-static const char *
-match(const char *pat, const char *str)
-{
-	for (;;) {
-		if (*pat == '/' || *pat == '\0')
-			return *str == '\0' ? pat : NULL;
-		if (*pat != *str)
-			return NULL;
-		++pat;
-		++str;
-	}
-}
+/* maps control number to indices into roottree */
+static unsigned char nodeindex[NUMCTLS][4];
 
 int
 handleosc(const unsigned char *buf, size_t len)
 {
-	const char *addr, *next;
-	const struct oscnode *path[8], *node;
-	size_t pathlen;
+	const struct node *node;
+	struct context ctx;
 	struct oscmsg msg;
-	int reg;
+	const char *pattern;
+	char *end;
 
 	if (len % 4 != 0)
 		return -1;
@@ -1559,36 +1345,38 @@ handleosc(const unsigned char *buf, size_t len)
 	msg.end = (unsigned char *)buf + len;
 	msg.type = "ss";
 
-	addr = oscgetstr(&msg);
+	pattern = oscgetstr(&msg);
 	msg.type = oscgetstr(&msg);
 	if (msg.err) {
 		fprintf(stderr, "invalid osc message: %s\n", msg.err);
 		return -1;
 	}
+	if (pattern[0] != '/') {
+		fprintf(stderr, "invalid osc address '%s'\n", pattern);
+		return -1;
+	}
+	if (msg.type[0] != ',') {
+		fprintf(stderr, "invalid osc types '%s'\n", msg.type);
+		return -1;
+	}
 	++msg.type;
 
-	reg = 0;
-	pathlen = 0;
-	for (node = tree; node->name;) {
-		next = match(addr + 1, node->name);
-		if (next) {
-			assert(pathlen < LEN(path));
-			path[pathlen++] = node;
-			reg += node->reg;
-			if (*next) {
-				node = node->child;
-				addr = next;
-			} else {
-				if (node->set) {
-					node->set(path + pathlen - 1, reg, &msg);
-					if (msg.err)
-						fprintf(stderr, "%s: %s\n", addr, msg.err);
-				}
-				break;
-			}
-		} else {
+	ctx.pattern = pattern;
+	ctx.param.in = ctx.param.out = -1;
+	for (node = roottree; ctx.pattern[0] && node && node->name;) {
+		if (!oscmatch(ctx.pattern, node->name, &end)) {
 			++node;
+			continue;
 		}
+		ctx.pattern = end;
+		ctx.node = node;
+		if (node->set) {
+			ctx.exact = !ctx.pattern[0];
+			node->set(&ctx, &msg);
+			if (msg.err)
+				fprintf(stderr, "%s: %s\n", pattern, msg.err);
+		}
+		node = node->tree;
 	}
 	return 0;
 }
@@ -1658,47 +1446,46 @@ static void
 handleregs(uint_least32_t *payload, size_t len)
 {
 	size_t i;
-	int reg, val, off;
-	const struct oscnode *node;
-	char addr[256], *addrend;
-	const struct oscnode *path[8];
-	size_t pathlen;
+	struct context ctx;
+	enum control ctl;
+	int reg, val;
+	const struct node *tree, *node;
+	const unsigned char *idx, *end;
+	char addr[256];
 
+	ctx.addr = addr;
+	ctx.addrend = addr + sizeof addr;
 	for (i = 0; i < len; ++i) {
 		reg = payload[i] >> 16 & 0x7fff;
 		val = (long)((payload[i] & 0xffff) ^ 0x8000) - 0x8000;
-		addrend = addr;
-		off = 0;
-		node = tree;
-		pathlen = 0;
-		while (node->name) {
-			if (reg >= off + node[1].reg && node[1].name && node[1].reg != -1) {
-				++node;
-				continue;
+		ctx.param.in = ctx.param.out = -1;
+		ctl = device->regtoctl(reg, &ctx.param);
+		if (ctl == -1) {
+			if (dflag)
+				fprintf(stderr, "[%.4X]=%.4X\n", reg, val & 0xFFFFU);
+			continue;
+		}
+		if (ctl == UNKNOWN)
+			continue;
+		assert(ctl < LEN(nodeindex));
+		assert(nodeindex[ctl][0] != 0xFF);
+
+		ctx.addrpos = addr;
+		tree = roottree;
+		for (idx = nodeindex[ctl], end = idx + sizeof nodeindex[ctl]; idx != end && *idx != 0xFF; ++idx) {
+			node = &tree[*idx];
+			if (node->name) {
+				*ctx.addrpos++ = '/';
+				ctx.addrpos = memccpy(ctx.addrpos, node->name, '\0', ctx.addrend - ctx.addrpos);
+				assert(ctx.addrpos);
+				--ctx.addrpos;
 			}
-			*addrend++ = '/';
-			addrend = memccpy(addrend, node->name, '\0', addr + sizeof addr - addrend);
-			assert(addrend);
-			--addrend;
-			assert(pathlen < LEN(path));
-			path[pathlen++] = node;
-			if (reg == off + node->reg && node->new) {
-				node->new(path + pathlen - 1, addr, reg, val);
-			} else if (node->child) {
-				off += node->reg;
-				node = node->child;
-				continue;
-			} else if (dflag && reg != off + node->reg) {
-				switch (reg) {
-				case 0x3180:
-				case 0x3380:
-					break;
-				default:
-					fprintf(stderr, "[%.4x]=%.4hx (%.4x %s)\n", reg, (short)val, off + node->reg, addr);
-					break;
-				}
+			ctx.node = node;
+			if (node->new) {
+				ctx.exact = idx == end || idx[1] == 0xFF;
+				node->new(&ctx, val);
 			}
-			break;
+			tree = node->tree;
 		}
 	}
 }
@@ -1798,8 +1585,27 @@ handletimer(bool levels)
 		writesysex(2, NULL, 0, buf);
 	}
 
-	setreg(0x3f00, serial);
+	setreg(0x3F00, serial);
 	serial = (serial + 1) & 0xf;
+}
+
+static void
+maptree(const struct node *tree, int i)
+{
+	static unsigned char index[4];
+	const struct node *node;
+
+	static_assert(sizeof index == sizeof nodeindex[0]);
+	assert(i < sizeof index);
+	index[i] = 0;
+	for (node = tree; node->set || node->new || node->tree; ++node, ++index[i]) {
+		if (node->ctl) {
+			memcpy(nodeindex[node->ctl], index, i + 1);
+			memset(nodeindex[node->ctl] + i + 1, 0xFF, sizeof index - (i + 1));
+		}
+		if (node->tree)
+			maptree(node->tree, i + 1);
+	}
 }
 
 int
@@ -1826,6 +1632,9 @@ init(const char *port)
 		fprintf(stderr, "unsupported device '%s'\n", port);
 		return -1;
 	}
+
+	memset(nodeindex, 0xFF, sizeof nodeindex);
+	maptree(roottree, 0);
 
 	inputs = calloc(device->inputslen + device->outputslen, sizeof *inputs);
 	outputs = calloc(device->outputslen, sizeof *outputs);

@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include "device.h"
 
 #define LEN(a) (sizeof (a) / sizeof *(a))

@@ -1,6 +1,7 @@
 #ifndef OSC_H
 #define OSC_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 struct oscmsg {
@@ -17,5 +18,7 @@ float oscgetfloat(struct oscmsg *msg);
 void oscputstr(struct oscmsg *msg, const char *str);
 void oscputint(struct oscmsg *msg, int_least32_t val);
 void oscputfloat(struct oscmsg *msg, float val);
+
+bool oscmatch(const char *pat, const char *str, char **end);
 
 #endif

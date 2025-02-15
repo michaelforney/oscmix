@@ -180,3 +180,23 @@ oscputfloat(struct oscmsg *msg, float val)
 	putbe32(pos, u.u32);
 	msg->buf = pos + 4;
 }
+
+bool
+oscmatch(const char *pat, const char *str, char **end)
+{
+	/* TODO: more complete implementation supporting *, [], and {} */
+	assert(*pat == '/');
+	for (;;) {
+		++pat;
+		if (*pat == '/' || *pat == '\0') {
+			if (*str)
+				return false;
+			if (end)
+				*end = (char *)pat;
+			return true;
+		}
+		if (*pat != *str)
+			return false;
+		++str;
+	}
+}
