@@ -57,7 +57,7 @@ WSDGRAM_OBJ=\
 oscmix.o $(DEVICES): device.h
 
 oscmix: $(OSCMIX_OBJ)
-	$(CC) $(LDFLAGS) -o $@ $(OSCMIX_OBJ) -l pthread -l m
+	$(CC) $(LDFLAGS) -o $@ $(OSCMIX_OBJ) -l m
 
 wsdgram: $(WSDGRAM_OBJ)
 	$(CC) $(LDFLAGS) -o $@ $(WSDGRAM_OBJ) -l pthread
