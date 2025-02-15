@@ -248,7 +248,7 @@ newbool(const struct oscnode *path[], const char *addr, int reg, int val)
 }
 
 static int
-setmonolevel(int reg, float level)
+setmixlevel(int reg, float level)
 {
 	long val;
 
@@ -277,9 +277,9 @@ muteinput(struct input *in, bool mute)
 	for (och = 0; och < device->outputslen; ++och) {
 		out = &outputs[och];
 		if (out->mix[ich] > 0)
-			setmonolevel(0x4000 | och << 6 | ich, mute ? 0 : out->mix[ich]);
+			setmixlevel(0x4000 | och << 6 | ich, mute ? 0 : out->mix[ich]);
 		if (in->stereo && out->mix[ich + 1] > 0)
-			setmonolevel(0x4000 | och << 6 | (ich + 1), mute ? 0 : out->mix[ich + 1]);
+			setmixlevel(0x4000 | och << 6 | (ich + 1), mute ? 0 : out->mix[ich + 1]);
 	}
 }
 
@@ -646,8 +646,8 @@ setlevel(struct output *out, const struct input *in, bool instereo, const struct
 			out[0].mix[ich + 1] = rl;
 			out[1].mix[ich + 1] = rr;
 			if (!in->mute) {
-				setmonolevel(0x4000 | och << 6 | (ich + 1), rl);
-				setmonolevel(0x4000 | (och + 1) << 6 | (ich + 1), rr);
+				setmixlevel(0x4000 | och << 6 | (ich + 1), rl);
+				setmixlevel(0x4000 | (och + 1) << 6 | (ich + 1), rr);
 			}
 		} else {
 			theta = (l->pan + 100) * PI / 400.f;
@@ -657,8 +657,8 @@ setlevel(struct output *out, const struct input *in, bool instereo, const struct
 		out[0].mix[ich] = ll;
 		out[1].mix[ich] = lr;
 		if (!in->mute) {
-			setmonolevel(0x4000 | och << 6 | ich, ll);
-			setmonolevel(0x4000 | (och + 1) << 6 | ich, lr);
+			setmixlevel(0x4000 | och << 6 | ich, ll);
+			setmixlevel(0x4000 | (och + 1) << 6 | ich, lr);
 		}
 	} else {
 		if (instereo) {
@@ -671,13 +671,13 @@ setlevel(struct output *out, const struct input *in, bool instereo, const struct
 			}
 			out[0].mix[ich + 1] = rl;
 			if (!in->mute)
-				setmonolevel(0x4000 | och << 6 | (ich + 1), rl);
+				setmixlevel(0x4000 | och << 6 | (ich + 1), rl);
 		} else {
 			ll = l->vol;
 		}
 		out[0].mix[ich] = ll;
 		if (!in->mute)
-			setmonolevel(0x4000 | och << 6 | ich, ll);
+			setmixlevel(0x4000 | och << 6 | ich, ll);
 	}
 }
 
