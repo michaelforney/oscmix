@@ -1121,7 +1121,7 @@ static const struct node dynamicstree[] = {
 static const struct node autoleveltree[] = {
 	{"maxgain", AUTOLEVEL_MAXGAIN, .set=setfixed, .new=newfixed, .scale=0.1, .min=0, .max=180},
 	{"headroom", AUTOLEVEL_HEADROOM, .set=setfixed, .new=newfixed, .scale=0.1, .min=30, .max=120},
-	{"risetime", AUTOLEVEL_RISETIME, .set=setint, .new=newint, .min=100, .max=9900},
+	{"risetime", AUTOLEVEL_RISETIME, .set=setfixed, .new=newfixed, .scale=0.1, .min=1, .max=99},
 	{NULL, AUTOLEVEL_METER, .new=newmeter},
 	{""},
 };
