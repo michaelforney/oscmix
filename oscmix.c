@@ -131,7 +131,7 @@ setreg(unsigned reg, unsigned val)
 
 	val &= 0xffff;
 	if (dflag && reg != 0x3f00)
-		fprintf(stderr, "setreg %#.4x %#.4x\n", reg, val);
+		fprintf(stderr, "setreg %.4X %.4X\n", reg, val);
 	regval = (reg & 0x7fff) << 16 | val;
 	par = regval >> 16 ^ regval;
 	par ^= par >> 8;
