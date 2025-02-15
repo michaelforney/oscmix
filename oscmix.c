@@ -756,10 +756,17 @@ newmix(const struct oscnode *path[], const char *addr, int reg, int val)
 	val = ((val & 0x7fff) ^ 0x4000) - 0x4000;
 	calclevel(out, in, 0, &level);
 	in->width = level.width;
-	if (ispan)
+	if (ispan) {
+		if (val < -100)
+			val = -100;
+		if (val > 100)
+			val = 100;
 		level.pan = val;
-	else
+	} else {
 		level.vol = val <= -650 ? 0 : powf(10.f, val / 200.f);
+		if (level.vol > 2)
+			level.vol = 2;
+	}
 	setlevel(out, in, 0, &level);
 	if (in->stereo) {
 		if (inidx & 1)
