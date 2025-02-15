@@ -456,7 +456,7 @@ static int
 setinputhiz(const struct oscnode *path[], int reg, struct oscmsg *msg)
 {
 	int idx;
-	
+
 	idx = path[-1] - path[-2]->child;
 	assert(idx < device->inputslen);
 	if (device->inputs[idx].flags & INPUT_HAS_HIZ)
@@ -468,7 +468,7 @@ static int
 newinputhiz(const struct oscnode *path[], const char *addr, int reg, int val)
 {
 	int idx;
-	
+
 	idx = path[-1] - path[-2]->child;
 	assert(idx < device->inputslen);
 	if (device->inputs[idx].flags & INPUT_HAS_HIZ)
