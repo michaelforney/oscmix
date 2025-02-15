@@ -45,7 +45,7 @@ handshake(FILE *rd, FILE *wr)
 	long version;
 	char *token;
 	unsigned char sha1[20];
-	char accept[(sizeof sha1 + 2) / 3 * 4], buf[2048];
+	char accept[(sizeof sha1 + 2) / 3 * 4 + 1], buf[2048];
 
 	if (!fgets(buf, sizeof buf, rd)) {
 		if (ferror(rd))
