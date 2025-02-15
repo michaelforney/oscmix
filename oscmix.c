@@ -41,7 +41,7 @@ struct oscnode {
 struct input {
 	bool stereo;
 	bool mute;
-	float width;
+	int width;
 };
 
 struct output {
@@ -709,6 +709,7 @@ setmix(const struct oscnode *path[], int reg, struct oscmsg *msg)
 		--in, --inidx;
 
 	calclevel(out, in, 1, &level);
+	level.width = in->width;
 	vol = oscgetfloat(msg);
 	level.vol = vol <= -65.f ? 0 : powf(10.f, vol / 20.f);
 
@@ -718,8 +719,6 @@ setmix(const struct oscnode *path[], int reg, struct oscmsg *msg)
 			level.pan = -100;
 		else if (level.pan > 100)
 			level.pan = 100;
-		if (*msg->type && in->stereo && out->stereo)
-			level.width = oscgetfloat(msg);
 	}
 	if (oscend(msg) != 0)
 		return -1;
@@ -756,6 +755,7 @@ newmix(const struct oscnode *path[], const char *addr, int reg, int val)
 	ispan = val & 0x8000;
 	val = ((val & 0x7fff) ^ 0x4000) - 0x4000;
 	calclevel(out, in, 0, &level);
+	in->width = level.width;
 	if (ispan)
 		level.pan = val;
 	else
@@ -1825,6 +1825,12 @@ init(const char *port)
 	if (!inputs || !outputs) {
 		perror(NULL);
 		return -1;
+	}
+	for (i = 0; i < device->inputslen + device->outputslen; ++i) {
+		struct input *in;
+
+		in = &inputs[i];
+		in->width = 100;
 	}
 	for (i = 0; i < device->outputslen; ++i) {
 		struct output *out;
