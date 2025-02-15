@@ -264,22 +264,23 @@ static void
 muteinput(struct input *in, bool mute)
 {
 	const struct output *out;
-	int och, ich;
+	const float *mix;
+	int reg;
 
 	if (in->mute == mute)
 		return;
-	ich = in - inputs;
-	if (in->stereo && ich & 1)
-		--in, --ich;
+	if (in->stereo && (in - inputs) & 1)
+		--in;
 	in[0].mute = mute;
 	if (in->stereo)
 		in[1].mute = mute;
-	for (och = 0; och < device->outputslen; ++och) {
-		out = &outputs[och];
-		if (out->mix[ich] > 0)
-			setmixlevel(0x4000 | och << 6 | ich, mute ? 0 : out->mix[ich]);
-		if (in->stereo && out->mix[ich + 1] > 0)
-			setmixlevel(0x4000 | och << 6 | (ich + 1), mute ? 0 : out->mix[ich + 1]);
+	for (out = outputs; out < outputs + device->outputslen; ++out) {
+		mix = &out->mix[in - inputs];
+		reg = 0x4000 | (out - outputs) << 6 | (in - inputs);
+		if (mix[0] > 0)
+			setmixlevel(reg, mute ? 0 : mix[0]);
+		if (in->stereo && mix[1] > 0)
+			setmixlevel(reg + 1, mute ? 0 : mix[1]);
 	}
 }
 
