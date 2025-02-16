@@ -1,4 +1,4 @@
-#define _POSIX_C_SOURCE 200809L
+#define _XOPEN_SOURCE 700  /* needed for SA_RESTART on FreeBSD */
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
