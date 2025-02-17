@@ -475,7 +475,7 @@ class Channel {
 		const template = document.getElementById('channel-template');
 		const fragment = template.content.cloneNode(true);
 
-		let name, prefix;
+		let defName, prefix;
 		const flags = new Set();
 		switch (type) {
 		case Channel.INPUT:
@@ -491,19 +491,19 @@ class Channel {
 					flags.add('reflevel');
 				flags.add('gain');
 			}
-			name = Channel.#inputNames[index];
+			defName = Channel.#inputNames[index];
 			prefix = `/input/${index + 1}`;
 			break;
 		case Channel.PLAYBACK:
 			flags.add('playback');
-			name = Channel.#outputNames[index];
+			defName = Channel.#outputNames[index];
 			prefix = `/playback/${index + 1}`;
 			break;
 		case Channel.OUTPUT:
 			flags.add('output');
 			if (index <= 7)
 				flags.add('reflevel');
-			name = Channel.#outputNames[index];
+			defName = Channel.#outputNames[index];
 			prefix = `/output/${index + 1}`;
 			break;
 		}
@@ -522,8 +522,21 @@ class Channel {
 
 		this.volumeDiv = fragment.getElementById('channel-volume');
 
-		const nameDiv = fragment.getElementById('channel-name');
-		nameDiv.textContent = name;
+		const name = fragment.getElementById('channel-name');
+		name.value = defName;
+		name.addEventListener('dblclick', (event) => {
+			name.readOnly = false;
+			name.select();
+		});
+		name.addEventListener('blur', (event) => name.readOnly = true);
+		const nameForm = fragment.getElementById('channel-name-form');
+		nameForm.addEventListener('submit', (event) => {
+			event.preventDefault();
+			name.setSelectionRange(0, 0);
+			name.blur();
+			iface.send(prefix + '/name', ',s', [name.value]);
+			return false;
+		});
 
 		this.level = fragment.getElementById('channel-level');
 		iface.methods.set(prefix + '/level', (args) => {
@@ -546,7 +559,7 @@ class Channel {
 		if (type == Channel.OUTPUT) {
 			const selects = document.querySelectorAll('select.channel-volume-output');
 			for (const select of selects) {
-				const option = new Option(name);
+				const option = new Option(name.value);
 				option.dataset.output = index;
 				select.add(option);
 			}
