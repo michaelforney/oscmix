@@ -9,26 +9,17 @@ enum inputflags {
 	INPUT_HAS_HIZ = 1 << 4,
 };
 
-struct inputinfo {
+enum outputflags {
+	OUTPUT_HAS_REFLEVEL = 1 << 0,
+};
+
+struct channelinfo {
 	char name[12];
 	int flags;
 	struct {
 		short min;
 		short max;
 	} gain;
-	struct {
-		const char *const*names;
-		size_t nameslen;
-	} reflevel;
-};
-
-enum outputflags {
-	OUTPUT_HAS_REFLEVEL = 1 << 0,
-};
-
-struct outputinfo {
-	char name[12];
-	int flags;
 	struct {
 		const char *const*names;
 		size_t nameslen;
@@ -209,9 +200,9 @@ struct device {
 	int version;
 	int flags;
 
-	const struct inputinfo *inputs;
+	const struct channelinfo *inputs;
 	int inputslen;
-	const struct outputinfo *outputs;
+	const struct channelinfo *outputs;
 	int outputslen;
 
 	int refresh;

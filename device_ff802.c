@@ -3,7 +3,7 @@
 
 #define LEN(a) (sizeof (a) / sizeof *(a))
 
-static const struct inputinfo inputs[] = {
+static const struct channelinfo inputs[] = {
 	{"Analog 1",    INPUT_HAS_GAIN | INPUT_HAS_REFLEVEL},
 	{"Analog 2",    INPUT_HAS_GAIN | INPUT_HAS_REFLEVEL},
 	{"Analog 3",    INPUT_HAS_GAIN | INPUT_HAS_REFLEVEL},
@@ -37,7 +37,7 @@ static const struct inputinfo inputs[] = {
 };
 _Static_assert(LEN(inputs) == 30, "bad inputs");
 
-static const struct outputinfo outputs[] = {
+static const struct channelinfo outputs[] = {
 	{"Analog 1",  OUTPUT_HAS_REFLEVEL},
 	{"Analog 2",  OUTPUT_HAS_REFLEVEL},
 	{"Analog 3",  OUTPUT_HAS_REFLEVEL},
