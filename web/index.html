@@ -9,7 +9,9 @@
 		<template id="channel-template">
 			<div class="channel-outer">
 				<div class="channel">
-					<div id="channel-name" class="channel-name"></div>
+					<form id="channel-name-form" class="channel-name-form">
+						<input id="channel-name" class="channel-name" readonly>
+					</form>
 					<input class="channel-pan" id="pan" type="number" min="-100" max="100" step="1" value="0">
 					<div class="channel-mute">
 						<label class="toggle-button">M<input id="mute" type="checkbox"></label>

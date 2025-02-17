@@ -146,10 +146,17 @@ label:has(#connection-type:not([data-value="WebSocket"])) ~ .connection-websocke
 .channel:has(.channel-show-dynamics:not(:checked)) ~ .channel-panel-dynamics {
 	display: none;
 }
+.channel-name-form {
+	display: flex;
+	flex-direction: column;
+}
 .channel-name {
 	text-align: center;
 	font-weight: bold;
 	border: 0;
+}
+.channel-name:read-only {
+	outline: none;
 }
 .channel-pan {
 	text-align: center;
