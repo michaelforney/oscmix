@@ -560,12 +560,12 @@ class Channel {
 			const selects = document.querySelectorAll('select.channel-volume-output');
 			for (const select of selects) {
 				const option = new Option(name.value);
-				option.dataset.output = index;
+				option.value = index;
 				select.add(option);
 			}
 			if (left) {
 				stereo.addEventListener('change', (event) => {
-					const options = document.querySelectorAll('option[data-output="' + index + '"]');
+					const options = document.querySelectorAll('option[value="' + index + '"]');
 					for (const option of options)
 						option.disabled = event.target.checked;
 				});
