@@ -135,7 +135,7 @@ label:has(#connection-type:not([data-value="WebSocket"])) ~ .connection-websocke
 .channel {
 	display: flex;
 	flex-direction: column;
-	width: 100px;
+	width: 85px;
 }
 .channel > * {
 	border: 0;
