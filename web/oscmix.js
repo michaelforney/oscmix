@@ -621,6 +621,14 @@ class Channel {
 			name.select();
 		});
 		name.addEventListener('blur', (event) => name.readOnly = true);
+		iface.methods.set(prefix + '/name', (args) => {
+			name.value = args[0];
+			if (type == Channel.OUTPUT) {
+				const options = document.querySelectorAll(`.channel-volume-output > option[value="${index}"]`);
+				for (const option of options)
+					option.textContent = args[0];
+			}
+		});
 		const nameForm = fragment.getElementById('channel-name-form');
 		nameForm.addEventListener('submit', (event) => {
 			event.preventDefault();
