@@ -163,7 +163,7 @@ channel_constructed(GObject *obj)
 		gtk_widget_destroy(GTK_WIDGET(self->ui.dynamics_box));
 		break;
 	case CHANNEL_TYPE_OUTPUT:
-		mixer_bind(osc, g_strdup_printf("/output/%d/balance", self->id), G_TYPE_INT, self->pan, "value");
+		mixer_bind(osc, g_strdup_printf("/output/%d/pan", self->id), G_TYPE_INT, self->pan, "value");
 		mixer_bind(osc, g_strdup_printf("/output/%d/volume", self->id), G_TYPE_FLOAT, self->ui.volume, "value");
 		gtk_label_set_text(GTK_LABEL(self->ui.fx_label), "FX Return");
 		gtk_widget_destroy(self->ui.output);

@@ -534,7 +534,7 @@ class Channel {
 				volumeRange.value = args[0];
 				volumeNumber.value = args[0];
 			});
-			iface.bind(prefix + '/balance', ',i', panNumber, 'valueAsNumber', 'change');
+			iface.bind(prefix + '/pan', ',i', panNumber, 'valueAsNumber', 'change');
 			break;
 		}
 		if (type != Channel.OUTPUT) {
