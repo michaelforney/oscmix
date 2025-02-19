@@ -114,12 +114,12 @@ label:has(#connection-type:not([data-value="WebSocket"])) ~ .connection-websocke
 	flex-shrink: 1;
 	min-height: 200px;
 	overflow-x: auto;
-	column-gap: 3px;
-	padding-inline: 3px;
+	column-gap: 5px;
+	padding: 2px 4px;
 }
 .channel-outer {
 	display: flex;
-	border: 1px solid gray;
+	outline: 1px solid gray;
 	border-radius: 4px;
 	overflow: clip;
 }
