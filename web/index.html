@@ -8,6 +8,7 @@
 	<body>
 		<template id="channel-template">
 			<div class="channel-outer">
+				<input id="submix" class="submix" type="radio" form="view" name="submix" data-flags="output">
 				<div class="channel">
 					<form id="channel-name-form" class="channel-name-form">
 						<input id="channel-name" class="channel-name" readonly>
@@ -158,6 +159,18 @@
 					</fieldset>
 					<button id="connection-connect">Connect</button>
 					<button id="connection-disconnect">Disconnect</button>
+				</form>
+			</details>
+			<hr>
+			<details open>
+				<summary>View</summary>
+				<form id="view">
+					<fieldset>
+						<label>Routing Mode<select id="routing-mode" name="routingmode">
+							<option value="submix">Submix</option>
+							<option value="free">Free</option>
+						</select></label>
+					</fieldset>
 				</form>
 			</details>
 			<hr>

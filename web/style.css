@@ -123,6 +123,12 @@ label:has(#connection-type:not([data-value="WebSocket"])) ~ .connection-websocke
 	border-radius: 4px;
 	overflow: clip;
 }
+:root:has(#routing-mode > option:checked[value="submix"]) .channel-outer:has(.submix:checked) {
+	outline: 2px solid black;
+}
+.submix {
+	display: none;
+}
 .channel-outer.channel-right:has(.stereo:checked) {
 	display: none;
 }

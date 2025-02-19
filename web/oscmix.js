@@ -274,6 +274,7 @@ class Interface {
 }
 
 class OSCEvent extends Event {}
+class SubmixEvent extends Event {}
 
 class EQBand {
 	static PEAK = 0;
@@ -471,6 +472,16 @@ class Channel {
 		'autolevel/risetime',
 	]);
 
+	static submixChanged() {
+		event = new SubmixEvent('change');
+		const selects = document.querySelectorAll('select.channel-volume-output');
+		const index = document.forms.view.elements.submix.value;
+		for (const select of selects) {
+			select.selectedIndex = index;
+			select.dispatchEvent(event);
+		}
+	}
+
 	constructor(type, index, iface, left) {
 		const template = document.getElementById('channel-template');
 		const fragment = template.content.cloneNode(true);
@@ -479,6 +490,7 @@ class Channel {
 		const panNumber = fragment.getElementById('pan')
 		const stereo = fragment.getElementById('stereo');
 		const name = fragment.getElementById('channel-name');
+		const view = document.forms.view.elements;
 
 		let defName, prefix;
 		const flags = new Set();
@@ -525,6 +537,17 @@ class Channel {
 				});
 			}
 
+			const submix = fragment.getElementById('submix');
+			submix.value = index;
+			fragment.children[0].addEventListener('click', (event) => {
+				if (submix.checked)
+					return;
+				if (view.routingmode.value == 'submix') {
+					view.submix.value = index;
+					Channel.submixChanged();
+				}
+			});
+
 			volumeRange.oninput = volumeNumber.onchange = (event) => {
 				volumeRange.value = event.target.value;
 				volumeNumber.value = event.target.value;
@@ -540,8 +563,13 @@ class Channel {
 		if (type != Channel.OUTPUT) {
 			const output = fragment.getElementById('volume-output');
 			output.addEventListener('change', (event) => {
-				volumeRange.value = volumeNumber.value = this.volume[event.target.selectedIndex];
-				panNumber.value = this.pan[event.target.selectedIndex];
+				const outputIndex = event.target.selectedIndex;
+				volumeRange.value = volumeNumber.value = this.volume[outputIndex];
+				panNumber.value = this.pan[outputIndex];
+				if (view.routingmode.value == 'submix' && !(event instanceof SubmixEvent)) {
+					view.submix.value = outputIndex;
+					Channel.submixChanged();
+				}
 			});
 			volumeRange.oninput = volumeNumber.onchange = (event) => {
 				volumeRange.value = volumeNumber.value = event.target.value;
@@ -836,6 +864,11 @@ function setupInterface() {
 			left = i % 2 == 0 ? channel : null;
 		}
 	}
+
+	const routingMode = document.getElementById('routing-mode');
+	routingMode.addEventListener('change', Channel.submixChanged);
+	document.forms.view.elements.submix.value = 0;
+	Channel.submixChanged();
 
 	iface.bind('/reverb', ',i', document.getElementById('reverb-enabled'), 'checked', 'change');
 	const reverbType = document.getElementById('reverb-type');
