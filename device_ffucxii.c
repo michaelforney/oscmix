@@ -9,7 +9,7 @@ static const char *const reflevel_input[] = {"+13dBu", "+19dBu"};
 static const char *const reflevel_output[] = {"+4dBu", "+13dBu", "+19dBu"};
 static const char *const reflevel_phones[] = {"Low", "High"};
 
-static const struct inputinfo inputs[] = {
+static const struct channelinfo inputs[] = {
 	{"Mic/Line 1",  INPUT_HAS_GAIN | INPUT_HAS_48V | INPUT_HAS_AUTOSET,
 		.gain={0, 750},
 	},
@@ -51,7 +51,7 @@ static const struct inputinfo inputs[] = {
 };
 _Static_assert(LEN(inputs) == 20, "bad inputs");
 
-static const struct outputinfo outputs[] = {
+static const struct channelinfo outputs[] = {
 	{"Analog 1", OUTPUT_HAS_REFLEVEL, .reflevel={reflevel_output, LEN(reflevel_output)}},
 	{"Analog 2", OUTPUT_HAS_REFLEVEL, .reflevel={reflevel_output, LEN(reflevel_output)}},
 	{"Analog 3", OUTPUT_HAS_REFLEVEL, .reflevel={reflevel_output, LEN(reflevel_output)}},

@@ -423,7 +423,7 @@ setname(struct context *ctx, struct oscmsg *msg)
 static void
 setinputgain(struct context *ctx, struct oscmsg *msg)
 {
-	const struct inputinfo *info;
+	const struct channelinfo *info;
 	float val;
 
 	val = oscgetfloat(msg);
@@ -449,7 +449,7 @@ newinputgain(struct context *ctx, int val)
 static void
 newinputreflevel(struct context *ctx, int val)
 {
-	const struct inputinfo *info;
+	const struct channelinfo *info;
 
 	assert((unsigned)ctx->param.in < device->inputslen);
 	info = &device->inputs[ctx->param.in];
