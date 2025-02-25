@@ -492,7 +492,8 @@ class Channel {
 		const name = fragment.getElementById('channel-name');
 		const view = document.forms.view.elements;
 
-		let defName, prefix;
+		let defName;
+		const prefix = `/${type}/${index + 1}`;
 		const flags = [];
 		switch (type) {
 		case Channel.INPUT:
@@ -509,19 +510,16 @@ class Channel {
 				flags.push('gain');
 			}
 			defName = Channel.#inputNames[index];
-			prefix = `/input/${index + 1}`;
 			break;
 		case Channel.PLAYBACK:
 			flags.push('playback');
 			defName = Channel.#outputNames[index];
-			prefix = `/playback/${index + 1}`;
 			break;
 		case Channel.OUTPUT:
 			flags.push('output');
 			if (index <= 7)
 				flags.push('reflevel');
 			defName = Channel.#outputNames[index];
-			prefix = `/output/${index + 1}`;
 
 			const selects = document.querySelectorAll('select.channel-volume-output');
 			for (const select of selects) {
