@@ -201,6 +201,9 @@ label:has(#connection-type:not([data-value="WebSocket"])) ~ .connection-websocke
 .channel-volume meter {
 	height: auto;
 }
+.channel-volume meter::-webkit-meter-optimum-value {
+	transition: 0.1s inline-size;
+}
 .channel-volume meter + meter {
 	margin-left: 0;
 }
