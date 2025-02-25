@@ -1592,10 +1592,9 @@ handletimer(bool levels)
 static void
 maptree(const struct node *tree, int i)
 {
-	static unsigned char index[4];
+	static unsigned char index[sizeof nodeindex[0]];
 	const struct node *node;
 
-	static_assert(sizeof index == sizeof nodeindex[0]);
 	assert(i < sizeof index);
 	index[i] = 0;
 	for (node = tree; node->set || node->new || node->tree; ++node, ++index[i]) {
