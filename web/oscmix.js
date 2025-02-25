@@ -632,7 +632,10 @@ class Channel {
 
 		this.level = fragment.getElementById('channel-level');
 		iface.methods.set(prefix + '/level', (args) => {
-			const value = Math.max(args[0], -65);
+			let index = 0;
+			if (view.meterrms.checked) index += 1;
+			if (view.meterfx.checked && args.length >= 4) index += 2;
+			const value = Math.max(args[index], -65);
 			if (this.level.value != value)
 				this.level.value = value;
 		});
