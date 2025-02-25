@@ -193,6 +193,14 @@ label:has(#connection-type:not([data-value="WebSocket"])) ~ .connection-websocke
 .channel-mute > label:first-of-type {
 	border-right-width: 1px;
 }
+.channel-meter-value {
+	display: flex;
+	justify-content: space-evenly;
+	margin: 2px 4px;
+	border: 1px solid gray;
+	border-radius: 8px;
+	font-size: 0.75em;
+}
 .channel-volume {
 	display: flex;
 	flex-grow: 1;

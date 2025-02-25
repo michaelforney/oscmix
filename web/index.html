@@ -18,8 +18,11 @@
 						<label class="toggle-button">M<input id="mute" type="checkbox"></label>
 						<label class="toggle-button">S<input id="solo" type="checkbox"></label>
 					</div>
+					<div id="channel-meter-value" class="channel-meter-value">
+						<div id="volume-meter-value">UFL</div>
+					</div>
 					<div id="channel-volume" class="channel-volume">
-						<meter id="channel-level" min="-65" max="6" low="-3" high="-0.5" value="-65"></meter>
+						<meter id="volume-meter" min="-65" max="6" low="-3" high="-0.5" value="-65"></meter>
 						<input id="volume-range" type="range" orient="vertical" min="-65" max="6" step="0.5" value="-65" list="volume-values">
 						<div class="channel-panel-buttons">
 							<label class="toggle-button">S<input type="checkbox" class="channel-show-settings"></label>

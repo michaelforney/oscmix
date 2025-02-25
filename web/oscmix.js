@@ -606,6 +606,7 @@ class Channel {
 			node.remove();
 
 		this.volumeDiv = fragment.getElementById('channel-volume');
+		this.meterValueDiv = fragment.getElementById('channel-meter-value');
 
 		name.value = defName;
 		name.addEventListener('dblclick', (event) => {
@@ -630,22 +631,27 @@ class Channel {
 			return false;
 		});
 
-		this.level = fragment.getElementById('channel-level');
+		this.meter = fragment.getElementById('volume-meter');
+		this.meterValue = fragment.getElementById('volume-meter-value');
 		iface.methods.set(prefix + '/level', (args) => {
 			let index = 0;
 			if (view.meterrms.checked) index += 1;
 			if (view.meterfx.checked && args.length >= 4) index += 2;
 			const value = Math.max(args[index], -65);
-			if (this.level.value != value)
-				this.level.value = value;
+			if (this.meter.value != value) {
+				this.meter.value = value;
+				this.meterValue.textContent = value == -Infinity ? 'UFL' : value.toFixed(1);
+			}
 		});
 
 		if (left) {
 			stereo.addEventListener('change', (event) => {
 				if (event.target.checked) {
-					left.volumeDiv.insertBefore(this.level, left.level.nextSibling);
+					left.volumeDiv.insertBefore(this.meter, left.meter.nextSibling);
+					left.meterValueDiv.insertBefore(this.meterValue, left.meterValue.nextSibling);
 				} else {
-					this.volumeDiv.insertBefore(this.level, this.volumeDiv.firstElementChild);
+					this.volumeDiv.insertBefore(this.meter, this.volumeDiv.firstElementChild);
+					this.meterValueDiv.insertBefore(this.meterValue, this.meterValueDiv.firstElementChild);
 				}
 			});
 			fragment.children[0].classList.add('channel-right')
