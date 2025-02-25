@@ -411,9 +411,9 @@ class EQPlot {
 }
 
 class Channel {
-	static INPUT = 0;
-	static OUTPUT = 1;
-	static PLAYBACK = 2;
+	static INPUT = 'input';
+	static OUTPUT = 'output';
+	static PLAYBACK = 'playback';
 
 	static #inputNames = [
 		'Mic/Line 1', 'Mic/Line 2', 'Inst/Line 3', 'Inst/Line 4',
@@ -493,33 +493,33 @@ class Channel {
 		const view = document.forms.view.elements;
 
 		let defName, prefix;
-		const flags = new Set();
+		const flags = [];
 		switch (type) {
 		case Channel.INPUT:
-			flags.add('input');
+			flags.push('input');
 			if (index == 0 || index == 1)
-				flags.add('48v');
+				flags.push('48v');
 			if (index == 2 || index == 3)
-				flags.add('hi-z');
+				flags.push('hi-z');
 			if (index <= 3)
-				flags.add('autoset');
+				flags.push('autoset');
 			if (index <= 7) {
 				if (index >= 2)
-					flags.add('reflevel');
-				flags.add('gain');
+					flags.push('reflevel');
+				flags.push('gain');
 			}
 			defName = Channel.#inputNames[index];
 			prefix = `/input/${index + 1}`;
 			break;
 		case Channel.PLAYBACK:
-			flags.add('playback');
+			flags.push('playback');
 			defName = Channel.#outputNames[index];
 			prefix = `/playback/${index + 1}`;
 			break;
 		case Channel.OUTPUT:
-			flags.add('output');
+			flags.push('output');
 			if (index <= 7)
-				flags.add('reflevel');
+				flags.push('reflevel');
 			defName = Channel.#outputNames[index];
 			prefix = `/output/${index + 1}`;
 
@@ -560,6 +560,7 @@ class Channel {
 			iface.bind(prefix + '/pan', ',i', panNumber, 'valueAsNumber', 'change');
 			break;
 		}
+		fragment.children[0].dataset.flags = flags.join(' ');
 		if (type != Channel.OUTPUT) {
 			const output = fragment.getElementById('volume-output');
 			output.addEventListener('change', (event) => {
@@ -601,17 +602,8 @@ class Channel {
 			}
 		}
 
-		for (const node of fragment.querySelectorAll('[data-flags]')) {
-			let found
-			for (const flag of node.dataset.flags.split(' ')) {
-				if (flags.has(flag)) {
-					found = true;
-					break;
-				}
-			}
-			if (!found)
-				node.remove();
-		}
+		for (const node of fragment.querySelectorAll(`[data-type]:not([data-type~="${type}"])`))
+			node.remove();
 
 		this.volumeDiv = fragment.getElementById('channel-volume');
 

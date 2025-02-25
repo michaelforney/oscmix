@@ -123,6 +123,20 @@ label:has(#connection-type:not([data-value="WebSocket"])) ~ .connection-websocke
 	border-radius: 4px;
 	overflow: clip;
 }
+.channel-outer [data-flags]:not(
+	.channel-outer[data-flags~="48v"] [data-flags~="48v"],
+	.channel-outer[data-flags~="input"] [data-flags~="input"],
+	.channel-outer[data-flags~="output"] [data-flags~="output"],
+	.channel-outer[data-flags~="playback"] [data-flags~="playback"],
+	.channel-outer[data-flags~="hi-z"] [data-flags~="hi-z"],
+	.channel-outer[data-flags~="48v"] [data-flags~="48v"],
+	.channel-outer[data-flags~="reflevel"] [data-flags~="reflevel"],
+	.channel-outer[data-flags~="gain"] [data-flags~="gain"],
+	.channel-outer[data-flags~="autoset"] [data-flags~="autoset"])
+{
+	display: none;
+}
+
 :root:has(#routing-mode > option:checked[value="submix"]) .channel-outer:has(.submix:checked) {
 	outline: 2px solid black;
 }
