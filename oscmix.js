@@ -411,9 +411,9 @@ class EQPlot {
 }
 
 class Channel {
-	static INPUT = 0;
-	static OUTPUT = 1;
-	static PLAYBACK = 2;
+	static INPUT = 'input';
+	static OUTPUT = 'output';
+	static PLAYBACK = 'playback';
 
 	static #inputNames = [
 		'Mic/Line 1', 'Mic/Line 2', 'Inst/Line 3', 'Inst/Line 4',
@@ -492,36 +492,34 @@ class Channel {
 		const name = fragment.getElementById('channel-name');
 		const view = document.forms.view.elements;
 
-		let defName, prefix;
-		const flags = new Set();
+		let defName;
+		const prefix = `/${type}/${index + 1}`;
+		const flags = [];
 		switch (type) {
 		case Channel.INPUT:
-			flags.add('input');
+			flags.push('input');
 			if (index == 0 || index == 1)
-				flags.add('48v');
+				flags.push('48v');
 			if (index == 2 || index == 3)
-				flags.add('hi-z');
+				flags.push('hi-z');
 			if (index <= 3)
-				flags.add('autoset');
+				flags.push('autoset');
 			if (index <= 7) {
 				if (index >= 2)
-					flags.add('reflevel');
-				flags.add('gain');
+					flags.push('reflevel');
+				flags.push('gain');
 			}
 			defName = Channel.#inputNames[index];
-			prefix = `/input/${index + 1}`;
 			break;
 		case Channel.PLAYBACK:
-			flags.add('playback');
+			flags.push('playback');
 			defName = Channel.#outputNames[index];
-			prefix = `/playback/${index + 1}`;
 			break;
 		case Channel.OUTPUT:
-			flags.add('output');
+			flags.push('output');
 			if (index <= 7)
-				flags.add('reflevel');
+				flags.push('reflevel');
 			defName = Channel.#outputNames[index];
-			prefix = `/output/${index + 1}`;
 
 			const selects = document.querySelectorAll('select.channel-volume-output');
 			for (const select of selects) {
@@ -560,6 +558,7 @@ class Channel {
 			iface.bind(prefix + '/pan', ',i', panNumber, 'valueAsNumber', 'change');
 			break;
 		}
+		fragment.children[0].dataset.flags = flags.join(' ');
 		if (type != Channel.OUTPUT) {
 			const output = fragment.getElementById('volume-output');
 			output.addEventListener('change', (event) => {
@@ -601,19 +600,11 @@ class Channel {
 			}
 		}
 
-		for (const node of fragment.querySelectorAll('[data-flags]')) {
-			let found
-			for (const flag of node.dataset.flags.split(' ')) {
-				if (flags.has(flag)) {
-					found = true;
-					break;
-				}
-			}
-			if (!found)
-				node.remove();
-		}
+		for (const node of fragment.querySelectorAll(`[data-type]:not([data-type~="${type}"])`))
+			node.remove();
 
 		this.volumeDiv = fragment.getElementById('channel-volume');
+		this.meterValueDiv = fragment.getElementById('channel-meter-value');
 
 		name.value = defName;
 		name.addEventListener('dblclick', (event) => {
@@ -638,19 +629,27 @@ class Channel {
 			return false;
 		});
 
-		this.level = fragment.getElementById('channel-level');
+		this.meter = fragment.getElementById('volume-meter');
+		this.meterValue = fragment.getElementById('volume-meter-value');
 		iface.methods.set(prefix + '/level', (args) => {
-			const value = Math.max(args[0], -65);
-			if (this.level.value != value)
-				this.level.value = value;
+			let index = 0;
+			if (view.meterrms.checked) index += 1;
+			if (view.meterfx.checked && args.length >= 4) index += 2;
+			const value = Math.max(args[index], -65);
+			if (this.meter.value != value) {
+				this.meter.value = value;
+				this.meterValue.textContent = value == -Infinity ? 'UFL' : value.toFixed(1);
+			}
 		});
 
 		if (left) {
 			stereo.addEventListener('change', (event) => {
 				if (event.target.checked) {
-					left.volumeDiv.insertBefore(this.level, left.level.nextSibling);
+					left.volumeDiv.insertBefore(this.meter, left.meter.nextSibling);
+					left.meterValueDiv.insertBefore(this.meterValue, left.meterValue.nextSibling);
 				} else {
-					this.volumeDiv.insertBefore(this.level, this.volumeDiv.firstElementChild);
+					this.volumeDiv.insertBefore(this.meter, this.volumeDiv.firstElementChild);
+					this.meterValueDiv.insertBefore(this.meterValue, this.meterValueDiv.firstElementChild);
 				}
 			});
 			fragment.children[0].classList.add('channel-right')

@@ -8,7 +8,7 @@
 	<body>
 		<template id="channel-template">
 			<div class="channel-outer">
-				<input id="submix" class="submix" type="radio" form="view" name="submix" data-flags="output">
+				<input id="submix" class="submix" type="radio" form="view" name="submix" data-type="output">
 				<div class="channel">
 					<form id="channel-name-form" class="channel-name-form">
 						<input id="channel-name" class="channel-name" readonly>
@@ -18,17 +18,20 @@
 						<label class="toggle-button">M<input id="mute" type="checkbox"></label>
 						<label class="toggle-button">S<input id="solo" type="checkbox"></label>
 					</div>
+					<div id="channel-meter-value" class="channel-meter-value">
+						<div id="volume-meter-value">UFL</div>
+					</div>
 					<div id="channel-volume" class="channel-volume">
-						<meter id="channel-level" min="-65" max="6" low="-3" high="-0.5" value="-65"></meter>
+						<meter id="volume-meter" min="-65" max="6" low="-3" high="-0.5" value="-65"></meter>
 						<input id="volume-range" type="range" orient="vertical" min="-65" max="6" step="0.5" value="-65" list="volume-values">
 						<div class="channel-panel-buttons">
 							<label class="toggle-button">S<input type="checkbox" class="channel-show-settings"></label>
-							<label class="toggle-button channel-show-eq-label" data-flags="input output">EQ<input type="checkbox" class="channel-show-eq"></label>
-							<label class="toggle-button channel-show-dynamics-label" data-flags="input output">D<input type="checkbox" class="channel-show-dynamics"></label>
+							<label class="toggle-button channel-show-eq-label" data-type="input output">EQ<input type="checkbox" class="channel-show-eq"></label>
+							<label class="toggle-button channel-show-dynamics-label" data-type="input output">D<input type="checkbox" class="channel-show-dynamics"></label>
 						</div>
 					</div>
 					<input class="channel-volume-number" id="volume-number" type="number" min="-65" max="6" step="0.5">
-					<select class="channel-volume-output" id="volume-output" data-flags="input playback"></select>
+					<select class="channel-volume-output" id="volume-output" data-type="input playback"></select>
 				</div>
 				<div class="channel-panel channel-panel-settings">
 					<fieldset>
@@ -36,14 +39,14 @@
 						<label data-flags="hi-z">Instr.<span><input type="checkbox" id="hi-z"></span></label>
 						<label data-flags="48v">48V<span><input type="checkbox" id="48v"></span></label>
 						<label data-flags="reflevel">Ref. Level<select id="reflevel">
-							<option data-flags="output">+4 dBu</option>
+							<option data-type="output">+4 dBu</option>
 							<option>+13 dBu</option>
 							<option>+19 dBu</option>
 						</select></label>
 						<label data-flags="gain">Gain<input type="number" id="gain" min="0" max="24" step="0.5"></label>
 						<label data-flags="autoset">Autoset<span><input type="checkbox" id="autoset"></span></label>
 						<label>FX<input type="number" id="fx" min="-65" max="0" step="0.5"></label>
-						<label data-flags="output">Crossfeed<select id="crossfeed">
+						<label data-type="output">Crossfeed<select id="crossfeed">
 							<option>Off</option>
 							<option>1</option>
 							<option>2</option>
@@ -53,11 +56,11 @@
 						</select></label>
 						<label class="stereo-field">M/S Proc<span><input type="checkbox" id="msproc"></span></label>
 						<label>Phase<span><input type="checkbox" id="phase"></span></label>
-						<label data-flags="output">Loopback<span><input type="checkbox" id="loopback"></span></label>
-						<button id="roomeq-show" data-flags="output" class="roomeq">Room EQ</button>
+						<label data-type="output">Loopback<span><input type="checkbox" id="loopback"></span></label>
+						<button id="roomeq-show" data-type="output" class="roomeq">Room EQ</button>
 					</fieldset>
 				</div>
-				<div class="channel-panel channel-panel-eq" data-flags="input output">
+				<div class="channel-panel channel-panel-eq" data-type="input output">
 					<svg id="eq-plot" class="eq-plot">
 						<path id="eq-grid" class="eq-grid"/>
 						<polyline id="eq-curve" class="eq-curve"/>
@@ -110,7 +113,7 @@
 						</fieldset>
 					</details>
 				</div>
-				<div class="channel-panel channel-panel-dynamics" data-flags="input output">
+				<div class="channel-panel channel-panel-dynamics" data-type="input output">
 					<details open>
 						<summary>Dynamics<input id="dynamics" class="dynamics" type="checkbox"></summary>
 						<fieldset>
@@ -170,6 +173,8 @@
 							<option value="submix">Submix</option>
 							<option value="free">Free</option>
 						</select></label>
+						<label>Level Meter FX<span><input id="meter-fx" name="meterfx" type="checkbox"></span></label>
+						<label>Level Meter RMS<span><input id="meter-rms" name="meterrms" type="checkbox"></span></label>
 					</fieldset>
 				</form>
 			</details>
