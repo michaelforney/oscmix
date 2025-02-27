@@ -66,7 +66,7 @@ dumpsysex(const char *prefix, const unsigned char *buf, size_t len)
 		par ^= par >> 1;
 		printf("%.4X\t%.4X", reg, val);
 		if (par & 1)
-			printf("bad parity");
+			printf("\tbad parity");
 		fputc('\n', stdout);
 	}
 	fflush(stdout);
