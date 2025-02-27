@@ -49,6 +49,10 @@ dumpsysex(const char *prefix, const unsigned char *buf, size_t len)
 	if (pos[5] != 0 || tflag == BABYFACE) {
 		printf("subid=%d", pos[5]);
 		for (pos += sizeof hdr + 1; pos != end; pos += 5) {
+			if (pos[4] & 0xf0) {
+				printf("\tbad encoding\n");
+				return;
+			}
 			regval = getle32_7bit(pos);
 			printf("%c%.8lX", pos == buf + sizeof hdr + 1 ? '\t' : ' ', regval);
 		}
