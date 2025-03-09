@@ -9,3 +9,5 @@
 /gtk/gschemas.compiled
 /tools/regtool
 /web/oscmix.wasm
+/coremidiio
+.DS_Store
