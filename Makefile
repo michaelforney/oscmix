@@ -5,12 +5,23 @@ PREFIX=/usr/local
 BINDIR=$(PREFIX)/bin
 MANDIR=$(PREFIX)/share/man
 
+# if we are on Darwin (macOS) use COREMIDI, otherwise use ALSA
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+COREMIDI ?= y
+ALSA ?= n
+else
+COREMIDI ?= n
+ALSA ?= y
+endif
+
 -include config.mk
 
-ALSA?=y
 ALSA_CFLAGS?=$$(pkg-config --cflags alsa)
 ALSA_LDFLAGS?=$$(pkg-config --libs-only-L --libs-only-other alsa)
 ALSA_LDLIBS?=$$(pkg-config --libs-only-l alsa)
+
+COREMIDI_LDLIBS?=-framework CoreMIDI -framework CoreFoundation
 
 GTK?=y
 WEB?=n
@@ -18,6 +29,7 @@ WEB?=n
 BIN=oscmix $(BIN-y)
 BIN-$(ALSA)+=alsarawio alsaseqio
 BIN-$(WEB)+=wsdgram
+BIN-$(COREMIDI)+=coremidiio
 
 TARGET=$(BIN) $(TARGET-y)
 TARGET-$(GTK)+=gtk
@@ -54,6 +66,11 @@ WSDGRAM_OBJ=\
 	socket.o\
 	util.o
 
+COREMIDIIO_OBJ=\
+	coremidiio.o\
+	fatal.o\
+	spawn.o
+
 oscmix.o $(DEVICES): device.h
 
 oscmix: $(OSCMIX_OBJ)
@@ -70,6 +87,9 @@ alsaseqio.o: alsaseqio.c
 
 alsaseqio: alsaseqio.o
 	$(CC) $(LDFLAGS) $(ALSA_LDFLAGS) -o $@ alsaseqio.o $(ALSA_LDLIBS) -l pthread
+
+coremidiio: $(COREMIDIIO_OBJ)
+	$(CC) $(LDFLAGS) -o $@ $(COREMIDIIO_OBJ) $(COREMIDI_LDLIBS)
 
 tools/regtool.o: tools/regtool.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(ALSA_CFLAGS) -c -o $@ tools/regtool.c
@@ -89,6 +109,8 @@ clean:
 	rm -f oscmix $(OSCMIX_OBJ)\
 		wsdgram $(WSDGRAM_OBJ)\
 		alsarawio alsarawio.o\
-		alsaseqio alsaseqio.o
+		alsaseqio alsaseqio.o\
+		coremidiio coremidiio.o\
+		fatal.o spawn.o
 	$(MAKE) -C gtk clean
 	$(MAKE) -C web clean
