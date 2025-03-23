@@ -672,6 +672,7 @@ setmix(struct context *ctx, struct oscmsg *msg)
 	struct level level;
 	struct output *out;
 	struct input *in;
+	int base;
 
 	i = strtoul(ctx->pattern + 1, &end, 10) - 1;
 	if (*end != '/' || i >= device->outputslen)
@@ -680,11 +681,16 @@ setmix(struct context *ctx, struct oscmsg *msg)
 	ctx->pattern = end;
 	out = &outputs[i];
 
-	if (!oscmatch(ctx->pattern, "input", &end))
+	if (oscmatch(ctx->pattern, "input", &end))
+		base = 0;
+	else if (oscmatch(ctx->pattern, "playback", &end))
+		base = device->inputslen;
+	else
 		return;
 	i = strtoul(end + 1, &end, 10) - 1;
-	if (*end || i >= device->inputslen + device->outputslen)
+	if (*end || i >= device->inputslen + device->outputslen - base)
 		return;
+	i += base;
 	ctx->param.in = i;
 	ctx->pattern = end;
 	in = &inputs[i];
