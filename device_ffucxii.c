@@ -360,7 +360,9 @@ ctltoreg(enum control ctl, const struct param *p)
 		                      return 0x2000 | p->out << 6 | p->in;
 	case MIX_LEVEL:               if ((unsigned)p->out >= LEN(outputs)) break;
 		                      if ((unsigned)p->in >= LEN(inputs) + LEN(outputs)) break;
-		                      return 0x4000 | p->out << 6 | p->in;
+	                              idx = p->in;
+	                              if (idx >= LEN(inputs)) idx += 0x20 - LEN(inputs);
+		                      return 0x4000 | p->out << 6 | idx;
 	case REVERB:                  return 0x3000;
 	case REVERB_TYPE:             return 0x3001;
 	case REVERB_PREDELAY:         return 0x3002;
