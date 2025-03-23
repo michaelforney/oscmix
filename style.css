@@ -324,4 +324,3 @@ label:has(#connection-type:not([data-value="WebSocket"])) ~ .connection-websocke
 .channel-panel-eq .eq-controls :not(:nth-child(4n+1)) {
 	text-align: center;
 }
-}
