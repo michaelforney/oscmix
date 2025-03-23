@@ -1108,7 +1108,7 @@ static const struct node eqtree[] = {
 	{"band3q", EQ_BAND3Q, .set=setfixed, .new=newfixed, .scale=0.1, .min=4, .max=99},
 	{"band3type", EQ_BAND3TYPE, .set=setenum, .new=newenum, .names=(const char *const[]){
 		"Peak", "High Shelf", "Low Pass", "High Pass",
-	}, .nameslen=3},
+	}, .nameslen=4},
 	{0},
 };
 
