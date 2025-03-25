@@ -714,8 +714,12 @@ setmix(struct context *ctx, struct oscmsg *msg)
 
 	calclevel(out, in, 1, &level);
 	level.width = in->width;
-	vol = oscgetfloat(msg);
-	level.vol = vol <= -65.f ? 0 : powf(10.f, vol / 20.f);
+	if (*msg->type == 'N') {
+		++msg->type;
+	} else {
+		vol = oscgetfloat(msg);
+		level.vol = vol <= -65.f ? 0 : powf(10.f, vol / 20.f);
+	}
 
 	if (*msg->type) {
 		level.pan = oscgetint(msg);
