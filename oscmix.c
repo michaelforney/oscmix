@@ -349,7 +349,6 @@ setinputmute(struct context *ctx, struct oscmsg *msg)
 	if (oscend(msg) != 0)
 		return;
 	assert((unsigned)ctx->param.in < device->inputslen + device->outputslen);
-	/* mutex */
 	in = &inputs[ctx->param.in];
 	setval(ctx, val);
 	muteinput(in, val);
