@@ -1,0 +1,83 @@
+# .builds/darwin.yml
+
+name: oscmix
+options:
+  deploymentTarget: "10.15" # Minimal macOS-Version
+
+configs:
+  debug: debug
+  release: release
+
+settings:
+  GCC_C_LANGUAGE_STANDARD: c11
+  OTHER_CFLAGS: -I.
+
+targets:
+  # Main-Target
+  oscmix:
+    type: tool
+    platform: macOS
+    sources:
+      - path: ../main.c
+      - path: ../osc.c
+      - path: ../oscmix.c
+      - path: ../socket.c
+      - path: ../sysex.c
+      - path: ../util.c
+      - path: ../device_ff802.c
+      - path: ../device_ffucxii.c
+    settings:
+      OTHER_LDFLAGS: -lm
+
+  # WebSocket-Datagram
+  wsdgram:
+    type: tool
+    platform: macOS
+    sources:
+      - path: ../wsdgram.c
+      - path: ../base64.c
+      - path: ../http.c
+      - path: ../sha1.c
+      - path: ../socket.c
+      - path: ../util.c
+    settings:
+      OTHER_LDFLAGS: -lpthread
+
+  # CoreMIDI-Target
+  coremidiio:
+    type: tool
+    platform: macOS
+    sources:
+      - path: ../coremidiio.c
+      - path: ../fatal.c
+      - path: ../spawn.c
+    settings:
+      OTHER_LDFLAGS: -framework CoreMIDI -framework CoreFoundation
+
+  # GTK-Project
+  gtk:
+    type: tool
+    platform: macOS
+    postBuildScripts:
+      - script: make -C ../gtk
+
+  # Install-Target
+  install:
+    type: tool
+    platform: macOS
+    postBuildScripts:
+      - script: |
+          mkdir -p "${DESTDIR}${PREFIX}/bin"
+          cp ../oscmix ../wsdgram ../coremidiio "${DESTDIR}${PREFIX}/bin/"
+          mkdir -p "${DESTDIR}${PREFIX}/share/man/man1"
+          cp ../doc/oscmix.1 "${DESTDIR}${PREFIX}/share/man/man1/"
+
+  # Clean-Target
+  clean:
+    type: tool
+    platform: macOS
+    preBuildScripts:
+      - script: |
+          rm -f ../oscmix ../*.o ../wsdgram ../coremidiio
+          make -C ../gtk clean
+          make -C ../web clean
