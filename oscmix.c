@@ -277,12 +277,25 @@ setchannel(struct context *ctx, struct oscmsg *msg)
 	long index;
 
 	index = strtol(ctx->pattern + 1, &end, 10);
-	if (*end != '/')
+	if (*end != '/' || index < 1)
 		return;
-	if (strcmp(ctx->node->name, "input") == 0)
-		ctx->param.in = index - 1;
-	else
-		ctx->param.out = index - 1;
+	--index;
+	if (strcmp(ctx->node->name, "input") == 0) {
+		if (index >= device->inputslen + device->outputslen)
+			return;
+		ctx->param.in = index;
+	} else if (strcmp(ctx->node->name, "playback") == 0) {
+		if (index >= device->outputslen)
+			return;
+		ctx->param.in = device->inputslen + index;
+	} else if (strcmp(ctx->node->name, "output") == 0) {
+		if (index >= device->outputslen)
+			return;
+		ctx->param.out = index;
+	} else {
+		assert(0);
+		return;
+	}
 	ctx->pattern = end;
 }
 
@@ -335,7 +348,7 @@ setinputmute(struct context *ctx, struct oscmsg *msg)
 	val = oscgetint(msg);
 	if (oscend(msg) != 0)
 		return;
-	assert((unsigned)ctx->param.in < device->inputslen);
+	assert((unsigned)ctx->param.in < device->inputslen + device->outputslen);
 	/* mutex */
 	in = &inputs[ctx->param.in];
 	setval(ctx, val);
@@ -1217,7 +1230,9 @@ static const struct node roottree[] = {
 		{"loopback", .set=setoutputloopback},
 		{0},
 	}},
-	{"playback", .tree=(const struct node[]){
+	{"playback", .set=setchannel, .tree=(const struct node[]){
+		{"mute", .set=setinputmute},
+		{"stereo", .set=setinputstereo},
 		{0},
 	}},
 	{"mix", MIX, .set=setmix, .new=newmix},
