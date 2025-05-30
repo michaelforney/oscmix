@@ -178,7 +178,7 @@ regtoctl(int reg, struct param *p)
 	case 0x0025: return AUTOLEVEL_HEADROOM;
 	case 0x0026: return AUTOLEVEL_RISETIME;
 
-	case 0x2FC0: return REFRESH;
+	case 0x2FC0: break;  /* unknown */
 
 	case 0x3000: return REVERB;
 	case 0x3001: return REVERB_TYPE;

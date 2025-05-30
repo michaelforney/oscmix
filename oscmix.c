@@ -89,7 +89,6 @@ static struct {
 	int vers;
 	int load;
 } dsp;
-static bool refreshing;
 
 static void oscsend(const char *addr, const char *type, ...);
 static void oscflush(void);
@@ -1085,7 +1084,6 @@ setrefresh(struct context *ctx, struct oscmsg *msg)
 	dsp.vers = -1;
 	dsp.load = -1;
 	setval(ctx, device->refresh);
-	refreshing = true;
 	/* FIXME: needs lock */
 	for (i = 0; i < device->outputslen; ++i) {
 		pb = &inputs[device->inputslen + i];
@@ -1093,14 +1091,6 @@ setrefresh(struct context *ctx, struct oscmsg *msg)
 		oscsend(addr, ",i", pb->stereo);
 	}
 	oscflush();
-}
-
-static void
-newrefresh(struct context *ctx, int val)
-{
-	refreshing = false;
-	if (dflag)
-		fprintf(stderr, "refresh done\n");
 }
 
 static const struct node lowcuttree[] = {
@@ -1346,7 +1336,7 @@ static const struct node roottree[] = {
 		{NULL, DUREC_LENGTH, .new=newdureclength},
 		{0},
 	}},
-	{"refresh", REFRESH, .set=setrefresh, .new=newrefresh},
+	{"refresh", REFRESH, .set=setrefresh},
 	{0},
 };
 
@@ -1604,7 +1594,7 @@ handletimer(bool levels)
 	static int serial;
 	unsigned char buf[7];
 
-	if (levels && !refreshing) {
+	if (levels) {
 		/* XXX: ~60 times per second levels, ~30 times per second serial */
 		writesysex(2, NULL, 0, buf);
 	}
