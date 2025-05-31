@@ -759,7 +759,6 @@ newmix(struct context *ctx, int val)
 	ispan = val & 0x8000;
 	val = ((val & 0x7fff) ^ 0x4000) - 0x4000;
 	calclevel(out, in, 0, &level);
-	in->width = level.width;
 	if (ispan) {
 		if (val < -100)
 			val = -100;
@@ -776,6 +775,7 @@ newmix(struct context *ctx, int val)
 		if ((in - inputs) & 1)
 			--in;
 		calclevel(out, in, 1, &level);
+		in->width = level.width;
 	}
 	snprintf(ctx->addr, ctx->addrend - ctx->addr, "/mix/%d/input/%d", (int)(out - outputs) + 1, (int)(in - inputs) + 1);
 	oscsend(ctx->addr, ",fi", level.vol > 0 ? 20.f * log10f(level.vol) : -INFINITY, level.pan);
