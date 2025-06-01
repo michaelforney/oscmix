@@ -404,9 +404,9 @@ newoutputstereo(struct context *ctx, int val)
 	out = &outputs[ctx->param.out & ~1];
 	out[0].stereo = val;
 	out[1].stereo = val;
-	snprintf(ctx->addr, ctx->addrend - ctx->addr, "/output/%d/stereo", (int)(out - outputs));
-	oscsend(ctx->addr, ",i", val != 0);
 	snprintf(ctx->addr, ctx->addrend - ctx->addr, "/output/%d/stereo", (int)(out - outputs + 1));
+	oscsend(ctx->addr, ",i", val != 0);
+	snprintf(ctx->addr, ctx->addrend - ctx->addr, "/output/%d/stereo", (int)(out - outputs + 2));
 	oscsend(ctx->addr, ",i", val != 0);
 }
 
