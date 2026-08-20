@@ -34,8 +34,9 @@ struct node {
 	void (*new)(struct context *ctx, int val);
 	union {
 		struct {
-			const char *const *const names;
-			size_t nameslen;
+			const char *const *enumnames;
+			const int *enumvals;
+			size_t enumlen;
 		};
 		struct {
 			short min;
@@ -92,7 +93,7 @@ static struct {
 
 static void oscsend(const char *addr, const char *type, ...);
 static void oscflush(void);
-static void oscsendenum(const char *addr, int val, const char *const names[], size_t nameslen);
+static void oscsendenum(const char *addr, int val, const char *const names[], const int *vals, size_t len);
 
 static void
 dump(const char *name, const void *ptr, size_t len)
@@ -201,17 +202,19 @@ setenum(struct context *ctx, struct oscmsg *msg)
 {
 	const char *str;
 	int val;
+	size_t i;
 
 	switch (*msg->type) {
 	case 's':
 		str = oscgetstr(msg);
 		if (str) {
-			for (val = 0; val < ctx->node->nameslen; ++val) {
-				if (strcasecmp(str, ctx->node->names[val]) == 0)
+			for (i = 0; i < ctx->node->enumlen; ++i) {
+				if (strcasecmp(str, ctx->node->enumnames[i]) == 0)
 					break;
 			}
-			if (val == ctx->node->nameslen)
+			if (i == ctx->node->enumlen)
 				return;
+			val = ctx->node->enumvals ? ctx->node->enumvals[i] : i;
 		}
 		break;
 	default:
@@ -226,7 +229,7 @@ setenum(struct context *ctx, struct oscmsg *msg)
 static void
 newenum(struct context *ctx, int val)
 {
-	oscsendenum(ctx->addr, val, ctx->node->names, ctx->node->nameslen);
+	oscsendenum(ctx->addr, val, ctx->node->enumnames, ctx->node->enumvals, ctx->node->enumlen);
 }
 
 static void
@@ -464,7 +467,7 @@ newinputreflevel(struct context *ctx, int val)
 
 	assert((unsigned)ctx->param.in < device->inputslen);
 	info = &device->inputs[ctx->param.in];
-	oscsendenum(ctx->addr, val & 0xf, info->reflevel.names, info->reflevel.nameslen);
+	oscsendenum(ctx->addr, val & 0xf, info->reflevel.names, NULL, info->reflevel.nameslen);
 }
 
 static void
@@ -842,7 +845,7 @@ newdurecstatus(struct context *ctx, int val)
 	status = val & 0xF;
 	if (status != durec.status) {
 		durec.status = status;
-		oscsendenum("/durec/status", status, names, LEN(names));
+		oscsendenum("/durec/status", status, names, NULL, LEN(names));
 	}
 	position = (val >> 8) * 100 / 65;
 	if (position != durec.position) {
@@ -959,7 +962,7 @@ newdurecnext(struct context *ctx, int val)
 	playmode = val >> 12;
 	if (playmode != durec.playmode) {
 		durec.playmode = playmode;
-		oscsendenum("/durec/playmode", playmode, names, LEN(names));
+		oscsendenum("/durec/playmode", playmode, names, NULL, LEN(names));
 	}
 }
 
@@ -1103,18 +1106,18 @@ static const struct node eqtree[] = {
 	{"band1freq", EQ_BAND1FREQ, .set=setint, .new=newint, .min=20, .max=20000},
 	{"band1gain", EQ_BAND1GAIN, .set=setfixed, .new=newfixed, .scale=0.1, .min=-200, .max=200},
 	{"band1q", EQ_BAND1Q, .set=setfixed, .new=newfixed, .scale=0.1, .min=4, .max=99},
-	{"band1type", EQ_BAND1TYPE, .set=setenum, .new=newenum, .names=(const char *const[]){
+	{"band1type", EQ_BAND1TYPE, .set=setenum, .new=newenum, .enumnames=(const char *const[]){
 		"Peak", "Low Shelf", "High Pass", "Low Pass",
-	}, .nameslen=4},
+	}, .enumlen=4},
 	{"band2freq", EQ_BAND2FREQ, .set=setint, .new=newint, .min=20, .max=20000},
 	{"band2gain", EQ_BAND2GAIN, .set=setfixed, .new=newfixed, .scale=0.1, .min=-200, .max=200},
 	{"band2q", EQ_BAND2Q, .set=setfixed, .new=newfixed, .scale=0.1, .min=4, .max=99},
 	{"band3freq", EQ_BAND3FREQ, .set=setint, .new=newint, .min=20, .max=20000},
 	{"band3gain", EQ_BAND3GAIN, .set=setfixed, .new=newfixed, .scale=0.1, .min=-200, .max=200},
 	{"band3q", EQ_BAND3Q, .set=setfixed, .new=newfixed, .scale=0.1, .min=4, .max=99},
-	{"band3type", EQ_BAND3TYPE, .set=setenum, .new=newenum, .names=(const char *const[]){
+	{"band3type", EQ_BAND3TYPE, .set=setenum, .new=newenum, .enumnames=(const char *const[]){
 		"Peak", "High Shelf", "Low Pass", "High Pass",
-	}, .nameslen=4},
+	}, .enumlen=4},
 	{0},
 };
 
@@ -1140,9 +1143,9 @@ static const struct node autoleveltree[] = {
 
 static const struct node roomeqtree[] = {
 	{"delay", ROOMEQ_DELAY, .set=setfixed, .new=newfixed, .min=0, .max=425, .scale=0.001},
-	{"band1type", ROOMEQ_BAND1TYPE, .set=setenum, .new=newenum, .names=(const char *const[]){
+	{"band1type", ROOMEQ_BAND1TYPE, .set=setenum, .new=newenum, .enumnames=(const char *const[]){
 		"Peak", "Low Shelf", "High Pass", "Low Pass",
-	}, .nameslen=4},
+	}, .enumlen=4},
 	{"band1gain", ROOMEQ_BAND1GAIN, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
 	{"band1freq", ROOMEQ_BAND1FREQ, .set=setint, .new=newint, .min=20, .max=20000},
 	{"band1q", ROOMEQ_BAND1Q, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
@@ -1164,15 +1167,15 @@ static const struct node roomeqtree[] = {
 	{"band7gain", ROOMEQ_BAND7GAIN, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
 	{"band7freq", ROOMEQ_BAND7FREQ, .set=setint, .new=newint, .min=20, .max=20000},
 	{"band7q", ROOMEQ_BAND7Q, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
-	{"band8type", ROOMEQ_BAND8TYPE, .set=setenum, .new=newenum, .names=(const char *const[]){
+	{"band8type", ROOMEQ_BAND8TYPE, .set=setenum, .new=newenum, .enumnames=(const char *const[]){
 		"Peak", "High Shelf", "Low Pass", "High Pass",
-	}, .nameslen=4},
+	}, .enumlen=4},
 	{"band8gain", ROOMEQ_BAND8GAIN, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
 	{"band8freq", ROOMEQ_BAND8FREQ, .set=setint, .new=newint, .min=20, .max=20000},
 	{"band8q", ROOMEQ_BAND8Q, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
-	{"band9type", ROOMEQ_BAND9TYPE, .set=setenum, .new=newenum, .names=(const char *const[]){
+	{"band9type", ROOMEQ_BAND9TYPE, .set=setenum, .new=newenum, .enumnames=(const char *const[]){
 		"Peak", "High Shelf", "Low Pass", "High Pass",
-	}, .nameslen=4},
+	}, .enumlen=4},
 	{"band9gain", ROOMEQ_BAND9GAIN, .set=setfixed, .new=newfixed, .min=-200, .max=200, .scale=0.1},
 	{"band9freq", ROOMEQ_BAND9FREQ, .set=setint, .new=newint, .min=20, .max=20000},
 	{"band9q", ROOMEQ_BAND9Q, .set=setfixed, .new=newfixed, .min=4, .max=99, .scale=0.1},
@@ -1210,9 +1213,9 @@ static const struct node roottree[] = {
 		{"name", NAME, .set=setname},
 		{"playchan", OUTPUT_PLAYCHAN, .set=setint, .new=newint},
 		{"phase", OUTPUT_PHASE, .set=setbool, .new=newbool},
-		{"reflevel", OUTPUT_REFLEVEL, .set=setenum, .new=newenum, .names=(const char *const[]){
+		{"reflevel", OUTPUT_REFLEVEL, .set=setenum, .new=newenum, .enumnames=(const char *const[]){
 			"+4dBu", "+13dBu", "+19dBu",
-		}, .nameslen=3}, // TODO: phones
+		}, .enumlen=3}, // TODO: phones
 		{"crossfeed", OUTPUT_CROSSFEED, .set=setint, .new=newint},
 		{"volumecal", OUTPUT_VOLUMECAL, .set=setfixed, .new=newfixed, .min=-2400, .max=300, .scale=0.01},
 		{"lowcut", LOWCUT, .set=setbool, .new=newbool, .tree=lowcuttree},
@@ -1230,12 +1233,12 @@ static const struct node roottree[] = {
 	}},
 	{"mix", MIX, .set=setmix, .new=newmix},
 	{"reverb", REVERB, .set=setbool, .new=newbool, .tree=(const struct node[]){
-		{"type", REVERB_TYPE, .set=setenum, .new=newenum, .names=(const char *const[]){
+		{"type", REVERB_TYPE, .set=setenum, .new=newenum, .enumnames=(const char *const[]){
 			"Small Room", "Medium Room", "Large Room", "Walls",
 			"Shorty", "Attack", "Swagger", "Old School",
 			"Echoistic", "8plus9", "Grand Wide", "Thicker",
 			"Envelope", "Gated", "Space",
-		}, .nameslen=15},
+		}, .enumlen=15},
 		{"predelay", REVERB_PREDELAY, .set=setint, .new=newint},
 		{"lowcut", REVERB_LOWCUT, .set=setint, .new=newint},
 		{"roomscale", REVERB_ROOMSCALE, .set=setfixed, .new=newfixed, .scale=0.01},
@@ -1251,25 +1254,30 @@ static const struct node roottree[] = {
 		{0},
 	}},
 	{"echo", ECHO, .set=setbool, .new=newbool, .tree=(const struct node[]){
-		{"type", ECHO_TYPE, .set=setenum, .new=newenum, .names=(const char *const[]){
+		{"type", ECHO_TYPE, .set=setenum, .new=newenum, .enumnames=(const char *const[]){
 			"Stereo Echo",
 			"Stereo Cross",
 			"Pong Echo",
-		}, .nameslen=3},
+		}, .enumlen=3},
 		{"delay", ECHO_DELAY, .set=setfixed, .new=newfixed, .scale=0.001, .min=0, .max=2000},
 		{"feedback", ECHO_FEEDBACK, .set=setint, .new=newint},
-		{"highcut", ECHO_HIGHCUT, .set=setenum, .new=newenum, .names=(const char *const[]){
+		{"highcut", ECHO_HIGHCUT, .set=setenum, .new=newenum, .enumnames=(const char *const[]){
 			"Off", "16kHz", "12kHz", "8kHz", "4kHz", "2kHz",
-		}, .nameslen=6},
+		}, .enumlen=6},
 		{"volume", ECHO_VOLUME, .set=setfixed, .new=newfixed, .scale=0.1, .min=-650, .max=60},
 		{"width", ECHO_WIDTH, .set=setfixed, .new=newfixed, .scale=0.01},
 		{0},
 	}},
 	{"controlroom", .tree=(const struct node[]){
-		{"mainout", CTLROOM_MAINOUT, .set=setenum, .new=newenum, .names=(const char *const[]){
+		{"mainout", CTLROOM_MAINOUT, .set=setenum, .new=newenum, .enumnames=(const char *const[]){
 			"1/2", "3/4", "5/6", "7/8", "9/10",
 			"11/12", "13/14", "15/16", "17/18", "19/20",
-		}, .nameslen=10},
+			"None",
+		}, .enumvals=(const int[]){
+			0, 1, 2, 3, 4,
+			5, 6, 7, 8, 9,
+			-1,
+		}, .enumlen=11},
 		{"mainmono", CTLROOM_MAINMONO, .set=setbool, .new=newbool},
 		{"muteenable", CTLROOM_MUTEENABLE, .set=setbool, .new=newbool},
 		{"dimreduction", CTLROOM_DIMREDUCTION, .set=setfixed, .new=newfixed, .scale=0.1, .min=-650, .max=0},
@@ -1278,9 +1286,9 @@ static const struct node roottree[] = {
 		{0},
 	}},
 	{"clock", .tree=(const struct node[]){
-		{"source", CLOCK_SOURCE, .set=setenum, .new=newenum, .names=(const char *const[]){
+		{"source", CLOCK_SOURCE, .set=setenum, .new=newenum, .enumnames=(const char *const[]){
 			"Internal", "Word Clock", "SPDIF", "AES", "Optical",
-		}, .nameslen=5},
+		}, .enumlen=5},
 		{"samplerate", CLOCK_SAMPLERATE, .new=newsamplerate},
 		{"wckout", CLOCK_WCKOUT, .set=setbool, .new=newbool},
 		{"wcksingle", CLOCK_WCKSINGLE, .set=setbool, .new=newbool},
@@ -1288,23 +1296,23 @@ static const struct node roottree[] = {
 		{0},
 	}},
 	{"hardware", .tree=(const struct node[]){
-		{"opticalout", HARDWARE_OPTICALOUT, .set=setenum, .new=newenum, .names=(const char *const[]){
+		{"opticalout", HARDWARE_OPTICALOUT, .set=setenum, .new=newenum, .enumnames=(const char *const[]){
 			"ADAT", "SPDIF",
-		}, .nameslen=2},
-		{"spdifout", HARDWARE_SPDIFOUT, .set=setenum, .new=newenum, .names=(const char *const[]){
+		}, .enumlen=2},
+		{"spdifout", HARDWARE_SPDIFOUT, .set=setenum, .new=newenum, .enumnames=(const char *const[]){
 			"Consumer", "Professional",
-		}, .nameslen=2},
+		}, .enumlen=2},
 		{"ccmode", HARDWARE_CCMODE, .new=newbool},
-		{"ccmix", HARDWARE_CCMIX, .set=setenum, .new=newenum, .names=(const char *const[]){
+		{"ccmix", HARDWARE_CCMIX, .set=setenum, .new=newenum, .enumnames=(const char *const[]){
 			"TotalMix App", "6ch + phones", "8ch", "20ch",
-		}, .nameslen=4},
+		}, .enumlen=4},
 		{"standalonemidi", HARDWARE_STANDALONEMIDI, .set=setbool, .new=newbool},
-		{"standalonearc", HARDWARE_STANDALONEARC, .set=setenum, .new=newenum, .names=(const char *const[]){
+		{"standalonearc", HARDWARE_STANDALONEARC, .set=setenum, .new=newenum, .enumnames=(const char *const[]){
 			"Volume", "1s Op", "Normal",
-		}, .nameslen=3},
-		{"lockkeys", HARDWARE_LOCKKEYS, .set=setenum, .new=newenum, .names=(const char *const[]){
+		}, .enumlen=3},
+		{"lockkeys", HARDWARE_LOCKKEYS, .set=setenum, .new=newenum, .enumnames=(const char *const[]){
 			"Off", "Keys", "All",
-		}, .nameslen=3},
+		}, .enumlen=3},
 		{"remapkeys", HARDWARE_REMAPKEYS, .set=setbool, .new=newbool},
 		{"eqdrecord", .set=seteqdrecord},
 		{NULL, HARDWARE_DSPVERLOAD, .new=newdspload},
@@ -1437,10 +1445,24 @@ oscsend(const char *addr, const char *type, ...)
 }
 
 static void
-oscsendenum(const char *addr, int val, const char *const names[], size_t nameslen)
+oscsendenum(const char *addr, int val, const char *const names[], const int *vals, size_t len)
 {
-	if (val >= 0 && val < nameslen) {
-		oscsend(addr, ",is", val, names[val]);
+	const char *name;
+	size_t i;
+
+	name = NULL;
+	if (vals) {
+		for (i = 0; i < len; ++i) {
+			if (val == vals[i]) {
+				name = names[i];
+				break;
+			}
+		}
+	} else if (val >= 0 && val < len) {
+		name = names[val];
+	}
+	if (name) {
+		oscsend(addr, ",is", val, name);
 	} else {
 		fprintf(stderr, "unexpected enum value %d\n", val);
 		oscsend(addr, ",i", val);
