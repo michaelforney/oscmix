@@ -1464,7 +1464,7 @@ oscsendenum(const char *addr, int val, const char *const names[], const int *val
 	if (name) {
 		oscsend(addr, ",is", val, name);
 	} else {
-		fprintf(stderr, "unexpected enum value %d\n", val);
+		fprintf(stderr, "%s: unexpected enum value %d\n", addr, val);
 		oscsend(addr, ",i", val);
 	}
 }
