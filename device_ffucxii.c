@@ -120,8 +120,9 @@ regtoctl(int reg, struct param *p)
 			p->out = idx - LEN(inputs);
 		return DYNAMICS_METER;
 	} else if (reg - 0x35D0U < 0x280) {
-		p->out = (reg - 0x35D0) >> 5;
-		reg = 0x35D0 | (reg & 0x1F);
+		reg -= 0x35D0;
+		p->out = reg >> 5;
+		reg = 0x35D0 + (reg & 0x1F);
 	}
 	switch (reg) {
 	case 0x0000: return INPUT_MUTE;
