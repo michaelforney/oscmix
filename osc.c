@@ -181,22 +181,78 @@ oscputfloat(struct oscmsg *msg, float val)
 	msg->buf = pos + 4;
 }
 
+/* Match a segment of an OSC path, including glob style patterns.
+ *
+ * Some of the pattern types will match a variable length, changing the
+ * available input for the rest of the match. In those cases we feed whatever
+ * would be left of the segment for each valid option back into this function
+ * to check the remaining pattern matches.
+ */
+static char const *
+segmentmatch(char const * pat, char const * seg)
+{
+    while (*seg != '\0' || (*pat != '\0' && *pat != '/')) {
+        if (*pat == '*') {
+            do { // Try absorbing chars of the seg and see if the remaining pattern matches
+                char const * const m = segmentmatch(pat + 1, seg);
+                if (m)
+                    return m;
+            } while (*seg++ != '\0');
+            return NULL;
+        } else if (*pat == '[') {
+            // char group, have to read over the whole thing, but if we find it then it's OK
+            bool found = false;
+            while (*(++pat) != ']') {
+                if (*pat == '\0' || *pat == '/') {
+                    return NULL;  // Malformed pattern
+                } else if (*pat == *seg) {
+                    found = true;
+                }
+            }
+            if (!found) {
+                return NULL;
+            }
+            seg++;  // absorb the 1 char that this matched
+            pat++;  // move past ]
+        } else if (*pat == '{') {
+            // Try all options and see if remainder of pattern matches
+            char const * group_end = pat;
+            while (*(++group_end) != '}') {
+                if (*group_end == '\0' || *group_end == '/')
+                    return NULL;  // Malformed group
+            }
+            group_end++;
+            char const * item_start = ++pat;
+            int const slen = strlen(seg);
+            while (pat < group_end) {
+                if (*pat == ',' || *pat == '}') {
+                    if (slen >= pat - item_start && !strncmp(seg, item_start, pat - item_start)) {
+                        char const * const m = segmentmatch(group_end, &seg[pat - item_start]);
+                        if (m)
+                            return m;
+                    } else {
+                        item_start = pat + 1;
+                    }
+                }
+                pat++;
+            }
+            return NULL;
+        } else if (*pat == '?' || *seg == *pat) {
+            seg++;
+            pat++;
+        } else {
+            return NULL;
+        }
+    }
+    return (*seg == '\0' && (*pat == '\0' || *pat == '/')) ? pat : NULL;
+}
+
 bool
 oscmatch(const char *pat, const char *str, char **end)
 {
-	/* TODO: more complete implementation supporting *, [], and {} */
 	assert(*pat == '/');
-	for (;;) {
-		++pat;
-		if (*pat == '/' || *pat == '\0') {
-			if (*str)
-				return false;
-			if (end)
-				*end = (char *)pat;
-			return true;
-		}
-		if (*pat != *str)
-			return false;
-		++str;
-	}
+    char const * const matched = segmentmatch(pat + 1, str);
+    if (matched && end)
+        *end = (char *) matched;
+    return matched != NULL;
 }
