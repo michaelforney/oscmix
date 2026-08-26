@@ -326,9 +326,9 @@ ctltoreg(enum control ctl, const struct param *p)
 	case OUTPUT_STEREO:           reg = 0x04; goto channel;
 	case OUTPUT_RECORD:           reg = 0x05; goto channel;
 	case OUTPUT_PLAYCHAN:         reg = 0x07; goto channel;
-	case OUTPUT_PHASE:            if (~flags & INPUT_HAS_REFLEVEL) break;
-	                              reg = 0x08; goto channel;
-	case OUTPUT_REFLEVEL:         reg = 0x09; goto channel;
+	case OUTPUT_PHASE:            reg = 0x08; goto channel;
+	case OUTPUT_REFLEVEL:         if (~flags & OUTPUT_HAS_REFLEVEL) break;
+	                              reg = 0x09; goto channel;
 	case OUTPUT_CROSSFEED:        reg = 0x0A; goto channel;
 	case OUTPUT_VOLUMECAL:        reg = 0x0B; goto channel;
 	case LOWCUT:                  reg = 0x0C; goto channel;
