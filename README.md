@@ -17,10 +17,27 @@ implemented in oscmix.
 
 - RME Fireface UCX II
 
+## Build prerequisites
+
+Debian/Ubuntu:
+```sh
+apt install build-essential pkg-config libasound2-dev libgtk-3-dev clang lld wasi-libc
+```
+
+Fedora:
+```sh
+dnf install gcc make pkgconf alsa-lib-devel gtk3-devel clang lld wasi-libc
+```
+
+Arch:
+```sh
+pacman -S base-devel alsa-lib gtk3 clang lld wasi-libc
+```
+
 ## Usage
 
 ```
-oscmix [-dl] [-r recvaddr] [-s sendaddr]
+oscmix [-dlm] [-r recvaddr] [-s sendaddr]
 ```
 
 oscmix reads and writes MIDI SysEx messages from/to file descriptors
@@ -123,23 +140,9 @@ and `wasi-libc`.
 
 The OSC API is not yet final and may change without notice.
 
-| Method | Arguments | Description |
-| --- | --- | --- |
-| `/input/{1..20}/mute` | `i` enabled | Input *n* muted |
-| `/input/{1..20}/fxsend` | `f` db (-65-0) | Input *n* FX send level |
-| `/input/{1..20}/stereo` | `i` enabled | Input *n* is stereo |
-| `/input/{1..20}/record` | `i` enabled | Input *n* record enabled |
-| `/input/{1..20}/playchan` | `i` 0=off 1-60 | Input *n* play channel |
-| `/input/{1..20}/msproc` | `i` enabled | Input *n* M/S processing enabled |
-| `/input/{1..20}/phase` | `i` enabled | Input *n* phase invert enabled |
-| `/input/{1..4}/gain` | `f` 0-75 (n=1,2) 0-24 (n=3,4) | Input *n* gain |
-| `/input/{1..2}/48v` | `i` enabled | Input *n* phantom power enabled |
-| `/input/{3..8}/reflevel` | `i` 0=+4dBu 1=+13dBu 2=+19dBu | Input *n* reference level |
-| `/durec/status` | `i` | DURec status |
-| `/refresh` | none | **W** Refresh device registers |
-| `/register` | `ii...` register, value | **W** Set device register explicitly |
+See [doc/osc-api.md] for the full API reference.
 
-**TODO** Document rest of API. For now, see the OSC tree in `oscmix.c`.
+[doc/osc-api.md]: doc/osc-api.md
 
 ## Contact
 
