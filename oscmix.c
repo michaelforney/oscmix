@@ -399,6 +399,23 @@ newinputstereo(struct context *ctx, int val)
 }
 
 static void
+setoutputstereo(struct context *ctx, struct oscmsg *msg)
+{
+	struct output *out;
+	bool val;
+
+	if (!ctx->exact)
+		return;
+	val = oscgetint(msg);
+	if (oscend(msg) != 0)
+		return;
+	out = &outputs[ctx->param.out & ~1];
+	out[0].stereo = val;
+	out[1].stereo = val;
+	setval(ctx, val);
+}
+
+static void
 newoutputstereo(struct context *ctx, int val)
 {
 	struct output *out;
@@ -1208,7 +1225,7 @@ static const struct node roottree[] = {
 		{"pan", OUTPUT_PAN, .set=setint, .new=newint, .min=-100, .max=100},
 		{"mute", OUTPUT_MUTE, .set=setbool, .new=newbool},
 		{"fx", OUTPUT_FXRETURN, .set=setfixed, .new=newfixed, .scale=0.1, .min=-65.0, .max=0.0},
-		{"stereo", OUTPUT_STEREO, .set=setbool, .new=newoutputstereo},
+		{"stereo", OUTPUT_STEREO, .set=setoutputstereo, .new=newoutputstereo},
 		{"record", OUTPUT_RECORD, .set=setbool, .new=newbool},
 		{"name", NAME, .set=setname},
 		{"playchan", OUTPUT_PLAYCHAN, .set=setint, .new=newint},
