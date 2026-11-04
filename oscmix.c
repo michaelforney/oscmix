@@ -479,7 +479,7 @@ setoutputloopback(struct context *ctx, struct oscmsg *msg)
 	val = oscgetint(msg);
 	if (oscend(msg) != 0)
 		return;
-	putle32(buf, val << 7 | ctx->param.in);
+	putle32(buf, val << 7 | ctx->param.out);
 	writesysex(3, buf, sizeof buf, sysexbuf);
 }
 
