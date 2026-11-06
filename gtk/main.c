@@ -567,15 +567,105 @@ output_modify(GtkTreeModel *model, GtkTreeIter *iter, GValue *val, int col, gpoi
 	}
 }
 
+struct windowsize {
+	GtkWindow *window;
+	GSettings *settings;
+	guint source;
+	int width, height;
+};
+
+static gboolean
+save_window_size(gpointer ptr)
+{
+	struct windowsize *state = ptr;
+	GdkWindow *window = gtk_widget_get_window(GTK_WIDGET(state->window));
+	int width, height;
+
+	state->source = 0;
+	/* Re-checked here rather than in the configure handler: on a
+	   maximized launch a configure at the default size arrives before
+	   the maximized state does, and saving it would overwrite the
+	   remembered floating size. By the time the debounce fires, the
+	   state is settled. */
+	if (window && !(gdk_window_get_state(window) & (GDK_WINDOW_STATE_MAXIMIZED | GDK_WINDOW_STATE_FULLSCREEN))) {
+		gtk_window_get_size(state->window, &width, &height);
+		g_settings_set_int(state->settings, "window-width", width);
+		g_settings_set_int(state->settings, "window-height", height);
+	}
+	return G_SOURCE_REMOVE;
+}
+
+static gboolean
+restore_window_size(gpointer ptr)
+{
+	struct windowsize *state = ptr;
+
+	gtk_window_resize(state->window, state->width, state->height);
+	return G_SOURCE_REMOVE;
+}
+
+static gboolean
+on_window_map(GtkWidget *widget, GdkEvent *event, gpointer ptr)
+{
+	struct windowsize *state = ptr;
+
+	/* set_default_size from init loses against the template's own
+	   default-width/height here, and so does a resize at realize; a
+	   resize right after the map is what reliably restores the
+	   remembered size. Once: the handler removes itself. */
+	if (state->width > 0 && state->height > 0)
+		g_idle_add(restore_window_size, state);
+	g_signal_handlers_disconnect_by_func(widget, (gpointer)on_window_map, ptr);
+	return FALSE;
+}
+
+static gboolean
+on_window_configure(GtkWidget *widget, GdkEventConfigure *event, gpointer ptr)
+{
+	struct windowsize *state = ptr;
+
+	if (state->source)
+		g_source_remove(state->source);
+	state->source = g_timeout_add(500, save_window_size, state);
+	return FALSE;
+}
+
+static gboolean
+on_window_state(GtkWidget *widget, GdkEventWindowState *event, gpointer ptr)
+{
+	struct windowsize *state = ptr;
+
+	if (event->changed_mask & GDK_WINDOW_STATE_MAXIMIZED)
+		g_settings_set_boolean(state->settings, "window-maximized",
+			(event->new_window_state & GDK_WINDOW_STATE_MAXIMIZED) != 0);
+	return FALSE;
+}
+
 static void
 oscmix_window_init(OSCMixWindow *self)
 {
 	GSettings *settings;
+	struct windowsize *windowsize;
+	int width, height;
 
 	gtk_widget_init_template(GTK_WIDGET(self));
 	self->osc = mixer_new();
 
 	settings = g_settings_new("oscmix");
+	width = g_settings_get_int(settings, "window-width");
+	height = g_settings_get_int(settings, "window-height");
+	if (width > 0 && height > 0)
+		gtk_window_set_default_size(GTK_WINDOW(self), width, height);
+	if (g_settings_get_boolean(settings, "window-maximized"))
+		gtk_window_maximize(GTK_WINDOW(self));
+	windowsize = g_new0(struct windowsize, 1);
+	windowsize->window = GTK_WINDOW(self);
+	windowsize->settings = settings;
+	windowsize->width = width;
+	windowsize->height = height;
+	g_signal_connect(self, "map-event", G_CALLBACK(on_window_map), windowsize);
+	g_signal_connect(self, "configure-event", G_CALLBACK(on_window_configure), windowsize);
+	g_signal_connect(self, "window-state-event", G_CALLBACK(on_window_state), windowsize);
 	g_settings_bind(settings, "send-host", self->send_host, "text", G_SETTINGS_BIND_DEFAULT);
 	g_settings_bind(settings, "send-port", self->send_port, "value", G_SETTINGS_BIND_DEFAULT);
 	g_settings_bind(settings, "recv-host", self->recv_host, "text", G_SETTINGS_BIND_DEFAULT);
